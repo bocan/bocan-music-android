@@ -8,10 +8,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-// Robolectric SDK 36+ needs a Java 21 test JVM; the repo standard is JVM 17,
-// so the smoke test runs on the newest sandbox that supports Java 17.
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [35])
+@Config(sdk = [36])
 class MainActivityLaunchTests {
     @Test
     fun `activity reaches resumed state in light mode`() {
