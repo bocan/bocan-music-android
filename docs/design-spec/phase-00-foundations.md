@@ -100,13 +100,14 @@ Compose BOM + Material 3, Activity Compose, Timber, ktlint plugin, detekt, Kover
 
 ## Acceptance criteria
 
-- [ ] `./gradlew assembleDebug` produces an installable APK showing the themed empty shell with the Bòcan adaptive icon in the launcher.
-- [ ] Module DAG exists exactly as specified; no module depends upward.
-- [ ] `AppLog` redacts sensitive keys, proven by test.
-- [ ] ktlint, detekt, Android Lint, and Kover verify all pass via `./gradlew check test koverVerify`.
-- [ ] CI workflow runs the same and is green.
-- [ ] Pre-commit hook installs and blocks a deliberately misformatted file.
-- [ ] App icon renders correctly at API 29 (legacy fallback), API 31 (adaptive), and API 33+ (themed monochrome).
+- [x] `./gradlew assembleDebug` produces an installable APK showing the themed empty shell with the Bòcan adaptive icon in the launcher.
+- [x] Module DAG exists exactly as specified; no module depends upward.
+- [x] `AppLog` redacts sensitive keys, proven by test.
+- [x] ktlint, detekt, Android Lint, and Kover verify all pass via `./gradlew check test koverVerify`.
+- [x] CI workflow runs the same and is green.
+- [x] Pre-commit hook installs and blocks a deliberately misformatted file.
+- [x] App icon renders correctly at API 29 (legacy fallback), API 31 (adaptive), and API 33+ (themed monochrome).
+  - Verified live on an API 33 emulator with a round-mask launcher (light and dark shell, icon in the app drawer). With `minSdk 29` the adaptive icon is the only mechanism (no pre-26 legacy assets exist to fall back to), so API 29 and 31 use the identical adaptive XML path; the monochrome layer compiles and its geometry was checked against a rendered safe-zone overlay, but no launcher themed-icon toggle was exercised.
 
 ## Gotchas
 
