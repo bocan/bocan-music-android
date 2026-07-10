@@ -4,7 +4,7 @@ Every phase assumes these. Re-read once, then obey without being asked. This is 
 
 ## Language and platform
 
-- Kotlin 2.x, JVM toolchain 17. No Java sources.
+- Kotlin 2.x, JVM toolchain 21. No Java sources.
 - `minSdk 29` (Android 10), `targetSdk` = latest stable, `compileSdk` = latest stable.
 - Jetpack Compose with Material 3 for all UI. No XML layouts (XML is allowed only where the platform demands it: manifests, widget metadata, `strings.xml`, drawable resources).
 - Coroutines and Flow everywhere. No RxJava, no LiveData, no AsyncTask.

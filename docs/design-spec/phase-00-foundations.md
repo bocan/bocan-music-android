@@ -50,7 +50,7 @@ bocan-music-android/
 
 ## Implementation plan
 
-1. Bootstrap Gradle: Kotlin DSL, version catalog, Kotlin 2.x, AGP latest stable, JVM toolchain 17, `minSdk 29`, `compileSdk`/`targetSdk` latest stable. Enable Compose only in `:app`.
+1. Bootstrap Gradle: Kotlin DSL, version catalog, Kotlin 2.x, AGP latest stable, JVM toolchain 21, `minSdk 29`, `compileSdk`/`targetSdk` latest stable. Enable Compose only in `:app`.
 2. Create the five library modules and `:app` with the DAG from `_standards.md` expressed as Gradle dependencies. Add an architecture test (a small unit test in `:app` that parses `settings.gradle.kts` module list and each module's declared project dependencies via a generated report, or use the `build.gradle.kts` constraints) OR simply rely on Gradle: a lower module must not declare a dependency on a higher one. Keep it enforced by convention plus code review; do not add heavyweight arch-test frameworks.
 3. `:core:observability`: `AppLog` facade over Timber. API:
 
@@ -79,7 +79,7 @@ bocan-music-android/
 6. `MainActivity` + `BocanApplication` + empty `AppGraph`. The activity shows a centered "Bòcan" wordmark on the themed background. Edge-to-edge enabled.
 7. Lint and format: ktlint Gradle plugin, detekt with a repo-root `detekt.yml` (default rules plus `MaxLineLength` 140), Android Lint with `NewApi` and `MissingPermission` fatal. `scripts/install-hooks.sh` writes a `.git/hooks/pre-commit` that runs ktlint and detekt on staged Kotlin files.
 8. Kover wired with an 80 percent verify rule on `:core:observability` (the only core module with code so far); later phases extend the rule to their modules.
-9. CI (`.github/workflows/ci.yml`): on push and PR, set up JDK 17 + Gradle cache, run `./gradlew check test koverVerify assembleDebug`. No emulator jobs in this phase.
+9. CI (`.github/workflows/ci.yml`): on push and PR, set up JDK 21 + Gradle cache, run `./gradlew check test koverVerify assembleDebug`. No emulator jobs in this phase.
 10. `.gitignore` for Android/Gradle/IDE. Commit the Gradle wrapper.
 
 ## Context7 lookups
