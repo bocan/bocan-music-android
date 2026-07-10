@@ -1,6 +1,6 @@
 # Bòcan Music for Android
 
-A native Android companion app for [Bòcan Music](https://github.com/bocan/bocan-music), the macOS music player for people who still keep their CDs.
+A native Android companion app for [Bòcan Music](https://github.com/bocan/bocan-music), the macOS music player for people who still own their music.
 
 Bòcan for Android does two things:
 
