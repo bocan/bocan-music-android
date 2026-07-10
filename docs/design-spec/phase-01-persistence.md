@@ -41,7 +41,7 @@ core/persistence/src/test/resources/fixtures/manifest-small.json
 - `playlist_tracks`: `playlistId`, `position`, `trackId`; PK (`playlistId`, `position`), index on `trackId`.
 - `podcasts`: `id` (PK), `title`, `author`, `descriptionHtml`, `artworkHash`, `defaultSpeed`.
 - `episodes`: `id` (String PK), `podcastId`, `guid`, `title`, `publishedAt`, `durationMs`, `descriptionHtml`, `relPath`, `size`, `sha256`, `hasChapters`, `downloadState`, `syncedAt`, `seedPositionMs`, `seedPlayState`.
-- `tracks_fts`: FTS4 external-content table over `tracks` (`title`, `artistName`, `albumName`, `genre`) with the standard sync triggers Room generates for `@Fts4(contentEntity = TrackEntity::class)`.
+- `tracks_fts`: FTS5 external-content table over `tracks` (`title`, `artistName`, `albumName`, `genre`) with the sync triggers Room generates for `@Fts5(contentEntity = TrackEntity::class)`. Configure prefix indexes (`prefix = [2, 3]`) so the search box's prefix matching does not scan.
 
 ### Local tables (never touched by `SyncApplier` except seeding)
 
@@ -69,7 +69,7 @@ class SyncApplier(private val db: BocanDatabase) {
 }
 ```
 
-`apply` runs in one `withTransaction`: upsert all synced tables, delete departed rows, rebuild `albums`/`artists`, seed missing `play_stats` and `episode_state` rows, update `sync_server.lastAppliedGeneration`. New and changed rows get `downloadState = pending`; unchanged stay `downloaded`. Clip tracks (`clipSourceTrackId != null`) inherit the source's download state and never appear in `tracksToDownload`.
+`apply` runs in one `withWriteTransaction` (Room 3's transaction API): upsert all synced tables, delete departed rows, rebuild `albums`/`artists`, seed missing `play_stats` and `episode_state` rows, update `sync_server.lastAppliedGeneration`. New and changed rows get `downloadState = pending`; unchanged stay `downloaded`. Clip tracks (`clipSourceTrackId != null`) inherit the source's download state and never appear in `tracksToDownload`.
 
 The `Manifest` DTOs (kotlinx.serialization data classes matching sync-protocol.md section 7 exactly) live in this module under `model/manifest/` so both `:core:sync` and tests share them.
 
@@ -84,23 +84,23 @@ The `Manifest` DTOs (kotlinx.serialization data classes matching sync-protocol.m
 
 ## Implementation plan
 
-1. Add Room (runtime, ktx, compiler via KSP) and kotlinx.serialization to `:core:persistence`. Room `exportSchema = true` with the schema JSON committed under `core/persistence/schemas/`.
+1. Add Room 3 (`androidx.room3` runtime, compiler via KSP, the `androidx.room3` Gradle plugin) plus `BundledSQLiteDriver` (`androidx.sqlite:sqlite-bundled`) and kotlinx.serialization to `:core:persistence`. The Room Gradle plugin's `schemaDirectory` (Room 3's replacement for `exportSchema`) commits the schema JSON under `core/persistence/schemas/`.
 2. Entities and converters (enums as strings, Instant as epoch millis).
 3. DAOs with the queries above. Every multi-statement write is `@Transaction`.
-4. FTS4 external-content table plus a `SearchDao` test proving prefix search and quote escaping.
+4. FTS5 external-content table plus a `SearchDao` test proving prefix search and quote escaping.
 5. Manifest DTOs + a parser test against `fixtures/manifest-small.json` (hand-write this fixture to cover: a clip track, a smart playlist, a folder, an episode with seed state, nulls everywhere optional).
 6. `SyncApplier.plan` and `apply` with exhaustive tests (see test plan).
-7. Wire `BocanDatabase` construction into `AppGraph` (single instance, WAL mode is Room's default journal on API 29+; verify).
+7. Wire `BocanDatabase` construction into `AppGraph` (single instance, built with `BundledSQLiteDriver`; verify WAL journal mode is in effect).
 8. Extend the Kover verify rule to this module.
 
 ## Context7 lookups
 
-- use context7: Room KSP setup, FTS4 external content entity, withTransaction, latest stable version
+- use context7: Room 3 (androidx.room3) setup with KSP and the Room Gradle plugin, Fts5 external content entity, withWriteTransaction, BundledSQLiteDriver, latest stable version
 - use context7: kotlinx.serialization JSON ignoreUnknownKeys and explicit nulls configuration
 
 ## Dependencies
 
-Room (+ KSP), kotlinx-serialization-json, kotlinx-coroutines. Test: Robolectric (Room needs a Context; use an in-memory database), Turbine.
+Room 3 (`androidx.room3` + KSP + Room Gradle plugin), `androidx.sqlite:sqlite-bundled` (the driver that guarantees FTS5), kotlinx-serialization-json, kotlinx-coroutines. Test: Robolectric (Room's Android builder needs a Context; use an in-memory database on the bundled driver), Turbine.
 
 ## Test plan
 
@@ -133,7 +133,8 @@ Room (+ KSP), kotlinx-serialization-json, kotlinx-coroutines. Test: Robolectric 
 
 - **Local-state seeding is once, ever.** The seed fields live on the synced `episodes` row, but the applier only copies them when creating a missing `episode_state` row. If you re-seed on every sync, the Mac silently stomps phone listening progress, which is the bug this whole design exists to prevent.
 - **Deriving albums must be deterministic** (stable ordering before "first non-null artwork") or tests flake and the UI flickers on every sync.
-- **FTS4, not FTS5.** Room supports FTS3/FTS4 natively; do not hand-roll FTS5 virtual tables in v1.
+- **FTS5 rides on the bundled driver.** Room only guarantees FTS5 with `BundledSQLiteDriver`; never build the database on the platform SQLite (`AndroidSQLiteDriver`) or FTS5 becomes a device lottery. The bundled driver costs roughly a megabyte per ABI and buys one known SQLite everywhere.
+- **Room 3 is a new package, not an upgrade.** Everything imports from `androidx.room3`; a stray `androidx.room` 2.x artifact or import anywhere in the dependency graph is a review-blocking defect. Room 3.0.0 went stable 2026-07-01, so treat surprising behaviour as potentially a library bug: check the issue tracker before contorting the code.
 - **Foreign keys and the applier's delete order**: delete `playlist_tracks` before `tracks`, episodes before podcasts, or defer FKs inside the transaction.
 - **Do not store absolute paths.** Only `relPath`; the media root can move (user clears storage, backup restore).
 

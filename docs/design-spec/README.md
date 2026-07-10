@@ -45,7 +45,7 @@ Goal, Non-goals, Outcome shape, Implementation plan, Definitions and contracts, 
 | ReplayGain track/album | Yes, values come from the manifest (phase 04) |
 | Playback speed with pitch correction | Yes (phase 04) |
 | Smart + manual playlists, folders, accent colors | Read-only: smart lists are materialized by the Mac at manifest time (phases 01, 05) |
-| FTS search | Yes, Room FTS4 (phases 01, 05) |
+| FTS search | Yes, Room 3 FTS5 on the bundled SQLite driver (phases 01, 05) |
 | Synced lyrics (LRC) | Yes, served by the Mac per track (phase 06) |
 | Ratings, loved, play stats | Ratings and loved display synced values; play stats are phone-local (phases 01, 06) |
 | Podcasts: resume, speed, chapters, show notes | Yes over synced episodes; no subscribing on the phone (phase 07) |

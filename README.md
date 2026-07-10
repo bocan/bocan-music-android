@@ -82,7 +82,7 @@ Repo-scoped Claude Code skills in [`.claude/skills/`](.claude/skills/) enforce t
 | Language | Kotlin 2.x, JDK 17+ | The native Android language; Swift-like ergonomics keep the two codebases culturally similar |
 | UI | Jetpack Compose, Material 3 | Declarative UI mirroring the Mac app's SwiftUI approach; Material You dynamic color |
 | Playback | AndroidX Media3 1.10+ (ExoPlayer, MediaSession) plus the Media3 FFmpeg decoder extension | Gapless, speed/pitch, skip-silence out of the box; FFmpeg covers APE, WavPack, DSD, Musepack and friends, mirroring the Mac's AVFoundation/FFmpeg split |
-| Database | Room (SQLite) with FTS | The Android analogue of the Mac app's GRDB layer; reactive Flows mirror ValueObservation |
+| Database | Room 3 with FTS5 on the bundled SQLite driver | The Android analogue of the Mac app's GRDB layer; reactive Flows mirror ValueObservation |
 | Discovery | `NsdManager` (mDNS / Bonjour) | The Mac advertises `_bocansync._tcp`; both platforms speak Bonjour natively |
 | Transport | HTTPS over mutual TLS with pinned self-signed certs, OkHttp client | Pairing binds the two device certificates; everything after is pinned both ways |
 | Background sync | WorkManager plus a foreground service for active transfers | Survives Doze; visible progress during large pulls |
