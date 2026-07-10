@@ -1,0 +1,15 @@
+config:
+  validation: true
+
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+  MagicNumber:
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotated: ['Composable', 'Preview']
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
