@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- The sync client speaks TLS to the paired Mac over the LAN. -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <!-- mDNS discovery (NsdManager) and the multicast lock that keeps mDNS frames
+       flowing while Wi-Fi power save is active. -->
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+</manifest>
