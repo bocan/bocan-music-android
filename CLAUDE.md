@@ -6,6 +6,14 @@ This file guides Claude Code when working in this repository.
 
 Bòcan Music for Android: a Kotlin / Jetpack Compose companion app to the macOS player at `../bocan-music`. It syncs music one way (Mac to phone) over pinned mutual TLS on the local network, and plays it with feature parity where Android allows. It is a player only: it never edits files, tags, or playlists.
 
+## Project skills
+
+Three repo skills in `.claude/skills/` encode the workflow; prefer them over improvising:
+
+- `/phase NN` implements one design-spec phase end to end (binding docs, contracts, gates, acceptance boxes, conventional commit).
+- `/android-standards` reviews changes against the standards charter before committing.
+- `/protocol-guard` runs whenever `core/sync`, the manifest DTOs, shared fixtures, or `sync-protocol.md` change; it classifies contract impact and flags Mac-side counterparts.
+
 ## How to work here
 
 - The build is phased. Implement exactly one phase file from `docs/design-spec/` per session, in order, honouring each file's `Depends on:` header.
