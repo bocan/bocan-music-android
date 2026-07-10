@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Window backgrounds shown before Compose attaches. -->
+  <color name="window_background_light">#FDFBFF</color>
+  <color name="window_background_dark">#1A1024</color>
+</resources>
