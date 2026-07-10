@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark indigo gradient approximating the Mac icon's background, with the
+     moon layer from 1-moon.svg pulled inside the adaptive icon's visible circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:aapt="http://schemas.android.com/aapt"
+  android:width="108dp"
+  android:height="108dp"
+  android:viewportWidth="1024"
+  android:viewportHeight="1024">
+
+  <path android:pathData="M 0 0 H 1024 V 1024 H 0 Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+        android:type="linear"
+        android:startX="512"
+        android:startY="0"
+        android:endX="512"
+        android:endY="1024">
+        <item android:offset="0" android:color="@color/ic_launcher_bg_start" />
+        <item android:offset="1" android:color="@color/ic_launcher_bg_end" />
+      </gradient>
+    </aapt:attr>
+  </path>
+
+  <!-- crescent moon -->
+  <group
+    android:scaleX="1.5"
+    android:scaleY="1.5"
+    android:pivotX="538"
+    android:pivotY="130"
+    android:translateY="150">
+    <path
+      android:fillColor="@color/ic_launcher_moon"
+      android:pathData="M 512 78 A 52 52 0 1 0 564 130 A 40 40 0 1 1 512 78 Z" />
+  </group>
+</vector>

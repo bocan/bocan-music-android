@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Adaptive icon palette, mirrored from the Mac icon assets. -->
+  <color name="ic_launcher_bg_start">#0E0A26</color>
+  <color name="ic_launcher_bg_end">#293380</color>
+  <color name="ic_launcher_moon">#E8C36A</color>
+  <color name="ic_launcher_spirit">#B9EBDD</color>
+  <color name="ic_launcher_spirit_inner">#6FC9B4</color>
+  <color name="ic_launcher_face">#1E1547</color>
+  <color name="ic_launcher_guitar_body">#463581</color>
+  <color name="ic_launcher_guitar_neck">#D9C9A3</color>
+</resources>
