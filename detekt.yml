@@ -1,6 +1,14 @@
 config:
   validation: true
 
+complexity:
+  # Room DAOs are declarative SQL surfaces; the design spec fixes their shape.
+  TooManyFunctions:
+    ignoreAnnotated: ['Dao']
+  # Test fixture builders mirror wide contract objects via named defaults.
+  LongParameterList:
+    excludes: ['**/test/**']
+
 style:
   MaxLineLength:
     active: true
