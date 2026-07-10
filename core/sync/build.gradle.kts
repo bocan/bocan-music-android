@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kover)
 }
 
@@ -20,13 +21,62 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     lint {
         fatal += listOf("NewApi", "MissingPermission")
+    }
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Thin platform glue over the Android Keystore, NsdManager, and
+                // WifiManager multicast lock. There is no behaviour to unit test
+                // off-device (Robolectric does not implement the AndroidKeyStore
+                // provider, and NsdManager needs a real network stack). The
+                // logic they delegate to (fingerprinting, TXT parsing, resolve
+                // serialisation, cert pinning) lives in plain classes that are
+                // covered directly.
+                classes(
+                    "io.cloudcauldron.bocan.sync.identity.KeystoreDeviceIdentity",
+                    "io.cloudcauldron.bocan.sync.identity.KeystoreDeviceIdentity$*",
+                    "io.cloudcauldron.bocan.sync.discovery.NsdServiceBrowserImpl",
+                    "io.cloudcauldron.bocan.sync.discovery.NsdServiceBrowserImpl$*",
+                    "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl",
+                    "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl$*"
+                )
+            }
+        }
+        verify {
+            rule {
+                minBound(80)
+            }
+        }
     }
 }
 
 dependencies {
     api(project(":core:persistence"))
 
+    api(libs.okhttp)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.okhttp.tls)
+    testImplementation(libs.okhttp.mockwebserver3)
+    // The bundled SQLite Android artifact ships device .so files only; the jvm
+    // artifact carries the host natives Robolectric database tests need.
+    testImplementation(libs.sqlite.bundled.jvm)
 }
