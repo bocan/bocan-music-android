@@ -122,12 +122,12 @@ Room 3 (`androidx.room3` + KSP + Room Gradle plugin), `androidx.sqlite:sqlite-bu
 
 ## Acceptance criteria
 
-- [ ] Schema JSON committed; database version 1 builds and opens.
-- [ ] `SyncApplier` passes every case above, including the local-state survival cases.
-- [ ] Manifest fixture parses with `ignoreUnknownKeys = true` and round-trips.
-- [ ] FTS search proven safe against quoting tricks.
-- [ ] All DAOs' observed queries emit reactively, proven with Turbine.
-- [ ] Kover floor holds for this module.
+- [x] Schema JSON committed; database version 1 builds and opens.
+- [x] `SyncApplier` passes every case above, including the local-state survival cases.
+- [x] Manifest fixture parses with `ignoreUnknownKeys = true` and round-trips.
+- [x] FTS search proven safe against quoting tricks.
+- [x] All DAOs' observed queries emit reactively, proven with Turbine.
+- [x] Kover floor holds for this module.
 
 ## Gotchas
 
