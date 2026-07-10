@@ -58,7 +58,7 @@ sealed interface PairingState {
 `DeviceIdentity`: generates a P-256 key in the Android Keystore (`KeyProperties.PURPOSE_SIGN`, no user auth requirement) and a self-signed cert (25-year validity, CN `bocan-android-<8 hex>`) on first use; exposes `certificate: X509Certificate`, `fingerprint: String`, and a `KeyManager` for TLS client auth. Certificate generation uses BouncyCastle's `X509v3CertificateBuilder` signed by the Keystore key via `ContentSigner` bridging, or, simpler and preferred if workable, `android.security.keystore` attestation-free self-signed flow; investigate with Context7 and pick the least exotic path that keeps the private key non-exportable.
 
 `SyncHttpClientFactory`:
-- `pairingClient(expectedHost)`: TLS accepting any server cert but capturing it (custom `X509TrustManager` that records the chain and only permits the `/v1/pair/*` and `/v1/ping` paths at the interceptor level), presenting the device client cert.
+- `pairingClient(expectedFingerprint)`: TLS whose trust manager verifies that the presented server certificate's SHA-256 equals the fingerprint from the discovered TXT record, capturing the certificate for the ceremony, and only permitting the `/v1/pair/*` and `/v1/ping` paths at the interceptor level, presenting the device client cert. The trust manager must throw `CertificateException` on any mismatch. There must be no accept-any trust manager anywhere in the codebase: Google Play's pre-launch security scan flags `checkServerTrusted` implementations that never throw, and that is a store rejection, not a warning. The TXT fingerprint is unauthenticated, so this pin is defence in depth; the pairing code remains the real MITM check.
 - `pairedClient()`: pins the stored `fpMac` (reject on mismatch before any request body is sent), presents the device cert, TLS 1.3 preferred. Also sets sane timeouts (connect 5 s; read: long for file streams, override per-call in phase 03).
 
 ## Implementation plan
@@ -92,6 +92,7 @@ OkHttp, BouncyCastle (bcpkix) if needed for cert building, kotlinx-serialization
 - Wrong code typed: no confirm request is ever sent; recorded cert discarded.
 - Server returns `badProof` / `pairingExpired` / 503: correct typed errors.
 - MITM simulation: MockWebServer presents cert A while the expected-code derivation is fed cert B's fingerprint; typed "Mac's code" mismatches; ceremony aborts. (This is the security property; encode it as a named test.)
+- TXT pin: the pairing client refuses a server whose certificate does not hash to the advertised fingerprint (`CertificateException` before any request is sent).
 
 ### Discovery
 - Fake `NsdManager` seam (interface wrapper) proving resolve-queue serialisation and TXT parsing, including missing keys.
@@ -102,6 +103,7 @@ OkHttp, BouncyCastle (bcpkix) if needed for cert building, kotlinx-serialization
 - [ ] Full ceremony succeeds against a TLS MockWebServer, persisting the pinned relationship.
 - [ ] The paired client refuses a server presenting a different certificate (test proves the request fails before sending).
 - [ ] The pre-pairing client refuses to call non-pairing endpoints.
+- [ ] No accept-any `X509TrustManager` exists in the app: both client builders throw on certificate mismatch, proven by test (Google Play's security scanner rejects accept-any implementations).
 - [ ] Pairing UI: discovery list, code entry, success, and the mismatch warning all reachable; strings in `strings.xml`.
 - [ ] No secrets or codes appear in logs (AppLog redaction covers `code` and `proof`).
 - [ ] Kover floor holds for `:core:sync` so far.
@@ -109,6 +111,7 @@ OkHttp, BouncyCastle (bcpkix) if needed for cert building, kotlinx-serialization
 ## Gotchas
 
 - **Take fingerprints from the TLS session, never from JSON.** The JSON fields are advisory; the security property depends on hashing the certificate the socket actually presented.
+- **Never write a trust manager that cannot fail.** Even the pairing-mode client pins to the TXT-advertised fingerprint. An accept-any `checkServerTrusted` is both a Play Store rejection and a habit this codebase refuses to form.
 - **NsdManager resolves one service at a time** and throws `FAILURE_ALREADY_ACTIVE` if you overlap; serialise resolves.
 - **Keystore keys and TLS**: an Android Keystore private key cannot be extracted, so the `KeyManager` must delegate signing to the Keystore. Do not "fix" a handshake problem by generating the key outside the Keystore and storing it in a file.
 - **The code is not a secret** but redact it in logs anyway; log hygiene should not depend on the reader knowing the crypto design.

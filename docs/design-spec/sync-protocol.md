@@ -35,7 +35,7 @@ Each device generates, once, a P-256 (secp256r1) key pair and a self-signed X.50
 
 - TLS 1.3 minimum (1.2 acceptable only if the platform stack cannot be forced to 1.3; log a warning).
 - The server always presents its certificate and always requests a client certificate.
-- **Before pairing completes**: the phone connects with a trust manager that accepts the server certificate without validation but records it; the server accepts any client certificate but records it. All pre-pairing requests are refused except the three `/v1/pair/*` endpoints and `/v1/ping`.
+- **Before pairing completes**: the phone connects with a trust manager that requires the presented server certificate to hash to the `fp` fingerprint advertised in the discovered TXT record, and records the certificate. It never accepts an arbitrary certificate: partly defence in depth, and partly because Google Play's security scanner rejects apps containing accept-any trust managers. The TXT record is unauthenticated, so this pin is NOT the security boundary; the pairing code check in section 4 is. The server accepts any client certificate during pairing mode but records it. All pre-pairing requests are refused except the three `/v1/pair/*` endpoints and `/v1/ping`.
 - **After pairing**: the phone refuses any server certificate whose SHA-256 does not equal the pinned `fpMac`. The server refuses any client certificate whose SHA-256 is not in its trusted-devices list. No hostname verification, no CA chains, no system trust store on either side: the pin is the whole trust decision.
 
 ## 4. Pairing ceremony
@@ -45,7 +45,7 @@ Design: the six-digit code is **derived from both certificate fingerprints**, so
 Sequence:
 
 1. User clicks "Pair a phone" in the Mac's settings. The Mac enters pairing mode for 120 seconds (`pm=1` in TXT) and shows a waiting sheet.
-2. Phone (pairing screen) lists discovered `pm=1` services. User taps the Mac. Phone opens TLS (accept-and-record mode) and calls:
+2. Phone (pairing screen) lists discovered `pm=1` services. User taps the Mac. Phone opens TLS (TXT-pinned record mode, section 3) and calls:
 
    `POST /v1/pair/start`
    ```json
