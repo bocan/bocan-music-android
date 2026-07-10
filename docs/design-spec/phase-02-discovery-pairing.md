@@ -99,14 +99,14 @@ OkHttp, BouncyCastle (bcpkix) if needed for cert building, kotlinx-serialization
 
 ## Acceptance criteria
 
-- [ ] Golden pairing vectors pass; the vectors file and generator script are committed.
-- [ ] Full ceremony succeeds against a TLS MockWebServer, persisting the pinned relationship.
-- [ ] The paired client refuses a server presenting a different certificate (test proves the request fails before sending).
-- [ ] The pre-pairing client refuses to call non-pairing endpoints.
-- [ ] No accept-any `X509TrustManager` exists in the app: both client builders throw on certificate mismatch, proven by test (Google Play's security scanner rejects accept-any implementations).
-- [ ] Pairing UI: discovery list, code entry, success, and the mismatch warning all reachable; strings in `strings.xml`.
-- [ ] No secrets or codes appear in logs (AppLog redaction covers `code` and `proof`).
-- [ ] Kover floor holds for `:core:sync` so far.
+- [x] Golden pairing vectors pass; the vectors file and generator script are committed.
+- [x] Full ceremony succeeds against a TLS MockWebServer, persisting the pinned relationship.
+- [x] The paired client refuses a server presenting a different certificate (test proves the request fails before sending).
+- [x] The pre-pairing client refuses to call non-pairing endpoints.
+- [x] No accept-any `X509TrustManager` exists in the app: both client builders throw on certificate mismatch, proven by test (Google Play's security scanner rejects accept-any implementations).
+- [x] Pairing UI: discovery list, code entry, success, and the mismatch warning all reachable; strings in `strings.xml`.
+- [x] No secrets or codes appear in logs (AppLog redaction covers `code` and `proof`).
+- [x] Kover floor holds for `:core:sync` so far.
 
 ## Gotchas
 
