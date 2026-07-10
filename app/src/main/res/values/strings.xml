@@ -2,4 +2,37 @@
 <resources>
   <string name="app_name">Bòcan Music</string>
   <string name="wordmark">Bòcan</string>
+  <string name="home_pair_action">Pair a Mac</string>
+
+  <!-- Pairing -->
+  <string name="pairing_title">Pair with a Mac</string>
+  <string name="pairing_searching">Searching for Macs on your network…</string>
+  <string name="pairing_no_macs">No Macs found yet. On your Mac, open Bòcan settings and click Pair a phone.</string>
+  <string name="pairing_ready">Ready to pair</string>
+  <string name="pairing_pair_action">Pair</string>
+  <string name="pairing_mac_row">Pair with %1$s, ready to pair</string>
+
+  <string name="pairing_enter_code_title">Enter the pairing code</string>
+  <string name="pairing_enter_code_prompt">Type the six digit code shown on %1$s.</string>
+  <string name="pairing_code_digit">Code digit %1$d</string>
+
+  <string name="pairing_confirming">Pairing…</string>
+  <string name="pairing_paired_title">Paired</string>
+  <string name="pairing_paired_message">Paired with %1$s.</string>
+  <string name="pairing_done">Done</string>
+
+  <!-- Failure copy. The mismatch warning is verbatim from the sync protocol. -->
+  <string name="pairing_code_mismatch">This code does not match. Someone may be interfering with your network, or you tapped the wrong Mac.</string>
+  <string name="pairing_too_many_attempts">Too many incorrect codes. Start the pairing again.</string>
+  <string name="pairing_error_expired">Pairing timed out. On your Mac, click Pair a phone again.</string>
+  <string name="pairing_error_bad_proof">The Mac rejected the pairing. Please try again.</string>
+  <string name="pairing_error_busy">The Mac is busy updating its library. Try again in a moment.</string>
+  <string name="pairing_error_rate_limited">Too many attempts. Wait a moment and try again.</string>
+  <string name="pairing_error_network">Could not reach the Mac. Check that both devices are on the same Wi-Fi network.</string>
+  <string name="pairing_error_pin">The Mac\'s identity could not be verified. Do not continue; try pairing again.</string>
+  <string name="pairing_error_unsupported">This Mac is running a newer version of Bòcan. Update Bòcan on your phone.</string>
+  <string name="pairing_error_generic">Pairing failed. Please try again.</string>
+
+  <string name="pairing_retry_code">Re-enter code</string>
+  <string name="pairing_start_over">Start over</string>
 </resources>
