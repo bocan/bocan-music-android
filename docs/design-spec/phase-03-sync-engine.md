@@ -113,14 +113,16 @@ WorkManager. Everything else already present.
 
 ## Acceptance criteria
 
-- [ ] End-to-end sync against the fixture server converges: files, DB, artwork, deletions.
-- [ ] Kill the process mid-transfer, relaunch, re-sync: converges with no re-download of completed files and no corruption.
-- [ ] Resume uses Range requests, proven by recorded requests.
-- [ ] Foreground service shows determinate progress and stops when done; no lingering notification.
-- [ ] Auto-sync fires when the paired Mac appears on Wi-Fi and respects the user toggles.
-- [ ] A departed file is deleted from disk and DB; its play stats survive.
-- [ ] Path traversal and disk-full paths fail safe, with tests.
-- [ ] Kover floor holds for `:core:sync`.
+- [x] End-to-end sync against the fixture server converges: files, DB, artwork, deletions.
+- [x] Kill the process mid-transfer, relaunch, re-sync: converges with no re-download of completed files and no corruption.
+- [x] Resume uses Range requests, proven by recorded requests.
+- [x] Foreground service shows determinate progress and stops when done; no lingering notification.
+  Verified by construction, not an automated test: driving a real `Service` off-device is not meaningful under Robolectric (the service is in the module's kover exclude list, like the other platform glue). The determinate `setProgress` during transfer and `stopForeground(REMOVE)` plus `stopSelf` on every terminal state are in `SyncForegroundService`.
+- [x] Auto-sync fires when the paired Mac appears on Wi-Fi and respects the user toggles.
+  The debounce and paired-Mac matching are unit-tested in `SyncTriggersTests`; the toggle gate (`onPairedVisible` only starts the service when auto-sync is on) is wired in `SyncCoordinator`.
+- [x] A departed file is deleted from disk and DB; its play stats survive.
+- [x] Path traversal and disk-full paths fail safe, with tests.
+- [x] Kover floor holds for `:core:sync`.
 
 ## Gotchas
 
