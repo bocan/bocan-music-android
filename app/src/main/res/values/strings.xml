@@ -35,4 +35,35 @@
 
   <string name="pairing_retry_code">Re-enter code</string>
   <string name="pairing_start_over">Start over</string>
+
+  <!-- Sync status -->
+  <string name="home_sync_action">Library sync</string>
+  <string name="sync_status_title">Library sync</string>
+  <string name="sync_not_paired">No Mac paired yet. Pair a Mac to sync your library.</string>
+  <string name="sync_now_action">Sync now</string>
+  <string name="sync_cancel_action">Cancel</string>
+  <string name="sync_server_label">Paired with %1$s</string>
+  <string name="sync_last_synced">Last synced %1$s</string>
+  <string name="sync_never_synced">Not synced yet</string>
+  <string name="sync_generation">Library version %1$d</string>
+  <string name="sync_counts">%1$d downloaded, %2$d pending, %3$d failed</string>
+  <string name="sync_storage_used">%1$s used on this device</string>
+
+  <string name="sync_state_idle">Idle</string>
+  <string name="sync_state_checking">Checking for changes…</string>
+  <string name="sync_state_transferring">Downloading %1$d of %2$d</string>
+  <string name="sync_state_applying">Finishing up…</string>
+  <string name="sync_state_done">Up to date</string>
+  <string name="sync_state_unreachable">Your Mac is not reachable. Sync will resume when it comes back.</string>
+  <string name="sync_state_failed">Sync failed. Please try again.</string>
+  <string name="sync_state_failed_space">Not enough free space to sync. Free up space and try again.</string>
+  <string name="sync_state_failed_not_paired">This phone is no longer paired with the Mac.</string>
+
+  <string name="sync_failures_title">Some items could not be downloaded</string>
+  <string name="sync_failure_row">%1$s (%2$s)</string>
+
+  <string name="sync_auto_label">Sync automatically over Wi-Fi</string>
+  <string name="sync_charging_label">Only sync while charging</string>
+
+  <string name="sync_banner_transferring">Syncing: %1$d of %2$d</string>
 </resources>

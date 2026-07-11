@@ -4,6 +4,9 @@ import android.app.Application
 import android.os.Build
 import android.provider.Settings
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
+import io.cloudcauldron.bocan.app.sync.SyncCoordinator
+import io.cloudcauldron.bocan.app.sync.SyncSettings
+import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.persistence.BocanDatabase
@@ -15,6 +18,7 @@ import io.cloudcauldron.bocan.sync.identity.KeystoreDeviceIdentity
 import io.cloudcauldron.bocan.sync.net.SyncHttpClientFactory
 import io.cloudcauldron.bocan.sync.net.TrustStore
 import io.cloudcauldron.bocan.sync.pairing.PairingClient
+import io.cloudcauldron.bocan.sync.service.SyncForegroundService
 import kotlinx.coroutines.Dispatchers
 
 /**
@@ -42,6 +46,39 @@ class AppGraph(val application: Application) {
     val trustStore: TrustStore by lazy { TrustStore(database.syncDao()) }
 
     val macDiscovery: MacDiscovery by lazy { MacDiscovery.create(application, dispatchers) }
+
+    val syncSettings: SyncSettings by lazy { SyncSettings(application) }
+
+    /** The single sync graph and the SyncHost the service and worker reach through the Application. */
+    val syncCoordinator: SyncCoordinator by lazy {
+        SyncCoordinator(
+            context = application,
+            dispatchers = dispatchers,
+            database = database,
+            httpClientFactory = { httpClientFactory },
+            discovery = macDiscovery,
+            settings = syncSettings
+        )
+    }
+
+    /** A fresh view model for the sync status screen; the caller disposes it. */
+    fun syncStatusViewModel(): SyncStatusViewModel = SyncStatusViewModel(
+        sources = SyncStatusViewModel.Sources(
+            syncState = syncCoordinator.syncState,
+            server = database.syncDao().observeServer(),
+            counts = database.libraryDao().observeDownloadCounts(),
+            autoSync = syncSettings.autoSyncEnabled,
+            chargingOnly = syncSettings.chargingOnly,
+            storageBytes = syncCoordinator::storageBytes
+        ),
+        actions = SyncStatusViewModel.Actions(
+            syncNow = { SyncForegroundService.start(application, force = true) },
+            cancel = syncCoordinator::cancelSync,
+            setAutoSync = syncCoordinator::setAutoSync,
+            setChargingOnly = syncCoordinator::setChargingOnly
+        ),
+        dispatchers = dispatchers
+    )
 
     /** A fresh view model for one pairing flow; the caller disposes it. */
     fun pairingViewModel(): PairingViewModel = PairingViewModel(
