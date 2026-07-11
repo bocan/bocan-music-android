@@ -21,6 +21,7 @@ import org.robolectric.annotation.Config
 private class FakeLibraryDao(tracks: List<TrackEntity>) : LibraryDao {
     private val byId = tracks.associateBy { it.id }
     override suspend fun tracksByIds(ids: List<Long>): List<TrackEntity> = ids.mapNotNull { byId[it] }
+    override suspend fun downloadedTrackIds(): List<Long> = byId.keys.toList()
 
     override fun observeAlbumsByName(): Flow<List<AlbumEntity>> = emptyFlow()
     override fun observeAlbumsByArtist(): Flow<List<AlbumEntity>> = emptyFlow()

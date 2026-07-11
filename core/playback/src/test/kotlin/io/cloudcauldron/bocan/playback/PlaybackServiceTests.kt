@@ -55,6 +55,7 @@ class TestPlaybackApp :
             episodeRecorder = EpisodeProgressRecorder(FakeEpisodeStateDao(), FakePodcastDao(), dispatchers, NoopLog),
             queuePersistence = QueuePersistence(cacheDir, dispatchers, NoopLog),
             mediaTree = MediaTree(EmptyBrowseDao, EMPTY_LABELS, { null }, dispatchers),
+            episodeSkipButtons = emptyList(),
             dispatchers = dispatchers
         )
     }

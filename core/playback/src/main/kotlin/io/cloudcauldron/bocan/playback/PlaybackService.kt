@@ -4,6 +4,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.CommandButton
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -55,6 +56,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var persistence: QueuePersistence
     private lateinit var effectsChain: EffectsChain
     private lateinit var mediaTree: MediaTree
+    private lateinit var episodeSkipButtons: List<CommandButton>
 
     private val components: PlaybackComponents get() = (application as PlaybackHost).playbackComponents
 
@@ -66,6 +68,7 @@ class PlaybackService : MediaLibraryService() {
         persistence = graph.queuePersistence
         effectsChain = graph.effectsChain
         mediaTree = graph.mediaTree
+        episodeSkipButtons = graph.episodeSkipButtons
 
         session = MediaLibrarySession.Builder(this, player, BrowseCallback())
             .build()
@@ -96,9 +99,11 @@ class PlaybackService : MediaLibraryService() {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     val values = mediaItem?.localConfiguration?.tag as? ReplayGainValues ?: ReplayGainValues.NONE
                     effectsChain.onItemTransition(values)
+                    updateNotificationButtons(mediaItem)
                 }
             }
         )
+        updateNotificationButtons(player.currentMediaItem)
         scope.launch {
             while (currentCoroutineContext().isActive) {
                 delay(FADE_TICK_MS)
@@ -228,6 +233,15 @@ class PlaybackService : MediaLibraryService() {
             val ids = mediaItems.mapNotNull { MediaId.parse(it.mediaId) }
             components.mediaItemSource.resolve(ids).ifEmpty { mediaItems }
         }
+    }
+
+    /**
+     * Set the notification and Auto custom layout to the episode skip buttons when a
+     * podcast episode is current, and clear it (leaving the built-in transport) for music.
+     */
+    private fun updateNotificationButtons(mediaItem: MediaItem?) {
+        val isEpisode = mediaItem?.mediaId?.let(MediaId::parse) is MediaId.Episode
+        session.setCustomLayout(if (isEpisode) episodeSkipButtons else emptyList())
     }
 
     /** Apply a custom session command to the player, on the session's application thread. */
