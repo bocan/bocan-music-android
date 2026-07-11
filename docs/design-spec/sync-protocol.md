@@ -84,7 +84,7 @@ Sequence:
 
 6. Pairing mode ends. Rate limiting: 3 failed `confirm` proofs or 120 s elapsed cancels the session; new attempts need a fresh "Pair a phone" click, which regenerates nonces.
 
-The final human click on the Mac (step 5) is deliberate: a MITM that fooled only one side produces a visible asymmetry (Mac says paired, phone says failed), and the instruction on the Mac's sheet tells the user what to check. Do not remove it.
+The final human click on the Mac (step 5) is deliberate: a MITM that fooled only one side produces a visible asymmetry (Mac says paired, phone says failed), and the instruction on the Mac's sheet tells the user what to check. Do not remove it. Because the `pair/confirm` response is held until that click, the phone must allow the confirm request the full 120 second session lifetime before timing out; a shorter transport read timeout turns a slow human into a spurious failure and a half-paired state.
 
 Unpairing: either side can forget the other. The Mac's settings lists trusted devices with a Revoke button; revoked fingerprints are refused at the TLS layer immediately.
 

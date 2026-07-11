@@ -17,6 +17,7 @@ import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import java.time.Instant
 import java.util.Base64
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -151,8 +152,14 @@ class PairingClient(
             PATH_CONFIRM,
             SyncJson.encodeToString(PairConfirmRequest(current.sessionId, proof))
         )
+        // The Mac holds the confirm response until the user clicks Trust on its
+        // screen, up to the 120 s session lifetime (sync-protocol.md section 4),
+        // so this one call must wait that out instead of the transport default.
+        val confirmClient = current.pairing.client.newBuilder()
+            .readTimeout(CONFIRM_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
         try {
-            withContext(dispatchers.io) { current.pairing.client.newCall(request).execute() }.use { response ->
+            withContext(dispatchers.io) { confirmClient.newCall(request).execute() }.use { response ->
                 if (!response.isSuccessful) {
                     fail(errorFrom(response))
                     return
@@ -226,6 +233,9 @@ class PairingClient(
         const val MAX_ERROR_SNIPPET = 200
         const val PATH_START = "/v1/pair/start"
         const val PATH_CONFIRM = "/v1/pair/confirm"
+
+        // The 120 s pairing session lifetime plus margin for the network.
+        const val CONFIRM_READ_TIMEOUT_SECONDS = 130L
         val SECURE_RANDOM = SecureRandom()
     }
 }
