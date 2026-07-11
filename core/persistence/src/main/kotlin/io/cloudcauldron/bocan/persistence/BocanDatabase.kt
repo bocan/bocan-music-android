@@ -8,6 +8,7 @@ import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import io.cloudcauldron.bocan.persistence.daos.EpisodeStateDao
 import io.cloudcauldron.bocan.persistence.daos.LibraryDao
+import io.cloudcauldron.bocan.persistence.daos.LyricsDao
 import io.cloudcauldron.bocan.persistence.daos.PlayStatsDao
 import io.cloudcauldron.bocan.persistence.daos.PlaylistDao
 import io.cloudcauldron.bocan.persistence.daos.PodcastDao
@@ -62,6 +63,8 @@ abstract class BocanDatabase : RoomDatabase() {
     abstract fun searchDao(): SearchDao
 
     abstract fun playStatsDao(): PlayStatsDao
+
+    abstract fun lyricsDao(): LyricsDao
 
     abstract fun episodeStateDao(): EpisodeStateDao
 
