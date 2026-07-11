@@ -1,11 +1,16 @@
 package io.cloudcauldron.bocan.app.player
 
+import io.cloudcauldron.bocan.app.data.PodcastPreferencesSource
 import io.cloudcauldron.bocan.persistence.daos.LibraryDao
+import io.cloudcauldron.bocan.persistence.daos.PodcastDao
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.MediaId
 import io.cloudcauldron.bocan.playback.SleepDuration
 import io.cloudcauldron.bocan.playback.SleepTimer
 import io.cloudcauldron.bocan.playback.SleepTimerState
+import io.cloudcauldron.bocan.playback.podcast.Chapter
+import io.cloudcauldron.bocan.playback.podcast.ChaptersParser
+import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
 import io.cloudcauldron.bocan.playback.queue.PlaybackTransport
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
@@ -13,11 +18,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -25,6 +32,21 @@ import kotlinx.coroutines.launch
 
 /** The current track's Mac-owned display metadata (loved and rating are display-only here). */
 data class TrackDisplay(val loved: Boolean = false, val rating: Int = 0, val albumId: Long? = null, val artistId: Long? = null)
+
+/** The podcast slice of Now Playing state: present only while an episode is current. */
+data class PodcastNowPlaying(
+    val isPodcast: Boolean = false,
+    val podcastId: Long? = null,
+    val chapters: List<Chapter> = emptyList(),
+    val chapterTitle: String? = null,
+    val skipBackSeconds: Int = DEFAULT_SKIP_BACK,
+    val skipForwardSeconds: Int = DEFAULT_SKIP_FORWARD
+) {
+    private companion object {
+        const val DEFAULT_SKIP_BACK = 15
+        const val DEFAULT_SKIP_FORWARD = 30
+    }
+}
 
 /** Everything the Now Playing screen renders. */
 data class NowPlayingUiState(
@@ -40,7 +62,8 @@ data class NowPlayingUiState(
     val shuffleActive: Boolean = false,
     val speed: Float = 1.0f,
     val display: TrackDisplay = TrackDisplay(),
-    val sleepTimer: SleepTimerState = SleepTimerState.Idle
+    val sleepTimer: SleepTimerState = SleepTimerState.Idle,
+    val podcast: PodcastNowPlaying = PodcastNowPlaying()
 )
 
 /**
@@ -49,11 +72,14 @@ data class NowPlayingUiState(
  * Transport actions delegate to the [PlaybackTransport]; loved and rating expose no
  * edit path.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 @OptIn(ExperimentalCoroutinesApi::class)
 class NowPlayingViewModel(
     private val transport: PlaybackTransport,
     private val libraryDao: LibraryDao,
+    private val podcastDao: PodcastDao,
+    private val chaptersRepository: ChaptersRepository,
+    private val preferences: PodcastPreferencesSource,
     private val sleepTimer: SleepTimer,
     dispatchers: CoroutineDispatchers
 ) {
@@ -64,8 +90,23 @@ class NowPlayingViewModel(
             .distinctUntilChanged()
             .flatMapLatest { mediaId -> displayFor(mediaId) }
 
+    /** Resolves the podcast context (chapters, show id) once per episode; empty for music. */
+    private val podcastContext: Flow<PodcastContext> =
+        transport.state.map { it.current?.mediaId }
+            .distinctUntilChanged()
+            .flatMapLatest { mediaId -> flow { emit(podcastContextFor(mediaId)) } }
+
+    private val skipIntervals: Flow<Pair<Int, Int>> =
+        combine(preferences.skipBackSeconds, preferences.skipForwardSeconds) { back, forward -> back to forward }
+
     val state: StateFlow<NowPlayingUiState> =
-        combine(transport.state, currentDisplay, sleepTimer.state) { player, display, timer ->
+        combine(transport.state, currentDisplay, sleepTimer.state, podcastContext, skipIntervals) {
+                player,
+                display,
+                timer,
+                context,
+                intervals
+            ->
             val current = player.current
             NowPlayingUiState(
                 hasItem = current != null,
@@ -80,7 +121,8 @@ class NowPlayingViewModel(
                 shuffleActive = player.shuffleActive,
                 speed = player.speed,
                 display = display,
-                sleepTimer = timer
+                sleepTimer = timer,
+                podcast = context.toUi(player.positionMs, intervals.first, intervals.second)
             )
         }.stateIn(scope, SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), NowPlayingUiState())
 
@@ -89,6 +131,31 @@ class NowPlayingViewModel(
     fun next() = launch { transport.skipNext() }
 
     fun previous() = launch { transport.skipPrevious() }
+
+    /** Skip back by the configured interval, clamped at the start of the episode. */
+    fun skipBack() = launch {
+        val player = transport.state.value
+        val delta = state.value.podcast.skipBackSeconds * MILLIS_PER_SECOND
+        transport.seekTo((player.positionMs - delta).coerceAtLeast(0))
+    }
+
+    /** Skip forward by the configured interval, clamped at the episode duration. */
+    fun skipForward() = launch {
+        val player = transport.state.value
+        val delta = state.value.podcast.skipForwardSeconds * MILLIS_PER_SECOND
+        transport.seekTo((player.positionMs + delta).coerceAtMost(player.durationMs))
+    }
+
+    /** Cycle the podcast speed presets and persist the choice as a per-show override. */
+    fun cycleSpeed() = launch {
+        val current = state.value.speed
+        val next = SPEED_PRESETS.firstOrNull { it > current + SPEED_EPSILON } ?: SPEED_PRESETS.first()
+        transport.setSpeed(next)
+        state.value.podcast.podcastId?.let { preferences.setShowSpeed(it, next.toDouble()) }
+    }
+
+    /** Seek to a chapter's start; used by the chapters sheet. */
+    fun seekToChapter(chapter: Chapter) = launch { transport.seekTo(chapter.startTimeMs) }
 
     fun seekTo(positionMs: Long) = launch { transport.seekTo(positionMs) }
 
@@ -123,11 +190,48 @@ class NowPlayingViewModel(
         TrackDisplay(track.loved, track.rating, track.albumId, track.albumArtistId)
     }
 
+    private suspend fun podcastContextFor(mediaId: String?): PodcastContext {
+        val episodeId = (mediaId?.let(MediaId::parse) as? MediaId.Episode)?.episodeId ?: return PodcastContext()
+        val episode = podcastDao.episode(episodeId)
+        return if (episode == null) {
+            PodcastContext(isPodcast = true)
+        } else {
+            PodcastContext(
+                isPodcast = true,
+                podcastId = episode.podcastId,
+                chapters = chaptersRepository.chaptersFor(episodeId, episode.hasChapters)
+            )
+        }
+    }
+
     private fun launch(block: suspend () -> Unit) {
         scope.launch { block() }
     }
 
+    /** The per-episode facts resolved off the transport; folded with live position into UI. */
+    private data class PodcastContext(
+        val isPodcast: Boolean = false,
+        val podcastId: Long? = null,
+        val chapters: List<Chapter> = emptyList()
+    ) {
+        fun toUi(positionMs: Long, skipBack: Int, skipForward: Int): PodcastNowPlaying {
+            if (!isPodcast) return PodcastNowPlaying()
+            val activeIndex = ChaptersParser.activeChapterIndex(chapters, positionMs)
+            return PodcastNowPlaying(
+                isPodcast = true,
+                podcastId = podcastId,
+                chapters = chapters,
+                chapterTitle = chapters.getOrNull(activeIndex)?.title,
+                skipBackSeconds = skipBack,
+                skipForwardSeconds = skipForward
+            )
+        }
+    }
+
     private companion object {
         const val SUBSCRIBE_TIMEOUT_MS = 5_000L
+        const val MILLIS_PER_SECOND = 1_000L
+        const val SPEED_EPSILON = 0.01f
+        val SPEED_PRESETS = listOf(0.8f, 1.0f, 1.2f, 1.5f, 2.0f)
     }
 }

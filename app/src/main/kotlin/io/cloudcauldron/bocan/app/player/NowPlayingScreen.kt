@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -41,7 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.podcasts.ChaptersSheet
 import io.cloudcauldron.bocan.playback.SleepTimerState
+import io.cloudcauldron.bocan.playback.podcast.ChaptersParser
 
 /**
  * The full-screen Now Playing: ambient artwork background, artwork or lyrics, tappable
@@ -65,6 +68,7 @@ fun NowPlayingScreen(
     var showQueue by remember { mutableStateOf(false) }
     var showSleep by remember { mutableStateOf(false) }
     var showSpeed by remember { mutableStateOf(false) }
+    var showChapters by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -75,12 +79,14 @@ fun NowPlayingScreen(
     ) {
         TopRow(
             armed = ui.sleepTimer != SleepTimerState.Idle,
+            hasChapters = ui.podcast.chapters.isNotEmpty(),
             onBack = onBack,
             onOverflow = { },
             onSleep = { showSleep = true },
             onSpeed = { showSpeed = true },
             onToggleLyrics = { showLyrics = !showLyrics },
-            onQueue = { showQueue = true }
+            onQueue = { showQueue = true },
+            onChapters = { showChapters = true }
         )
         if (showLyrics) {
             val lyricsUi by lyrics.state.collectAsState()
@@ -94,18 +100,30 @@ fun NowPlayingScreen(
             )
         }
         SeekBar(ui.positionMs, ui.durationMs, onSeek = nowPlaying::seekTo, modifier = Modifier.padding(top = 8.dp))
-        TransportControls(
-            isPlaying = ui.isPlaying,
-            repeatMode = ui.repeatMode,
-            shuffleActive = ui.shuffleActive,
-            onPlayPause = nowPlaying::togglePlayPause,
-            onPrevious = nowPlaying::previous,
-            onNext = nowPlaying::next,
-            onShuffle = nowPlaying::toggleShuffle,
-            onShuffleLongPress = nowPlaying::toggleShuffle,
-            onCycleRepeat = nowPlaying::cycleRepeat,
-            modifier = Modifier.padding(vertical = 12.dp)
-        )
+        if (ui.podcast.isPodcast) {
+            PodcastTransportControls(
+                isPlaying = ui.isPlaying,
+                speed = ui.speed,
+                onPlayPause = nowPlaying::togglePlayPause,
+                onSkipBack = nowPlaying::skipBack,
+                onSkipForward = nowPlaying::skipForward,
+                onCycleSpeed = nowPlaying::cycleSpeed,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+        } else {
+            TransportControls(
+                isPlaying = ui.isPlaying,
+                repeatMode = ui.repeatMode,
+                shuffleActive = ui.shuffleActive,
+                onPlayPause = nowPlaying::togglePlayPause,
+                onPrevious = nowPlaying::previous,
+                onNext = nowPlaying::next,
+                onShuffle = nowPlaying::toggleShuffle,
+                onShuffleLongPress = nowPlaying::toggleShuffle,
+                onCycleRepeat = nowPlaying::cycleRepeat,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+        }
     }
 
     if (showQueue) {
@@ -124,17 +142,27 @@ fun NowPlayingScreen(
     if (showSpeed) {
         SpeedSheet(speed = ui.speed, onSpeed = nowPlaying::setSpeed, onDismiss = { showSpeed = false })
     }
+    if (showChapters) {
+        ChaptersSheet(
+            chapters = ui.podcast.chapters,
+            activeIndex = ChaptersParser.activeChapterIndex(ui.podcast.chapters, ui.positionMs),
+            onSeek = nowPlaying::seekTo,
+            onDismiss = { showChapters = false }
+        )
+    }
 }
 
 @Composable
 private fun TopRow(
     armed: Boolean,
+    hasChapters: Boolean,
     onBack: () -> Unit,
     onOverflow: () -> Unit,
     onSleep: () -> Unit,
     onSpeed: () -> Unit,
     onToggleLyrics: () -> Unit,
-    onQueue: () -> Unit
+    onQueue: () -> Unit,
+    onChapters: () -> Unit
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -167,6 +195,12 @@ private fun TopRow(
             OverflowItem(Icons.Rounded.Lyrics, R.string.lyrics_toggle) {
                 menuOpen = false
                 onToggleLyrics()
+            }
+            if (hasChapters) {
+                OverflowItem(Icons.AutoMirrored.Rounded.List, R.string.chapters_title) {
+                    menuOpen = false
+                    onChapters()
+                }
             }
             OverflowItem(Icons.AutoMirrored.Rounded.QueueMusic, R.string.queue_title) {
                 menuOpen = false
@@ -216,7 +250,20 @@ private fun ArtworkAndMeta(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOp
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clickable(onClick = onOpenAlbum)
         )
-        LovedAndRating(ui.display.loved, ui.display.rating)
+        ui.podcast.chapterTitle?.let { chapter ->
+            Text(
+                text = chapter,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+        if (!ui.podcast.isPodcast) {
+            LovedAndRating(ui.display.loved, ui.display.rating)
+        }
     }
 }
 

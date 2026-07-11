@@ -127,10 +127,8 @@
   <string name="search_clear_recent">Clear recent searches</string>
   <string name="search_no_results">No results for \"%1$s\"</string>
 
-  <!-- Playlists, podcasts -->
+  <!-- Playlists -->
   <string name="playlist_smart_subtitle">Materialized from your Mac</string>
-  <string name="podcasts_placeholder_title">Podcasts</string>
-  <string name="podcasts_placeholder_message">Podcast listening arrives in a later update.</string>
 
   <!-- Now Playing transport -->
   <string name="action_previous">Previous track</string>
@@ -161,6 +159,33 @@
   <string name="sleep_timer_fading">Fading out…</string>
   <string name="sleep_timer_extend">Add %1$d minutes</string>
   <string name="sleep_timer_cancel">Cancel timer</string>
+
+  <!-- Podcasts -->
+  <string name="podcasts_empty_title">No podcasts yet</string>
+  <string name="podcasts_empty_message">Subscribe and download episodes on your Mac; they appear here after a sync.</string>
+  <string name="podcasts_continue">Continue listening</string>
+  <string name="episode_unplayed">Unplayed</string>
+  <string name="episode_played">Played</string>
+  <string name="episode_mark_played">Mark as played</string>
+  <string name="episode_mark_unplayed">Mark as unplayed</string>
+  <string name="episode_show_notes">Show notes</string>
+  <string name="episode_remaining">%1$s, %2$d min left</string>
+  <string name="episode_date_duration">%1$s, %2$s</string>
+  <string name="show_description_more">Show more</string>
+  <string name="show_description_less">Show less</string>
+  <string name="show_notes_empty">No show notes for this episode.</string>
+  <string name="show_notes_link_confirm_title">Open insecure link?</string>
+  <string name="show_notes_link_confirm_message">This link is not secure (not https):\n\n%1$s\n\nOpen it in your browser anyway?</string>
+  <string name="action_open">Open</string>
+  <string name="chapters_title">Chapters</string>
+  <string name="action_skip_back">Skip back</string>
+  <string name="action_skip_forward">Skip forward</string>
+  <string name="podcast_settings_title">Podcasts</string>
+  <string name="podcast_settings_default_speed">Default speed</string>
+  <string name="podcast_settings_skip_back">Skip back</string>
+  <string name="podcast_settings_skip_forward">Skip forward</string>
+  <string name="podcast_settings_seconds">%1$d s</string>
+  <string name="podcast_settings_resume_note">Episodes resume where you left off. Fresh episodes start from the position your Mac last had, once.</string>
 
   <!-- Speed -->
   <string name="speed_title">Playback speed</string>

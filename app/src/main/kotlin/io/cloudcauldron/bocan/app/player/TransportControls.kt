@@ -9,17 +9,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Forward30
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -89,6 +93,45 @@ fun TransportControls(
                 contentDescription = stringResource(R.string.action_repeat),
                 tint = if (repeatActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+/**
+ * The podcast transport row: skip-back, a large play or pause, skip-forward, and a speed
+ * chip that cycles the presets. Previous and next stay reachable through the queue sheet.
+ */
+@Composable
+fun PodcastTransportControls(
+    isPlaying: Boolean,
+    speed: Float,
+    onPlayPause: () -> Unit,
+    onSkipBack: () -> Unit,
+    onSkipForward: () -> Unit,
+    onCycleSpeed: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AssistChip(
+            onClick = onCycleSpeed,
+            label = { Text(stringResource(R.string.speed_value, speed)) }
+        )
+        IconButton(onClick = onSkipBack) {
+            Icon(Icons.Rounded.Replay10, contentDescription = stringResource(R.string.action_skip_back))
+        }
+        FilledIconButton(onClick = onPlayPause, modifier = Modifier.size(64.dp)) {
+            if (isPlaying) {
+                Icon(Icons.Rounded.Pause, contentDescription = stringResource(R.string.action_pause))
+            } else {
+                Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.action_play))
+            }
+        }
+        IconButton(onClick = onSkipForward) {
+            Icon(Icons.Rounded.Forward30, contentDescription = stringResource(R.string.action_skip_forward))
         }
     }
 }

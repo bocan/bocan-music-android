@@ -5,6 +5,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
+import io.cloudcauldron.bocan.app.data.PodcastPreferences
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
 import io.cloudcauldron.bocan.app.library.GenreDetailViewModel
@@ -16,7 +17,10 @@ import io.cloudcauldron.bocan.app.player.LyricsViewModel
 import io.cloudcauldron.bocan.app.player.NowPlayingViewModel
 import io.cloudcauldron.bocan.app.player.PlayerViewModel
 import io.cloudcauldron.bocan.app.player.QueueViewModel
+import io.cloudcauldron.bocan.app.podcasts.PodcastsViewModel
+import io.cloudcauldron.bocan.app.podcasts.ShowDetailViewModel
 import io.cloudcauldron.bocan.app.search.SearchViewModel
+import io.cloudcauldron.bocan.app.settings.PodcastSettingsViewModel
 import io.cloudcauldron.bocan.app.sync.SyncCoordinator
 import io.cloudcauldron.bocan.app.sync.SyncSettings
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
@@ -33,6 +37,8 @@ import io.cloudcauldron.bocan.playback.PlayerVolume
 import io.cloudcauldron.bocan.playback.SleepTimer
 import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
 import io.cloudcauldron.bocan.playback.lyrics.LyricsRepository
+import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
+import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueueController
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
@@ -118,11 +124,21 @@ class AppGraph(val application: Application) {
     private val playbackLog: AppLog = AppLog.forCategory(LogCategory.Playback)
 
     private val mediaItemSource by lazy {
-        DatabaseMediaItemSource(database.libraryDao(), MediaItemFactory(mediaFileResolver), playbackDispatchers, playbackLog)
+        DatabaseMediaItemSource(
+            database.libraryDao(),
+            database.podcastDao(),
+            MediaItemFactory(mediaFileResolver),
+            playbackDispatchers,
+            playbackLog
+        )
     }
 
     private val playStatsRecorder by lazy {
         PlayStatsRecorder(database.playStatsDao(), playbackDispatchers, playbackLog)
+    }
+
+    private val episodeRecorder by lazy {
+        EpisodeProgressRecorder(database.episodeStateDao(), database.podcastDao(), playbackDispatchers, playbackLog)
     }
 
     private val queuePersistence by lazy {
@@ -131,7 +147,15 @@ class AppGraph(val application: Application) {
 
     /** The single object graph the PlaybackService builds its session from. */
     val playbackComponents: PlaybackComponents by lazy {
-        PlaybackComponents(playerFactory, mediaItemSource, playStatsRecorder, queuePersistence, playbackDispatchers)
+        PlaybackComponents(playerFactory, mediaItemSource, playStatsRecorder, episodeRecorder, queuePersistence, playbackDispatchers)
+    }
+
+    private val chaptersFetcher = io.cloudcauldron.bocan.playback.podcast.ChaptersFetcher { episodeId ->
+        syncCoordinator.fetchChapters(episodeId)
+    }
+
+    val chaptersRepository: ChaptersRepository by lazy {
+        ChaptersRepository(chaptersFetcher, playbackDispatchers, playbackLog)
     }
 
     private val playbackScope = CoroutineScope(SupervisorJob() + playbackDispatchers.main)
@@ -167,12 +191,36 @@ class AppGraph(val application: Application) {
         LyricsRepository(database.lyricsDao(), lyricsFetcher, playbackDispatchers, playbackLog)
     }
 
-    fun nowPlayingViewModel(): NowPlayingViewModel =
-        NowPlayingViewModel(queueController, database.libraryDao(), sleepTimer, playbackDispatchers)
+    fun nowPlayingViewModel(): NowPlayingViewModel = NowPlayingViewModel(
+        transport = queueController,
+        libraryDao = database.libraryDao(),
+        podcastDao = database.podcastDao(),
+        chaptersRepository = chaptersRepository,
+        preferences = podcastPreferences,
+        sleepTimer = sleepTimer,
+        dispatchers = playbackDispatchers
+    )
 
     fun queueViewModel(): QueueViewModel = QueueViewModel(queueController, playbackDispatchers)
 
     fun lyricsViewModel(): LyricsViewModel = LyricsViewModel(queueController, database.libraryDao(), lyricsRepository, playbackDispatchers)
+
+    // Podcasts graph (phase 07).
+
+    val podcastPreferences: PodcastPreferences by lazy { PodcastPreferences(application) }
+
+    fun podcastsViewModel(): PodcastsViewModel = PodcastsViewModel(database.podcastDao(), playbackDispatchers)
+
+    fun podcastSettingsViewModel(): PodcastSettingsViewModel = PodcastSettingsViewModel(podcastPreferences, playbackDispatchers)
+
+    fun showDetailViewModel(podcastId: Long): ShowDetailViewModel = ShowDetailViewModel(
+        podcastId = podcastId,
+        podcastDao = database.podcastDao(),
+        episodeStateDao = database.episodeStateDao(),
+        transport = queueController,
+        preferences = podcastPreferences,
+        dispatchers = playbackDispatchers
+    )
 
     fun libraryViewModel(): LibraryViewModel = LibraryViewModel(
         libraryDao = database.libraryDao(),

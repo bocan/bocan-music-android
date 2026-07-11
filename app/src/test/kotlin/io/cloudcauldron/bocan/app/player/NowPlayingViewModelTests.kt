@@ -1,9 +1,14 @@
 package io.cloudcauldron.bocan.app.player
 
 import io.cloudcauldron.bocan.app.FakeLibraryDao
+import io.cloudcauldron.bocan.app.podcasts.FakePodcastDao
+import io.cloudcauldron.bocan.app.podcasts.FakePodcastPreferences
+import io.cloudcauldron.bocan.observability.AppLog
+import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.PlayerVolume
 import io.cloudcauldron.bocan.playback.SleepTimer
+import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
 import kotlin.test.assertEquals
@@ -26,7 +31,16 @@ class NowPlayingViewModelTests {
         val d = UnconfinedTestDispatcher()
         val dispatchers = CoroutineDispatchers(io = d, default = d, main = d)
         val sleepTimer = SleepTimer(noopVolume, emptyFlow(), dispatchers)
-        return NowPlayingViewModel(transport, FakeLibraryDao(), sleepTimer, dispatchers)
+        val chapters = ChaptersRepository({ null }, dispatchers, AppLog.forCategory(LogCategory.Podcast))
+        return NowPlayingViewModel(
+            transport = transport,
+            libraryDao = FakeLibraryDao(),
+            podcastDao = FakePodcastDao(),
+            chaptersRepository = chapters,
+            preferences = FakePodcastPreferences(),
+            sleepTimer = sleepTimer,
+            dispatchers = dispatchers
+        )
     }
 
     @Test

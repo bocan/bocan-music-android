@@ -32,6 +32,9 @@ sealed interface Destination {
     @Serializable
     data class GenreDetail(val genre: String) : Destination
 
+    @Serializable
+    data class ShowDetail(val podcastId: Long) : Destination
+
     /** Placeholder route filled by phase 06; the mini player taps here. */
     @Serializable
     data object NowPlaying : Destination

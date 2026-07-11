@@ -30,7 +30,11 @@ class FakePlaybackTransport(initial: PlayerUiState = PlayerUiState()) : Playback
 
     override suspend fun connect() = Unit
     override fun release() = Unit
+    val playedEpisodes = mutableListOf<List<String>>()
     override suspend fun playNow(trackIds: List<Long>, startIndex: Int) = Unit
+    override suspend fun playEpisodes(episodeIds: List<String>, startIndex: Int) {
+        playedEpisodes += episodeIds
+    }
     override suspend fun playNext(trackIds: List<Long>) = Unit
     override suspend fun addToQueue(trackIds: List<Long>) = Unit
     override suspend fun removeAt(index: Int) {

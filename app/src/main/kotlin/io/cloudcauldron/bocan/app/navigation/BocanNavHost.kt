@@ -20,7 +20,8 @@ import io.cloudcauldron.bocan.app.library.LibraryScreen
 import io.cloudcauldron.bocan.app.library.PlaylistDetailScreen
 import io.cloudcauldron.bocan.app.pairing.PairingScreen
 import io.cloudcauldron.bocan.app.player.NowPlayingScreen
-import io.cloudcauldron.bocan.app.podcasts.PodcastsPlaceholder
+import io.cloudcauldron.bocan.app.podcasts.PodcastsHomeScreen
+import io.cloudcauldron.bocan.app.podcasts.ShowDetailScreen
 import io.cloudcauldron.bocan.app.search.SearchScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
 import io.cloudcauldron.bocan.app.sync.SyncStatusScreen
@@ -46,16 +47,33 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
                 )
             )
         }
-        composable<Destination.Podcasts> { PodcastsPlaceholder(Modifier.fillMaxSize()) }
+        composable<Destination.Podcasts> {
+            val vm = remember { appGraph.podcastsViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            PodcastsHomeScreen(
+                viewModel = vm,
+                onOpenShow = { navController.navigate(Destination.ShowDetail(it)) },
+                onResume = { appGraph.playerViewModel.playEpisodes(listOf(it), 0) },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        composable<Destination.ShowDetail> { entry ->
+            val vm = remember { appGraph.showDetailViewModel(entry.toRoute<Destination.ShowDetail>().podcastId) }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            ShowDetailScreen(vm, onBack = { navController.popBackStack() })
+        }
         composable<Destination.Search> {
             val vm = remember { appGraph.searchViewModel() }
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
             SearchScreen(viewModel = vm, callbacks = callbacks)
         }
         composable<Destination.Settings> {
+            val vm = remember { appGraph.podcastSettingsViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
             SettingsScreen(
                 onOpenPairing = { navController.navigate(Destination.Pairing) },
-                onOpenSync = { navController.navigate(Destination.SyncStatus) }
+                onOpenSync = { navController.navigate(Destination.SyncStatus) },
+                podcastSettings = vm
             )
         }
         composable<Destination.AlbumDetail>(

@@ -130,6 +130,23 @@ class SyncCoordinator(
         }
     }
 
+    /**
+     * Fetch an episode's Podcasting 2.0 chapters JSON from the paired Mac (sync-protocol.md
+     * section, /v1/chapters), for the chapters repository. Null when the Mac is not visible
+     * or the request fails. Never throws.
+     */
+    suspend fun fetchChapters(episodeId: String): String? = withContext(dispatchers.io) {
+        val base = endpoint.value ?: return@withContext null
+        val server = trustStore.current() ?: return@withContext null
+        val api = SyncApi(httpClientFactory().pairedClient(server.certFingerprint), dispatchers)
+        try {
+            api.chaptersJson(base, episodeId)
+        } catch (failure: SyncError) {
+            log.debug("chapters.fetch.failed", mapOf("error" to failure.toString()))
+            null
+        }
+    }
+
     /** Total bytes under the media root, for the status screen's storage line. */
     suspend fun storageBytes(): Long = withTimeoutOrNull(STORAGE_WALK_MS) {
         mediaLayout.mediaRoot()

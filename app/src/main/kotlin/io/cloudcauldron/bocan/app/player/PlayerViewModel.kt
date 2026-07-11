@@ -39,6 +39,15 @@ class PlayerViewModel(private val queueController: PlaybackTransport, dispatcher
         }
     }
 
+    /** Play [episodeIds] from [startIndex] (a podcast episode context). */
+    fun playEpisodes(episodeIds: List<String>, startIndex: Int) {
+        if (episodeIds.isEmpty()) return
+        scope.launch {
+            queueController.connect()
+            queueController.playEpisodes(episodeIds, startIndex)
+        }
+    }
+
     /** Play [trackIds] in a fresh shuffle. */
     fun shuffle(trackIds: List<Long>) {
         if (trackIds.isEmpty()) return
