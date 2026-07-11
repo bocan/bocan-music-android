@@ -76,13 +76,15 @@ None new.
 ## Acceptance criteria
 
 - [ ] EQ audibly and measurably shapes output for both platform-decoded and FFmpeg-decoded sources.
-- [ ] Presets match the Mac's names; curves documented next to the code.
-- [ ] No clipping with hot EQ settings (limiter proven by test).
-- [ ] ReplayGain modes and preamp adjustable from the screen; interaction with EQ chain order fixed as specified.
-- [ ] Fades honest: off by default, labelled "Fade between tracks", gapless intact when off.
+  - Measurably proven by `EqProcessorTests` (sine-sweep gain at the band centre). The processors sit in the shared `DefaultAudioSink` downstream of both the platform and FFmpeg renderers, so shaping is decoder-independent by construction; the audible, on-device FFmpeg-source half stays a manual check.
+- [x] Presets match the Mac's names; curves documented next to the code.
+- [x] No clipping with hot EQ settings (limiter proven by test).
+- [x] ReplayGain modes and preamp adjustable from the screen; interaction with EQ chain order fixed as specified.
+- [x] Fades honest: off by default, labelled "Fade between tracks", gapless intact when off.
 - [ ] Skip silence toggle works on a spoken-word file.
-- [ ] Master toggle A/Bs instantly.
-- [ ] EQ screen fully accessible (slider values read as text).
+  - The toggle is implemented and wired to ExoPlayer's `skipSilenceEnabled` through the `SkipSilence` seam, and `EffectsChainTests` proves the seam is driven; confirming the shortened gaps on an actual spoken-word file is a manual device check.
+- [x] Master toggle A/Bs instantly.
+- [x] EQ screen fully accessible (slider values read as text).
 
 ## Gotchas
 
