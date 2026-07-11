@@ -4,8 +4,16 @@ import android.app.Application
 import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
+import io.cloudcauldron.bocan.app.data.LibraryPreferences
+import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
+import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
+import io.cloudcauldron.bocan.app.library.GenreDetailViewModel
+import io.cloudcauldron.bocan.app.library.LibraryViewModel
+import io.cloudcauldron.bocan.app.library.PlaylistDetailViewModel
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
 import io.cloudcauldron.bocan.app.playback.AndroidMediaFileResolver
+import io.cloudcauldron.bocan.app.player.PlayerViewModel
+import io.cloudcauldron.bocan.app.search.SearchViewModel
 import io.cloudcauldron.bocan.app.sync.SyncCoordinator
 import io.cloudcauldron.bocan.app.sync.SyncSettings
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
@@ -35,14 +43,15 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 /**
  * The single manual dependency-injection wiring point. Later phases extend
  * this class with their object graphs (sync engine, player, ...): every
  * collaborator is constructed here and handed down via constructors.
  */
+// The graph is the single wiring point: a wide surface of construction factories is
+// its whole job, not a decomposition smell.
+@Suppress("TooManyFunctions")
 @OptIn(UnstableApi::class)
 class AppGraph(val application: Application) {
     val appLog: AppLog = AppLog.forCategory(LogCategory.App)
@@ -92,6 +101,9 @@ class AppGraph(val application: Application) {
     /** Holds the ReplayGain processor seam and audio session id for phase 08. */
     val playerFactory = PlayerFactory(application)
 
+    /** The on-disk artwork file for a content hash, or null; the UI's Coil resolver. */
+    fun artworkFile(hash: String?): File? = hash?.let { artworkStore.existing(it) }
+
     private val playbackLog: AppLog = AppLog.forCategory(LogCategory.Playback)
 
     private val mediaItemSource by lazy {
@@ -118,21 +130,32 @@ class AppGraph(val application: Application) {
         QueueController(application, playbackDispatchers, mediaItemSource, playbackScope)
     }
 
-    /**
-     * Temporary debug affordance (phase 04): connect to the session and play the
-     * first album end to end, proving audio works before phase 05 builds the library
-     * screens. Replaced by the real library UI.
-     */
-    fun playFirstAlbum() {
-        playbackScope.launch {
-            val albums = database.libraryDao().observeAlbumsByName().first()
-            val album = albums.firstOrNull() ?: return@launch
-            val trackIds = database.libraryDao().observeTracksForAlbum(album.id).first().map { it.id }
-            if (trackIds.isEmpty()) return@launch
-            queueController.connect()
-            queueController.playNow(trackIds, startIndex = 0)
-        }
-    }
+    // Library UI graph (phase 05).
+
+    val libraryPreferences: LibraryPreferences by lazy { LibraryPreferences(application) }
+
+    /** App-session player facade shared by the mini player and every play action. */
+    val playerViewModel: PlayerViewModel by lazy { PlayerViewModel(queueController, playbackDispatchers) }
+
+    fun libraryViewModel(): LibraryViewModel = LibraryViewModel(
+        libraryDao = database.libraryDao(),
+        playlistDao = database.playlistDao(),
+        syncServer = database.syncDao().observeServer(),
+        syncState = syncCoordinator.syncState,
+        prefs = libraryPreferences,
+        dispatchers = dispatchers
+    )
+
+    fun albumDetailViewModel(albumId: Long): AlbumDetailViewModel = AlbumDetailViewModel(albumId, database.libraryDao(), dispatchers)
+
+    fun artistDetailViewModel(artistId: Long): ArtistDetailViewModel = ArtistDetailViewModel(artistId, database.libraryDao(), dispatchers)
+
+    fun playlistDetailViewModel(playlistId: Long): PlaylistDetailViewModel =
+        PlaylistDetailViewModel(playlistId, database.playlistDao(), dispatchers)
+
+    fun genreDetailViewModel(genre: String): GenreDetailViewModel = GenreDetailViewModel(genre, database.libraryDao(), dispatchers)
+
+    fun searchViewModel(): SearchViewModel = SearchViewModel(database.searchDao(), libraryPreferences, dispatchers)
 
     /** A fresh view model for the sync status screen; the caller disposes it. */
     fun syncStatusViewModel(): SyncStatusViewModel = SyncStatusViewModel(

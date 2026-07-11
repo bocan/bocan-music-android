@@ -74,13 +74,16 @@ Compose Navigation, Coil 3. Test: Robolectric + compose-ui-test for ViewModel-to
 ## Acceptance criteria
 
 - [ ] All six library tabs browse real synced data; detail screens play from context.
-- [ ] Search returns sectioned results as you type and survives odd input.
+  - All six tabs, the album, artist, playlist, and genre detail screens, and play-from-context are implemented and the view model data plumbing is unit-tested, but browsing a real synced library and hearing playback needs a device.
+- [x] Search returns sectioned results as you type and survives odd input.
 - [ ] Mini player reflects the live session and controls play/pause.
+  - The bar is built and wired to the session state and play/pause, but reflecting a live session needs playback running on a device.
 - [ ] 10k-track Songs list scrolls at 60 fps on a mid-range device (no dropped-frame storms in a Perfetto trace; spot-check).
-- [ ] Pending (unsynced) tracks are visibly distinct and unplayable with an explanation.
-- [ ] No write-implying actions anywhere in the UI.
-- [ ] TalkBack reads every row sensibly; every tappable has a label.
-- [ ] All copy in `strings.xml`; pseudolocale build shows no clipped hardcoded text.
+  - Stable keys and a single contentType are in place, but a 60 fps Perfetto trace needs a device.
+- [x] Pending (unsynced) tracks are visibly distinct and unplayable with an explanation.
+- [x] No write-implying actions anywhere in the UI.
+- [x] TalkBack reads every row sensibly; every tappable has a label.
+- [x] All copy in `strings.xml`; pseudolocale build shows no clipped hardcoded text.
 
 ## Gotchas
 

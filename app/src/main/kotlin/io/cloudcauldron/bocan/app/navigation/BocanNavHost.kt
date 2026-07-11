@@ -1,0 +1,112 @@
+package io.cloudcauldron.bocan.app.navigation
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
+import androidx.navigation.toRoute
+import io.cloudcauldron.bocan.app.AppGraph
+import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.library.AlbumDetailScreen
+import io.cloudcauldron.bocan.app.library.ArtistDetailScreen
+import io.cloudcauldron.bocan.app.library.GenreDetailScreen
+import io.cloudcauldron.bocan.app.library.LibraryCallbacks
+import io.cloudcauldron.bocan.app.library.LibraryEmptyActions
+import io.cloudcauldron.bocan.app.library.LibraryScreen
+import io.cloudcauldron.bocan.app.library.PlaylistDetailScreen
+import io.cloudcauldron.bocan.app.pairing.PairingScreen
+import io.cloudcauldron.bocan.app.podcasts.PodcastsPlaceholder
+import io.cloudcauldron.bocan.app.search.SearchScreen
+import io.cloudcauldron.bocan.app.settings.SettingsScreen
+import io.cloudcauldron.bocan.app.sync.SyncStatusScreen
+
+/**
+ * The single navigation graph: the four bottom destinations plus the detail, search,
+ * pairing, and sync routes. Each destination creates its view model from [AppGraph] and
+ * disposes it when it leaves the back stack. Detail routes expose a bocan:// deep link.
+ */
+@Suppress("LongMethod")
+@Composable
+fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks: LibraryCallbacks, modifier: Modifier = Modifier) {
+    NavHost(navController = navController, startDestination = Destination.Library, modifier = modifier) {
+        composable<Destination.Library> {
+            val vm = remember { appGraph.libraryViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            LibraryScreen(
+                viewModel = vm,
+                callbacks = callbacks,
+                emptyActions = LibraryEmptyActions(
+                    onPair = { navController.navigate(Destination.Pairing) },
+                    onSyncNow = { navController.navigate(Destination.SyncStatus) }
+                )
+            )
+        }
+        composable<Destination.Podcasts> { PodcastsPlaceholder(Modifier.fillMaxSize()) }
+        composable<Destination.Search> {
+            val vm = remember { appGraph.searchViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            SearchScreen(viewModel = vm, callbacks = callbacks)
+        }
+        composable<Destination.Settings> {
+            SettingsScreen(
+                onOpenPairing = { navController.navigate(Destination.Pairing) },
+                onOpenSync = { navController.navigate(Destination.SyncStatus) }
+            )
+        }
+        composable<Destination.AlbumDetail>(
+            deepLinks = listOf(navDeepLink<Destination.AlbumDetail>(basePath = Destination.DEEP_LINK_ALBUM))
+        ) { entry ->
+            val vm = remember { appGraph.albumDetailViewModel(entry.toRoute<Destination.AlbumDetail>().albumId) }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            AlbumDetailScreen(vm.state, callbacks, navController::popBackStack)
+        }
+        composable<Destination.ArtistDetail>(
+            deepLinks = listOf(navDeepLink<Destination.ArtistDetail>(basePath = Destination.DEEP_LINK_ARTIST))
+        ) { entry ->
+            val vm = remember { appGraph.artistDetailViewModel(entry.toRoute<Destination.ArtistDetail>().artistId) }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            ArtistDetailScreen(vm.state, callbacks, navController::popBackStack)
+        }
+        composable<Destination.PlaylistDetail>(
+            deepLinks = listOf(navDeepLink<Destination.PlaylistDetail>(basePath = Destination.DEEP_LINK_PLAYLIST))
+        ) { entry ->
+            val vm = remember { appGraph.playlistDetailViewModel(entry.toRoute<Destination.PlaylistDetail>().playlistId) }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            PlaylistDetailScreen(vm.state, callbacks, navController::popBackStack)
+        }
+        composable<Destination.GenreDetail> { entry ->
+            val vm = remember { appGraph.genreDetailViewModel(entry.toRoute<Destination.GenreDetail>().genre) }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            GenreDetailScreen(vm.state, callbacks, navController::popBackStack)
+        }
+        composable<Destination.NowPlaying> { NowPlayingPlaceholder() }
+        composable<Destination.Pairing> {
+            val vm = remember { appGraph.pairingViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            PairingScreen(vm)
+        }
+        composable<Destination.SyncStatus> {
+            val vm = remember { appGraph.syncStatusViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            SyncStatusScreen(vm)
+        }
+    }
+}
+
+/** The Now Playing route is filled in by phase 06; the mini player taps here. */
+@Composable
+private fun NowPlayingPlaceholder() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(stringResource(R.string.now_playing_placeholder), style = MaterialTheme.typography.titleMedium)
+    }
+}
