@@ -25,8 +25,20 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Lint, test, coverage, and build
-        run: ./gradlew check test koverVerify assembleDebug
+      # Kover intermittently under-counts a module's coverage when the coverage-producing
+      # test tasks run under Gradle's parallel executor (org.gradle.parallel=true in
+      # gradle.properties): a module can report well below its real, isolated coverage,
+      # failing koverVerify. The build runs parallel (fast) with coverage excluded, then
+      # the coverage gate runs on its own, serially and from scratch, so the measurement
+      # can never be a parallel-produced or cache-restored figure. --rerun-tasks is what
+      # makes it authoritative: it re-executes the tests serially rather than trusting a
+      # cached .ic that may have been written under parallel. Do not fold these back into
+      # one command, and do not drop --no-parallel or --rerun-tasks from the coverage step.
+      - name: Lint, test, and build
+        run: ./gradlew check test assembleDebug -x koverVerify -x koverCachedVerify
+
+      - name: Verify coverage floors
+        run: ./gradlew koverVerify --no-parallel --rerun-tasks
 
       # The FFmpeg audio decoder is the only native code in the app. Google Play
       # requires 16 KB aligned .so files for apps targeting Android 15+, so fail the
