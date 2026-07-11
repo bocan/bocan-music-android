@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Lyrics
@@ -61,6 +62,7 @@ fun NowPlayingScreen(
     onBack: () -> Unit,
     onOpenArtist: (Long) -> Unit,
     onOpenAlbum: (Long) -> Unit,
+    onOpenEqualizer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val ui by nowPlaying.state.collectAsState()
@@ -86,7 +88,8 @@ fun NowPlayingScreen(
             onSpeed = { showSpeed = true },
             onToggleLyrics = { showLyrics = !showLyrics },
             onQueue = { showQueue = true },
-            onChapters = { showChapters = true }
+            onChapters = { showChapters = true },
+            onEqualizer = onOpenEqualizer
         )
         if (showLyrics) {
             val lyricsUi by lyrics.state.collectAsState()
@@ -162,7 +165,8 @@ private fun TopRow(
     onSpeed: () -> Unit,
     onToggleLyrics: () -> Unit,
     onQueue: () -> Unit,
-    onChapters: () -> Unit
+    onChapters: () -> Unit,
+    onEqualizer: () -> Unit
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -191,6 +195,10 @@ private fun TopRow(
             OverflowItem(Icons.Rounded.Speed, R.string.speed_title) {
                 menuOpen = false
                 onSpeed()
+            }
+            OverflowItem(Icons.Rounded.Equalizer, R.string.eq_title) {
+                menuOpen = false
+                onEqualizer()
             }
             OverflowItem(Icons.Rounded.Lyrics, R.string.lyrics_toggle) {
                 menuOpen = false

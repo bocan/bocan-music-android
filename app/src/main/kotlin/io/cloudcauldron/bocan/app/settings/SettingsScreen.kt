@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.Podcasts
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Wifi
@@ -40,6 +41,7 @@ import io.cloudcauldron.bocan.app.R
 fun SettingsScreen(
     onOpenPairing: () -> Unit,
     onOpenSync: () -> Unit,
+    onOpenEqualizer: () -> Unit,
     podcastSettings: PodcastSettingsViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -62,6 +64,11 @@ fun SettingsScreen(
                 headlineContent = { Text(stringResource(R.string.home_sync_action)) },
                 leadingContent = { Icon(Icons.Rounded.Sync, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenSync)
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.eq_open)) },
+                leadingContent = { Icon(Icons.Rounded.Equalizer, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenEqualizer)
             )
             PodcastSettingsSection(podcastSettings)
         }

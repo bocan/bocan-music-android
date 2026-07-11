@@ -45,6 +45,9 @@ sealed interface Destination {
     @Serializable
     data object SyncStatus : Destination
 
+    @Serializable
+    data object Equalizer : Destination
+
     companion object {
         const val DEEP_LINK_ALBUM = "bocan://album"
         const val DEEP_LINK_ARTIST = "bocan://artist"

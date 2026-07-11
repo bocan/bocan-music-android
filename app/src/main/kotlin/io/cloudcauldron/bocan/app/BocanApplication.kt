@@ -37,6 +37,7 @@ class BocanApplication :
         plantLogging()
         appGraph = AppGraph(this)
         appGraph.syncCoordinator.start()
+        appGraph.startEffects()
         appGraph.appLog.info("app.start", mapOf("debug" to BuildConfig.DEBUG))
     }
 

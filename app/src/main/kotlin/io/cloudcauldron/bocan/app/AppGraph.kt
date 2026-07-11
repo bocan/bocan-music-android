@@ -4,8 +4,10 @@ import android.app.Application
 import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
+import io.cloudcauldron.bocan.app.data.EqPreferences
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
 import io.cloudcauldron.bocan.app.data.PodcastPreferences
+import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
 import io.cloudcauldron.bocan.app.library.GenreDetailViewModel
@@ -35,6 +37,7 @@ import io.cloudcauldron.bocan.playback.PlaybackComponents
 import io.cloudcauldron.bocan.playback.PlayerFactory
 import io.cloudcauldron.bocan.playback.PlayerVolume
 import io.cloudcauldron.bocan.playback.SleepTimer
+import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
 import io.cloudcauldron.bocan.playback.lyrics.LyricsRepository
 import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
@@ -60,6 +63,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * The single manual dependency-injection wiring point. Later phases extend
@@ -115,8 +119,11 @@ class AppGraph(val application: Application) {
 
     private val mediaFileResolver = AndroidMediaFileResolver(mediaLayout, artworkStore)
 
-    /** Holds the ReplayGain processor seam and audio session id for phase 08. */
-    val playerFactory = PlayerFactory(application)
+    /** The audio effects chain (EQ, bass boost, ReplayGain gain, limiter) shared by the player and settings. */
+    val effectsChain = EffectsChain(playbackDispatchers)
+
+    /** Builds the single ExoPlayer with the effects chain inserted in the sink. */
+    val playerFactory = PlayerFactory(application, effectsChain)
 
     /** The on-disk artwork file for a content hash, or null; the UI's Coil resolver. */
     fun artworkFile(hash: String?): File? = hash?.let { artworkStore.existing(it) }
@@ -147,8 +154,31 @@ class AppGraph(val application: Application) {
 
     /** The single object graph the PlaybackService builds its session from. */
     val playbackComponents: PlaybackComponents by lazy {
-        PlaybackComponents(playerFactory, mediaItemSource, playStatsRecorder, episodeRecorder, queuePersistence, playbackDispatchers)
+        PlaybackComponents(
+            playerFactory,
+            mediaItemSource,
+            playStatsRecorder,
+            episodeRecorder,
+            queuePersistence,
+            playbackDispatchers
+        )
     }
+
+    /** DataStore-backed effects settings, edited by the Equalizer screen and applied to the chain. */
+    val eqPreferences: EqPreferences by lazy { EqPreferences(application) }
+
+    /**
+     * Start applying persisted effects settings to the chain, on launch and on every
+     * change, so the EQ is live even before the Now Playing screen is opened. Called once
+     * from the Application; the collection lives for the process.
+     */
+    fun startEffects() {
+        playbackScope.launch {
+            eqPreferences.state.collect { effectsChain.applySettings(it) }
+        }
+    }
+
+    fun equalizerViewModel(): EqualizerViewModel = EqualizerViewModel(eqPreferences, playbackDispatchers)
 
     private val chaptersFetcher = io.cloudcauldron.bocan.playback.podcast.ChaptersFetcher { episodeId ->
         syncCoordinator.fetchChapters(episodeId)

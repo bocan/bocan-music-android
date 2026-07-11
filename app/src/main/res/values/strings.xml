@@ -193,4 +193,40 @@
   <string name="speed_slower">Slower</string>
   <string name="speed_faster">Faster</string>
   <string name="speed_reset">Reset to normal</string>
+
+  <!-- Equalizer and effects -->
+  <string name="eq_title">Equalizer</string>
+  <string name="eq_open">Equalizer and effects</string>
+  <string name="eq_enable">Equalizer</string>
+  <string name="eq_enable_summary">Shapes the sound with the ten bands below.</string>
+  <string name="eq_preset">Preset</string>
+  <string name="eq_save_preset">Save as preset</string>
+  <string name="eq_preset_name_hint">Preset name</string>
+  <string name="eq_save">Save</string>
+  <string name="eq_cancel">Cancel</string>
+  <string name="eq_delete_preset">Delete preset</string>
+  <string name="eq_custom">Custom</string>
+  <string name="eq_bands">Bands</string>
+  <string name="eq_bass_boost">Bass boost</string>
+  <string name="eq_replaygain">Volume levelling</string>
+  <string name="eq_replaygain_summary">Evens out loudness between tracks using the levels your Mac measured.</string>
+  <string name="eq_replaygain_off">Off</string>
+  <string name="eq_replaygain_track">Per track</string>
+  <string name="eq_replaygain_album">Per album</string>
+  <string name="eq_preamp">Preamp</string>
+  <string name="eq_skip_silence">Skip silence</string>
+  <string name="eq_skip_silence_summary">Shortens gaps of silence, handy for spoken word.</string>
+  <string name="eq_fade">Fade between tracks</string>
+  <string name="eq_fade_summary">Fades the end of each track into the next. Off keeps gapless playback.</string>
+  <string name="eq_fade_off">Off</string>
+  <string name="eq_hertz">%1$d Hz</string>
+  <string name="eq_kilohertz">%1$d kHz</string>
+  <string name="eq_decibels">%1$s dB</string>
+  <string name="eq_seconds">%1$d s</string>
+  <string name="eq_hertz_spoken">%1$d hertz</string>
+  <string name="eq_kilohertz_spoken">%1$d kilohertz</string>
+  <string name="eq_gain_spoken_positive">plus %1$s decibels</string>
+  <string name="eq_gain_spoken_negative">minus %1$s decibels</string>
+  <string name="eq_gain_spoken_zero">0 decibels</string>
+  <string name="eq_band_a11y">%1$s, %2$s</string>
 </resources>

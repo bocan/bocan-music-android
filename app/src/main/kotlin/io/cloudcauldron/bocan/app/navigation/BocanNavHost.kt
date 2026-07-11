@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import io.cloudcauldron.bocan.app.AppGraph
+import io.cloudcauldron.bocan.app.effects.EqualizerScreen
 import io.cloudcauldron.bocan.app.library.AlbumDetailScreen
 import io.cloudcauldron.bocan.app.library.ArtistDetailScreen
 import io.cloudcauldron.bocan.app.library.GenreDetailScreen
@@ -73,6 +74,7 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             SettingsScreen(
                 onOpenPairing = { navController.navigate(Destination.Pairing) },
                 onOpenSync = { navController.navigate(Destination.SyncStatus) },
+                onOpenEqualizer = { navController.navigate(Destination.Equalizer) },
                 podcastSettings = vm
             )
         }
@@ -119,8 +121,14 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
                 lyrics = lyrics,
                 onBack = { navController.popBackStack() },
                 onOpenArtist = { navController.navigate(Destination.ArtistDetail(it)) },
-                onOpenAlbum = { navController.navigate(Destination.AlbumDetail(it)) }
+                onOpenAlbum = { navController.navigate(Destination.AlbumDetail(it)) },
+                onOpenEqualizer = { navController.navigate(Destination.Equalizer) }
             )
+        }
+        composable<Destination.Equalizer> {
+            val vm = remember { appGraph.equalizerViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            EqualizerScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
         composable<Destination.Pairing> {
             val vm = remember { appGraph.pairingViewModel() }
