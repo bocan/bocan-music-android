@@ -6,6 +6,7 @@ import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import io.cloudcauldron.bocan.persistence.daos.BrowseDao
 import io.cloudcauldron.bocan.persistence.daos.EpisodeStateDao
 import io.cloudcauldron.bocan.persistence.daos.LibraryDao
 import io.cloudcauldron.bocan.persistence.daos.LyricsDao
@@ -71,6 +72,8 @@ abstract class BocanDatabase : RoomDatabase() {
     abstract fun syncDao(): SyncDao
 
     abstract fun scrobbleDao(): ScrobbleDao
+
+    abstract fun browseDao(): BrowseDao
 
     companion object {
         const val FILE_NAME = "bocan.db"
