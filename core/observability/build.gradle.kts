@@ -35,6 +35,10 @@ kover {
     }
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     api(libs.timber)
 
