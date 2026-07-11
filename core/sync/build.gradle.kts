@@ -49,7 +49,20 @@ kover {
                     "io.cloudcauldron.bocan.sync.discovery.NsdServiceBrowserImpl",
                     "io.cloudcauldron.bocan.sync.discovery.NsdServiceBrowserImpl$*",
                     "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl",
-                    "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl$*"
+                    "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl$*",
+                    // Platform glue over the foreground service, WorkManager, and
+                    // the NotificationManager. The engine, triggers, downloader,
+                    // and layout logic they delegate to are covered directly;
+                    // driving a real Service or WorkManager off-device is not
+                    // meaningful under Robolectric.
+                    "io.cloudcauldron.bocan.sync.service.SyncForegroundService",
+                    "io.cloudcauldron.bocan.sync.service.SyncForegroundService$*",
+                    "io.cloudcauldron.bocan.sync.service.SyncNotifications",
+                    "io.cloudcauldron.bocan.sync.service.SyncNotifications$*",
+                    "io.cloudcauldron.bocan.sync.auto.SyncWorker",
+                    "io.cloudcauldron.bocan.sync.auto.SyncWorker$*",
+                    "io.cloudcauldron.bocan.sync.auto.SyncWorkScheduler",
+                    "io.cloudcauldron.bocan.sync.auto.SyncWorkScheduler$*"
                 )
             }
         }
@@ -65,6 +78,7 @@ dependencies {
     api(project(":core:persistence"))
 
     api(libs.okhttp)
+    api(libs.androidx.work.runtime)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
 
