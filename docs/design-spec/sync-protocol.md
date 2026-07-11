@@ -113,6 +113,7 @@ Unpairing: either side can forget the other. The Mac's settings lists trusted de
 File endpoints:
 
 - Support `Range: bytes=start-` (single open-ended range is sufficient) and reply `206` with `Content-Range`. This is the resume mechanism.
+- A `Range` whose start is at or past the end of the file draws `416`. The client must discard its partial file and restart that transfer cleanly rather than retrying the same range.
 - Set `ETag` to the item's `sha256` from the manifest. The client sends `If-Match` with the expected hash; if the file changed since the manifest was fetched the server replies `412` and the client re-fetches the manifest.
 - `Content-Type` is best-effort (`audio/flac`, `audio/mpeg`, `application/octet-stream` fallback); the client never trusts it for format detection.
 
@@ -249,7 +250,7 @@ Always present on a Podcast: `id`, `title`. `author`, `descriptionHtml`, `artwor
    - present in both but `sha256` differs: mark for re-download.
    - absent locally: mark for download.
    - metadata-only changes (same `sha256`, different tags/rating/playlists): DB update only, no transfer.
-4. Download queue: artwork first (small, unblocks UI), then tracks, then episodes. Each file: request with `If-Match` and `Range` if a `.part` exists; stream to `<target>.part`; on completion verify SHA-256; atomic rename into place. Hash mismatch deletes the `.part` and retries once, then records a per-item failure without failing the sync.
+4. Download queue: artwork first (small, unblocks UI), then tracks, then episodes. Each file: request with `If-Match` and `Range` if a `.part` exists; stream to `<target>.part`; on completion verify SHA-256; atomic rename into place. A `.part` that already hashes to the expected `sha256` is a finished download that died before its rename: rename it into place without a request. Hash mismatch deletes the `.part` and retries once, then records a per-item failure without failing the sync.
 5. Apply the manifest to Room in one transaction: upsert synced tables, delete departed rows, seed local-state rows for never-seen items. Set `lastAppliedGeneration`.
 6. Delete files marked in step 3 only after the transaction commits, then remove empty directories.
 

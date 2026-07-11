@@ -95,6 +95,37 @@ class DownloaderTests {
     }
 
     @Test
+    fun `a complete part that missed its rename is finished without a request`() = runTest {
+        // A prior run wrote every byte but died before the atomic rename.
+        val target = target()
+        partOf(target).writeBytes(payload)
+
+        val result = downloader().download(url(), payloadSha, target)
+
+        assertEquals(Downloader.Result.Downloaded, result)
+        assertArrayed(payload, target.readBytes())
+        assertFalse("part left behind", partOf(target).exists())
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `a 416 discards the part and retries cleanly from the start`() = runTest {
+        // Full-length garbage: resuming would ask for a range past the file's end.
+        val target = target()
+        partOf(target).writeBytes(ByteArray(payload.size) { 1 })
+        server.enqueue(MockResponse.Builder().code(416).build())
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(payload)).build())
+
+        val result = downloader().download(url(), payloadSha, target)
+
+        assertEquals(Downloader.Result.Downloaded, result)
+        assertArrayed(payload, target.readBytes())
+        assertFalse("part left behind", partOf(target).exists())
+        assertEquals("bytes=${payload.size}-", server.takeRequest().headers["Range"])
+        assertEquals(null, server.takeRequest().headers["Range"])
+    }
+
+    @Test
     fun `a corrupt body is retried once then recorded as a failure with no file in place`() = runTest {
         val wrong = ByteArray(payload.size) { 0 }
         server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(wrong)).build())

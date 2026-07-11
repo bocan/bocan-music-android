@@ -28,13 +28,17 @@ import okhttp3.Response
  *  1. If the target already exists and hashes to the expected SHA-256, it is
  *     [Result.AlreadyPresent] and no request is made. This is what lets an
  *     interrupted sync re-run without re-downloading completed files.
- *  2. Otherwise stream to `<target>.part`, resuming with `Range: bytes=<n>-`
+ *  2. A `.part` that already hashes clean is a finished download that died
+ *     before its rename: it is moved into place without a request.
+ *  3. Otherwise stream to `<target>.part`, resuming with `Range: bytes=<n>-`
  *     when a partial `.part` is present and re-hashing its prefix first (digest
  *     state is never persisted). `If-Match: <sha256>` guards against the file
- *     changing under us: a `412` throws [SyncError.ManifestStale].
- *  3. On a SHA-256 mismatch the `.part` is discarded and the whole file is
+ *     changing under us: a `412` throws [SyncError.ManifestStale], and a `416`
+ *     (our `.part` reaches past the file's end) discards the `.part` for a
+ *     clean retry instead of re-asking for the same range forever.
+ *  4. On a SHA-256 mismatch the `.part` is discarded and the whole file is
  *     retried once from scratch, then recorded as [Result.Failed].
- *  4. A verified file is moved into place with an atomic rename, so a reader
+ *  5. A verified file is moved into place with an atomic rename, so a reader
  *     never sees a half-written file.
  *
  * The client's read timeout is the stall detector: if no bytes arrive for the
@@ -69,6 +73,9 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
                 return@withContext Result.AlreadyPresent
             }
             val part = File(target.parentFile, target.name + PART_SUFFIX)
+            if (part.isFile && sha256Of(part) == expectedSha256) {
+                return@withContext finish(part, target)
+            }
             when (val first = streamToPart(url, expectedSha256, part, allowResume = true, onProgress)) {
                 is Attempt.Verified -> return@withContext finish(part, target)
                 is Attempt.Failed -> return@withContext Result.Failed(first.reason)
@@ -135,11 +142,18 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
         if (response.code == HTTP_PRECONDITION_FAILED) {
             throw SyncError.ManifestStale(response.request.url.toString())
         }
-        val partial = response.code == HTTP_PARTIAL
-        val full = response.code == HTTP_OK
-        if (!partial && !full) return Attempt.Failed("http ${response.code}")
+        return when (response.code) {
+            // Our .part reaches past the file's end: it cannot be a valid
+            // prefix, so fall through to the delete-and-retry-clean path.
+            HTTP_RANGE_NOT_SATISFIABLE -> Attempt.DigestMismatch
+            HTTP_OK, HTTP_PARTIAL -> streamAndVerify(response, sink, existing, expectedSha256)
+            else -> Attempt.Failed("http ${response.code}")
+        }
+    }
+
+    private suspend fun streamAndVerify(response: Response, sink: Sink, existing: Long, expectedSha256: String): Attempt {
         // The server ignored our Range (answered 200): restart the digest and truncate.
-        val append = partial && existing > 0
+        val append = response.code == HTTP_PARTIAL && existing > 0
         if (!append) sink.digest.reset()
         streamBody(response, sink, append)
         val actual = Fingerprints.toHex(sink.digest.digest())
@@ -199,5 +213,6 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
         const val HTTP_OK = 200
         const val HTTP_PARTIAL = 206
         const val HTTP_PRECONDITION_FAILED = 412
+        const val HTTP_RANGE_NOT_SATISFIABLE = 416
     }
 }
