@@ -1,24 +1,29 @@
 package io.cloudcauldron.bocan.playback
 
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.audio.ReplayGainValues
+import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.queue.QueueSnapshot
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.fromPlayer
 import io.cloudcauldron.bocan.playback.queue.toPlayer
+import io.cloudcauldron.bocan.playback.session.SessionCommands as BocanCommands
 import io.cloudcauldron.bocan.playback.stats.ResumePolicy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -34,10 +39,13 @@ import kotlinx.coroutines.launch
  * restores the persisted queue paused on start, and writes the queue back on a five
  * second cadence plus every item transition.
  *
- * The notification comes from Media3's default provider (customised in phase 10);
- * [onGetLibraryRoot] returns a stub browse tree until phase 10 fills it for Auto.
- * Task removal keeps playback alive when something is playing.
+ * The notification comes from Media3's default provider; the [BrowseCallback] serves the
+ * Android Auto tree, advertises the custom session commands, and resolves browse items to
+ * playable ones. Task removal keeps playback alive when something is playing.
  */
+// The service is the single Media3 surface: lifecycle, session, browse, and command
+// handling all live here by design, not as a decomposition smell.
+@Suppress("TooManyFunctions")
 @UnstableApi
 class PlaybackService : MediaLibraryService() {
     private val log = AppLog.forCategory(LogCategory.Playback)
@@ -46,6 +54,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var session: MediaLibrarySession
     private lateinit var persistence: QueuePersistence
     private lateinit var effectsChain: EffectsChain
+    private lateinit var mediaTree: MediaTree
 
     private val components: PlaybackComponents get() = (application as PlaybackHost).playbackComponents
 
@@ -56,8 +65,9 @@ class PlaybackService : MediaLibraryService() {
         player = graph.playerFactory.create()
         persistence = graph.queuePersistence
         effectsChain = graph.effectsChain
+        mediaTree = graph.mediaTree
 
-        session = MediaLibrarySession.Builder(this, player, LibraryCallback())
+        session = MediaLibrarySession.Builder(this, player, BrowseCallback())
             .build()
 
         graph.statsRecorder.attach(player, scope)
@@ -167,25 +177,36 @@ class PlaybackService : MediaLibraryService() {
         )
     }
 
-    /** A minimal browse tree so library controllers can connect; phase 10 fills it for Auto. */
-    private inner class LibraryCallback : MediaLibrarySession.Callback {
+    /**
+     * The Android Auto and browser callback: it serves the [MediaTree], advertises the
+     * custom session commands so the notification, Auto, and widget can trigger skip,
+     * speed, and shuffle, and resolves browse items to playable ones so a tap in Auto
+     * plays the real local file (phase 10).
+     */
+    private inner class BrowseCallback : MediaLibrarySession.Callback {
+        override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
+            val available = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+            BocanCommands.all().forEach { available.add(it) }
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(available.build())
+                .build()
+        }
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: android.os.Bundle
+        ): ListenableFuture<SessionResult> {
+            handleCommand(customCommand.customAction)
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+        }
+
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?
-        ): ListenableFuture<LibraryResult<MediaItem>> {
-            val root = MediaItem.Builder()
-                .setMediaId(ROOT_ID)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setIsBrowsable(true)
-                        .setIsPlayable(false)
-                        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                        .build()
-                )
-                .build()
-            return Futures.immediateFuture(LibraryResult.ofItem(root, params))
-        }
+        ): ListenableFuture<LibraryResult<MediaItem>> = Futures.immediateFuture(LibraryResult.ofItem(mediaTree.rootItem(), params))
 
         override fun onGetChildren(
             session: MediaLibrarySession,
@@ -194,13 +215,55 @@ class PlaybackService : MediaLibraryService() {
             page: Int,
             pageSize: Int,
             params: LibraryParams?
-        ): ListenableFuture<LibraryResult<com.google.common.collect.ImmutableList<MediaItem>>> =
-            Futures.immediateFuture(LibraryResult.ofItemList(com.google.common.collect.ImmutableList.of(), params))
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = future {
+            LibraryResult.ofItemList(ImmutableList.copyOf(mediaTree.children(parentId, page, pageSize)), params)
+        }
+
+        // Browse items carry only a media id; resolve them to real playable items before they enter the queue.
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>
+        ): ListenableFuture<List<MediaItem>> = future {
+            val ids = mediaItems.mapNotNull { MediaId.parse(it.mediaId) }
+            components.mediaItemSource.resolve(ids).ifEmpty { mediaItems }
+        }
+    }
+
+    /** Apply a custom session command to the player, on the session's application thread. */
+    private fun handleCommand(action: String) {
+        when (action) {
+            BocanCommands.SKIP_BACK -> player.seekTo((player.currentPosition - SKIP_BACK_MS).coerceAtLeast(0))
+            BocanCommands.SKIP_FORWARD -> player.seekTo(player.currentPosition + SKIP_FORWARD_MS)
+            BocanCommands.TOGGLE_SHUFFLE -> player.shuffleModeEnabled = !player.shuffleModeEnabled
+            BocanCommands.CYCLE_SPEED -> player.setPlaybackSpeed(nextSpeed(player.playbackParameters.speed))
+            else -> log.warning("playback.command.unknown", mapOf("action" to action))
+        }
+    }
+
+    private fun nextSpeed(current: Float): Float = SPEED_CYCLE.firstOrNull { it > current + SPEED_EPSILON } ?: SPEED_CYCLE.first()
+
+    /** Bridge a suspend browse/resolve to a [ListenableFuture] on the service scope. */
+    @Suppress("TooGenericExceptionCaught")
+    private fun <T> future(block: suspend () -> T): ListenableFuture<T> {
+        val future = SettableFuture.create<T>()
+        scope.launch {
+            try {
+                future.set(block())
+            } catch (error: Exception) {
+                log.error("playback.browse.failed", mapOf("error" to error.toString()))
+                future.setException(error)
+            }
+        }
+        return future
     }
 
     private companion object {
-        const val ROOT_ID = "root"
         const val PERSIST_INTERVAL_MS = 5_000L
         const val FADE_TICK_MS = 200L
+        const val SKIP_BACK_MS = 15_000L
+        const val SKIP_FORWARD_MS = 30_000L
+        const val SPEED_EPSILON = 0.01f
+        val SPEED_CYCLE = listOf(1.0f, 1.25f, 1.5f, 2.0f, 0.8f)
     }
 }
