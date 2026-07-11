@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Settings: the pairing and library-sync entry points, plus the Podcasts section (default
@@ -44,6 +46,8 @@ fun SettingsScreen(
     onOpenSync: () -> Unit,
     onOpenEqualizer: () -> Unit,
     onOpenScrobbling: () -> Unit,
+    resumeOnReconnect: Flow<Boolean>,
+    onSetResumeOnReconnect: (Boolean) -> Unit,
     podcastSettings: PodcastSettingsViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -76,6 +80,12 @@ fun SettingsScreen(
                 headlineContent = { Text(stringResource(R.string.scrobble_open)) },
                 leadingContent = { Icon(Icons.Rounded.Radio, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenScrobbling)
+            )
+            val resume by resumeOnReconnect.collectAsState(initial = false)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_resume_on_reconnect)) },
+                supportingContent = { Text(stringResource(R.string.settings_resume_on_reconnect_summary)) },
+                trailingContent = { Switch(checked = resume, onCheckedChange = onSetResumeOnReconnect) }
             )
             PodcastSettingsSection(podcastSettings)
         }

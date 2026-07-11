@@ -73,6 +73,7 @@ class FakeLibraryDao : LibraryDao {
     override fun observeAllTracksByAlbum(): Flow<List<TrackEntity>> = tracksFlow
     override fun observeGenres(): Flow<List<String>> = genresFlow
     override suspend fun tracksByIds(ids: List<Long>): List<TrackEntity> = tracksFlow.value.filter { it.id in ids }
+    override suspend fun downloadedTrackIds(): List<Long> = tracksFlow.value.map { it.id }
     override fun observeDownloadCounts(): Flow<DownloadCounts> = countsFlow
 }
 

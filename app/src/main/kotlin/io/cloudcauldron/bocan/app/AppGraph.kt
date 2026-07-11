@@ -1,13 +1,16 @@
 package io.cloudcauldron.bocan.app
 
 import android.app.Application
+import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.CommandButton
 import io.cloudcauldron.bocan.app.data.EqPreferences
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
+import io.cloudcauldron.bocan.app.data.PlaybackPreferences
 import io.cloudcauldron.bocan.app.data.PodcastPreferences
 import io.cloudcauldron.bocan.app.data.ScrobbleSettings
 import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
@@ -18,6 +21,7 @@ import io.cloudcauldron.bocan.app.library.LibraryViewModel
 import io.cloudcauldron.bocan.app.library.PlaylistDetailViewModel
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
 import io.cloudcauldron.bocan.app.playback.AndroidMediaFileResolver
+import io.cloudcauldron.bocan.app.playback.HeadphoneReconnectMonitor
 import io.cloudcauldron.bocan.app.player.LyricsViewModel
 import io.cloudcauldron.bocan.app.player.NowPlayingViewModel
 import io.cloudcauldron.bocan.app.player.PlayerViewModel
@@ -53,6 +57,7 @@ import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
 import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueueController
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
+import io.cloudcauldron.bocan.playback.session.SessionCommands
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
 import io.cloudcauldron.bocan.scrobble.CoroutineDispatchers as ScrobbleDispatchers
 import io.cloudcauldron.bocan.scrobble.ScrobbleService
@@ -190,6 +195,20 @@ class AppGraph(val application: Application) {
         )
     }
 
+    /** The notification and Auto skip buttons shown for an episode, localized here. */
+    private val episodeSkipButtons: List<CommandButton> by lazy {
+        listOf(
+            CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
+                .setDisplayName(application.getString(R.string.action_skip_back))
+                .setSessionCommand(SessionCommands.command(SessionCommands.SKIP_BACK))
+                .build(),
+            CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_30)
+                .setDisplayName(application.getString(R.string.action_skip_forward))
+                .setSessionCommand(SessionCommands.command(SessionCommands.SKIP_FORWARD))
+                .build()
+        )
+    }
+
     /** The single object graph the PlaybackService builds its session from. */
     val playbackComponents: PlaybackComponents by lazy {
         PlaybackComponents(
@@ -199,6 +218,7 @@ class AppGraph(val application: Application) {
             episodeRecorder,
             queuePersistence,
             mediaTree,
+            episodeSkipButtons,
             playbackDispatchers
         )
     }
@@ -317,6 +337,52 @@ class AppGraph(val application: Application) {
      */
     fun startWidget() {
         WidgetUpdater(application, queueController.state, WidgetStateStore(application), playbackScope).start()
+        headphoneReconnectMonitor.start()
+    }
+
+    /** Playback-behaviour settings (resume on reconnect). */
+    val playbackPreferences: PlaybackPreferences by lazy { PlaybackPreferences(application) }
+
+    private val headphoneReconnectMonitor: HeadphoneReconnectMonitor by lazy {
+        HeadphoneReconnectMonitor(
+            audioManager = application.getSystemService(AudioManager::class.java),
+            resumeEnabled = { playbackPreferences.resumeOnReconnectNow() },
+            onReconnect = ::resumeIfPaused,
+            scope = playbackScope,
+            dispatchers = playbackDispatchers
+        )
+    }
+
+    fun setResumeOnReconnect(enabled: Boolean) {
+        playbackScope.launch { playbackPreferences.setResumeOnReconnect(enabled) }
+    }
+
+    /** Resume only when playback is paused with content, through the connected session controller. */
+    private fun resumeIfPaused() {
+        val state = queueController.state.value
+        if (!state.isPlaying && state.current != null) playerViewModel.togglePlayPause()
+    }
+
+    /**
+     * Route a `bocan://` launcher shortcut to its action. The `nowplaying` deep link is
+     * handled by the navigation graph, not here; the rest are one-shot playback or sync
+     * actions dispatched through the shared player facade.
+     */
+    fun handleShortcut(host: String?) {
+        when (host) {
+            SHORTCUT_RESUME -> playerViewModel.togglePlayPause()
+            SHORTCUT_SHUFFLE -> playbackScope.launch {
+                val ids = database.libraryDao().downloadedTrackIds()
+                if (ids.isNotEmpty()) playerViewModel.shuffle(ids)
+            }
+            SHORTCUT_CONTINUE -> playbackScope.launch {
+                database.browseDao().continueListeningPage(limit = 1, offset = 0).firstOrNull()?.let {
+                    playerViewModel.playEpisodes(listOf(it.id), 0)
+                }
+            }
+            SHORTCUT_SYNC -> SyncForegroundService.start(application, force = true)
+            else -> Unit
+        }
     }
 
     fun scrobbleSettingsViewModel(): ScrobbleSettingsViewModel = ScrobbleSettingsViewModel(
@@ -460,5 +526,9 @@ class AppGraph(val application: Application) {
         const val DEFAULT_DEVICE_NAME = "Android phone"
         const val PLAYBACK_DIR = "playback"
         const val MS_PER_SECOND = 1000L
+        const val SHORTCUT_RESUME = "resume"
+        const val SHORTCUT_SHUFFLE = "shuffle"
+        const val SHORTCUT_CONTINUE = "continue"
+        const val SHORTCUT_SYNC = "sync"
     }
 }

@@ -274,4 +274,6 @@
   <string name="shortcut_continue_long">Continue listening</string>
   <string name="shortcut_sync_short">Sync</string>
   <string name="shortcut_sync_long">Sync now</string>
+  <string name="settings_resume_on_reconnect">Resume on reconnect</string>
+  <string name="settings_resume_on_reconnect_summary">Resume playback when headphones reconnect after being unplugged.</string>
 </resources>

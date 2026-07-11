@@ -1,6 +1,7 @@
 package io.cloudcauldron.bocan.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val appGraph = (application as BocanApplication).appGraph
+        handleShortcutIntent(intent)
         setContent {
             BocanTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -37,6 +39,28 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShortcutIntent(intent)
+    }
+
+    /**
+     * Dispatch a `bocan://` launcher shortcut (resume, shuffle, continue, sync) to its
+     * action. The `nowplaying` deep link is left to the navigation graph, which resolves it.
+     */
+    private fun handleShortcutIntent(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (data.scheme == DEEP_LINK_SCHEME && data.host != NOW_PLAYING_HOST) {
+            (application as BocanApplication).appGraph.handleShortcut(data.host)
+        }
+    }
+
+    private companion object {
+        const val DEEP_LINK_SCHEME = "bocan"
+        const val NOW_PLAYING_HOST = "nowplaying"
     }
 }
 

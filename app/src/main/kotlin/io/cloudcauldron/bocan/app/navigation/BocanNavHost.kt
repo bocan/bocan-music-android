@@ -77,6 +77,8 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
                 onOpenSync = { navController.navigate(Destination.SyncStatus) },
                 onOpenEqualizer = { navController.navigate(Destination.Equalizer) },
                 onOpenScrobbling = { navController.navigate(Destination.ScrobbleSettings) },
+                resumeOnReconnect = appGraph.playbackPreferences.resumeOnReconnect,
+                onSetResumeOnReconnect = appGraph::setResumeOnReconnect,
                 podcastSettings = vm
             )
         }
@@ -106,7 +108,9 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
             GenreDetailScreen(vm.state, callbacks, navController::popBackStack)
         }
-        composable<Destination.NowPlaying> {
+        composable<Destination.NowPlaying>(
+            deepLinks = listOf(navDeepLink { uriPattern = "bocan://nowplaying" })
+        ) {
             val nowPlaying = remember { appGraph.nowPlayingViewModel() }
             val queue = remember { appGraph.queueViewModel() }
             val lyrics = remember { appGraph.lyricsViewModel() }
