@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 /**
  * One downloaded episode. playPositionMs and playState are the Mac's values
  * at manifest time and only ever seed episodes this phone has never played.
+ * publishedAt and durationMs are optional per the contract: a feed may omit
+ * its publication date or duration, and the Mac then omits the key.
  */
 @Serializable
 data class ManifestEpisode(
@@ -12,8 +14,8 @@ data class ManifestEpisode(
     val podcastId: Long,
     val guid: String,
     val title: String,
-    val publishedAt: String,
-    val durationMs: Long,
+    val publishedAt: String? = null,
+    val durationMs: Long? = null,
     val descriptionHtml: String? = null,
     val relPath: String,
     val size: Long,

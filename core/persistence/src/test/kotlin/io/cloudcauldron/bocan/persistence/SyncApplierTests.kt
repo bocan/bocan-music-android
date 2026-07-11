@@ -3,6 +3,7 @@ package io.cloudcauldron.bocan.persistence
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.cloudcauldron.bocan.persistence.model.DownloadState
 import io.cloudcauldron.bocan.persistence.model.PlayState
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -18,10 +19,10 @@ class SyncApplierTests {
         val plan = fixedClockApplier(db).apply(fixtureManifest())
 
         val tracks = db.syncDao().allTracks()
-        assertEquals(4, tracks.size)
+        assertEquals(5, tracks.size)
         assertTrue(tracks.all { it.downloadState == DownloadState.Pending })
-        assertEquals(listOf(101L, 102L, 103L), plan.tracksToDownload.map { it.id })
-        assertEquals(2, plan.episodesToDownload.size)
+        assertEquals(listOf(101L, 102L, 103L, 105L), plan.tracksToDownload.map { it.id })
+        assertEquals(3, plan.episodesToDownload.size)
         assertTrue(plan.relPathsToDelete.isEmpty())
         assertEquals(3, plan.artworkHashesNeeded.size)
 
@@ -40,7 +41,27 @@ class SyncApplierTests {
         assertEquals(2, souvlaki.trackCount)
         assertNull(souvlaki.artworkHash)
 
-        assertEquals(listOf(7L, 8L), db.libraryDao().observeArtists().firstList().map { it.id })
+        assertEquals(listOf(UNKNOWN_ID, 7L, 8L), db.libraryDao().observeArtists().firstList().map { it.id })
+    }
+
+    @Test
+    fun `untagged track and undated episode normalize into fallbacks`() = runDbTest { db ->
+        fixedClockApplier(db).apply(fixtureManifest())
+
+        val untagged = db.syncDao().allTracks().single { it.id == 105L }
+        assertEquals("rip-004", untagged.title)
+        assertEquals(UNKNOWN_ID, untagged.artistId)
+        assertEquals("", untagged.artistName)
+        assertEquals(UNKNOWN_ID, untagged.albumId)
+        assertEquals("", untagged.albumName)
+
+        val unknownAlbum = db.libraryDao().observeAlbumsByName().firstList().single { it.id == UNKNOWN_ID }
+        assertEquals("", unknownAlbum.name)
+        assertEquals(1, unknownAlbum.trackCount)
+
+        val undated = db.syncDao().allEpisodes().single { it.id == "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8" }
+        assertEquals(Instant.EPOCH, undated.publishedAt)
+        assertEquals(0L, undated.durationMs)
     }
 
     @Test

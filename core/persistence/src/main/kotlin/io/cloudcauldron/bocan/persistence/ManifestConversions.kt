@@ -14,28 +14,38 @@ import io.cloudcauldron.bocan.persistence.model.manifest.ManifestPlaylist
 import io.cloudcauldron.bocan.persistence.model.manifest.ManifestPodcast
 import io.cloudcauldron.bocan.persistence.model.manifest.ManifestTrack
 import java.time.Instant
+import kotlin.math.roundToInt
 
 /**
  * Pure manifest-to-entity conversions used by SyncApplier. Deterministic by
  * construction: every derivation sorts before grouping so repeated applies of
  * the same manifest produce byte-identical rows.
+ *
+ * The contract makes track metadata beyond the id/file core optional (an
+ * untagged file on the Mac omits the keys), so absence is normalized here:
+ * a missing title falls back to the relPath filename, and tracks without an
+ * artist or album id group into the reserved UNKNOWN_ID bucket (manifest ids
+ * are positive per the contract, so 0 can never collide).
  */
+
+/** The reserved id for tracks whose artist or album is unknown. */
+internal const val UNKNOWN_ID = 0L
 
 /** Group by albumId in deterministic track order: min year, first non-null artwork. */
 internal fun deriveAlbums(manifestTracks: List<ManifestTrack>): List<AlbumEntity> {
     val ordered = manifestTracks.sortedWith(
         compareBy(
-            { it.albumId },
+            { it.albumId ?: UNKNOWN_ID },
             { it.discNumber ?: Int.MAX_VALUE },
             { it.trackNumber ?: Int.MAX_VALUE },
             { it.id }
         )
     )
-    return ordered.groupBy { it.albumId }.map { (albumId, tracks) ->
+    return ordered.groupBy { it.albumId ?: UNKNOWN_ID }.map { (albumId, tracks) ->
         AlbumEntity(
             id = albumId,
-            name = tracks.first().album,
-            albumArtistName = tracks.first().albumArtist,
+            name = tracks.first().album.orEmpty(),
+            albumArtistName = tracks.first().albumArtist.orEmpty(),
             year = tracks.mapNotNull { it.year }.minOrNull(),
             artworkHash = tracks.firstNotNullOfOrNull { it.artworkHash },
             trackCount = tracks.size
@@ -45,19 +55,19 @@ internal fun deriveAlbums(manifestTracks: List<ManifestTrack>): List<AlbumEntity
 
 internal fun deriveArtists(manifestTracks: List<ManifestTrack>): List<ArtistEntity> = manifestTracks
     .sortedBy { it.id }
-    .groupBy { it.albumArtistId }
-    .map { (artistId, tracks) -> ArtistEntity(id = artistId, name = tracks.first().albumArtist) }
+    .groupBy { it.albumArtistId ?: UNKNOWN_ID }
+    .map { (artistId, tracks) -> ArtistEntity(id = artistId, name = tracks.first().albumArtist.orEmpty()) }
     .sortedBy { it.id }
 
 internal fun toTrackEntity(track: ManifestTrack, state: DownloadState, syncedAt: Instant): TrackEntity = TrackEntity(
     id = track.id,
-    title = track.title,
-    artistId = track.artistId,
-    artistName = track.artist,
-    albumArtistId = track.albumArtistId,
-    albumArtistName = track.albumArtist,
-    albumId = track.albumId,
-    albumName = track.album,
+    title = track.title ?: fallbackTitle(track.relPath),
+    artistId = track.artistId ?: UNKNOWN_ID,
+    artistName = track.artist.orEmpty(),
+    albumArtistId = track.albumArtistId ?: UNKNOWN_ID,
+    albumArtistName = track.albumArtist.orEmpty(),
+    albumId = track.albumId ?: UNKNOWN_ID,
+    albumName = track.album.orEmpty(),
     trackNumber = track.trackNumber,
     trackTotal = track.trackTotal,
     discNumber = track.discNumber,
@@ -65,7 +75,7 @@ internal fun toTrackEntity(track: ManifestTrack, state: DownloadState, syncedAt:
     year = track.year,
     genre = track.genre,
     composer = track.composer,
-    bpm = track.bpm,
+    bpm = track.bpm?.roundToInt(),
     durationMs = track.durationMs,
     sampleRate = track.sampleRate,
     bitDepth = track.bitDepth,
@@ -96,8 +106,8 @@ internal fun toEpisodeEntity(episode: ManifestEpisode, existing: EpisodeEntity?,
     podcastId = episode.podcastId,
     guid = episode.guid,
     title = episode.title,
-    publishedAt = Instant.parse(episode.publishedAt),
-    durationMs = episode.durationMs,
+    publishedAt = episode.publishedAt?.let(Instant::parse) ?: Instant.EPOCH,
+    durationMs = episode.durationMs ?: 0L,
     descriptionHtml = episode.descriptionHtml,
     relPath = episode.relPath,
     size = episode.size,
@@ -128,3 +138,6 @@ internal fun toPodcastEntity(podcast: ManifestPodcast): PodcastEntity = PodcastE
     artworkHash = podcast.artworkHash,
     defaultSpeed = podcast.playbackSpeed
 )
+
+/** An untitled track displays as its filename, extension stripped. */
+private fun fallbackTitle(relPath: String): String = relPath.substringAfterLast('/').substringBeforeLast('.').ifEmpty { relPath }

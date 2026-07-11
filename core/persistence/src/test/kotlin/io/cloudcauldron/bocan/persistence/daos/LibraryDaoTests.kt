@@ -26,7 +26,8 @@ class LibraryDaoTests {
 
             fixedClockApplier(db).apply(fixtureManifest())
 
-            assertEquals(listOf("Loveless", "Souvlaki"), awaitItem().map { it.name })
+            // The empty name is the unknown-album bucket for the untagged track.
+            assertEquals(listOf("", "Loveless", "Souvlaki"), awaitItem().map { it.name })
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -34,9 +35,9 @@ class LibraryDaoTests {
     @Test
     fun `album sort orders are distinct and stable`() = runDbTest { db ->
         fixedClockApplier(db).apply(fixtureManifest())
-        assertEquals(listOf(55L, 56L), db.libraryDao().observeAlbums(AlbumSort.Name).firstList().map { it.id })
-        assertEquals(listOf(55L, 56L), db.libraryDao().observeAlbums(AlbumSort.Artist).firstList().map { it.id })
-        assertEquals(listOf(56L, 55L), db.libraryDao().observeAlbums(AlbumSort.Year).firstList().map { it.id })
+        assertEquals(listOf(0L, 55L, 56L), db.libraryDao().observeAlbums(AlbumSort.Name).firstList().map { it.id })
+        assertEquals(listOf(0L, 55L, 56L), db.libraryDao().observeAlbums(AlbumSort.Artist).firstList().map { it.id })
+        assertEquals(listOf(56L, 55L, 0L), db.libraryDao().observeAlbums(AlbumSort.Year).firstList().map { it.id })
     }
 
     @Test
@@ -53,15 +54,16 @@ class LibraryDaoTests {
         fixedClockApplier(db).apply(fixtureManifest())
         val dao = db.libraryDao()
         assertEquals(
-            listOf("Loomer", "Only Shallow", "Souvlaki Space Station", "Souvlaki Space Station (Intro)"),
+            listOf("Loomer", "Only Shallow", "rip-004", "Souvlaki Space Station", "Souvlaki Space Station (Intro)"),
             dao.observeAllTracks(TrackSort.Title).firstList().map { it.title }
         )
+        // The untagged track's empty artist and album names sort first.
         assertEquals(
-            listOf(101L, 102L, 103L, 104L),
+            listOf(105L, 101L, 102L, 103L, 104L),
             dao.observeAllTracks(TrackSort.Artist).firstList().map { it.id }
         )
         assertEquals(
-            listOf(101L, 102L, 103L, 104L),
+            listOf(105L, 101L, 102L, 103L, 104L),
             dao.observeAllTracks(TrackSort.Album).firstList().map { it.id }
         )
     }
@@ -85,11 +87,11 @@ class LibraryDaoTests {
     fun `download counts follow markDownloaded`() = runDbTest { db ->
         val applier = fixedClockApplier(db)
         applier.apply(fixtureManifest())
-        assertEquals(DownloadCounts(pending = 4, downloaded = 0, failed = 0), db.libraryDao().observeDownloadCounts().first())
+        assertEquals(DownloadCounts(pending = 5, downloaded = 0, failed = 0), db.libraryDao().observeDownloadCounts().first())
 
         applier.markDownloaded(listOf(103L), emptyList())
 
         // The clip inherits its source, so two rows flip together.
-        assertEquals(DownloadCounts(pending = 2, downloaded = 2, failed = 0), db.libraryDao().observeDownloadCounts().first())
+        assertEquals(DownloadCounts(pending = 3, downloaded = 2, failed = 0), db.libraryDao().observeDownloadCounts().first())
     }
 }

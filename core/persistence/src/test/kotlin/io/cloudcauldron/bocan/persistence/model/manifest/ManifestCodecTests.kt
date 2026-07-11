@@ -3,6 +3,7 @@ package io.cloudcauldron.bocan.persistence.model.manifest
 import io.cloudcauldron.bocan.persistence.fixtureManifest
 import io.cloudcauldron.bocan.persistence.readFixture
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,10 +15,30 @@ class ManifestCodecTests {
         assertEquals(1, manifest.protocolVersion)
         assertEquals(42, manifest.generation)
         assertEquals("Test Mac", manifest.serverName)
-        assertEquals(4, manifest.tracks.size)
+        assertEquals(5, manifest.tracks.size)
         assertEquals(3, manifest.playlists.size)
         assertEquals(1, manifest.podcasts.size)
-        assertEquals(2, manifest.episodes.size)
+        assertEquals(3, manifest.episodes.size)
+    }
+
+    @Test
+    fun `contract-minimal track and episode decode with every optional field absent`() {
+        val untagged = fixtureManifest().tracks.single { it.id == 105L }
+        assertNull(untagged.title)
+        assertNull(untagged.artist)
+        assertNull(untagged.artistId)
+        assertNull(untagged.albumArtist)
+        assertNull(untagged.albumArtistId)
+        assertNull(untagged.album)
+        assertNull(untagged.albumId)
+        assertNull(untagged.bpm)
+        assertEquals(0, untagged.rating)
+        assertFalse(untagged.isLossless)
+
+        val undated = fixtureManifest().episodes.single { it.id == "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8" }
+        assertNull(undated.publishedAt)
+        assertNull(undated.durationMs)
+        assertNull(undated.descriptionHtml)
     }
 
     @Test

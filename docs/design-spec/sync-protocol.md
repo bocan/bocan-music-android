@@ -168,6 +168,9 @@ Size guidance: at 10,000 tracks the manifest is a few MB of JSON. Serve it gzip-
 
 Notes:
 
+- **Field optionality.** Always present on a Track: `id`, `relPath`, `size`, `sha256`, `format`, `durationMs`, `rating`, `loved`. Every other Track field is optional: an omitted key and an explicit `null` both mean unknown (the Mac omits keys it has no value for, exactly as an untagged file yields). A client must decode a track with any optional field absent and must never fail a sync over missing metadata. Display fallbacks are the client's concern: for example the `relPath` filename for a missing `title`, and an unknown-artist bucket for a missing `artistId`.
+- `bpm` is a number and may be fractional.
+- All ids in the manifest (`id`, `artistId`, `albumArtistId`, `albumId`, playlist and podcast ids) are positive integers; a client may reserve 0 for internal fallback buckets.
 - `id` is the Mac's stable track id. The phone uses it as its primary key. Ids are stable across manifests; a re-added file gets a new id.
 - `relPath` is a sanitized relative path (no leading `/`, no `..`, forward slashes, NFC-normalized). The phone stores the file at `<mediaRoot>/library/<relPath>` but treats `relPath` as opaque; identity is `id`, change detection is `sha256`.
 - `rating` is 0 to 100, matching the Mac's schema. `loved` is the favourite flag. Both are display-only on the phone.
@@ -189,6 +192,8 @@ Notes:
 ```
 
 `kind` is `manual`, `smart`, or `folder`. Smart playlists are evaluated on the Mac at manifest-build time and arrive as plain ordered id lists; the phone never sees the rules. Folders have empty `trackIds` and exist for hierarchy. `trackIds` may reference only tracks present in this manifest (server guarantees it).
+
+Always present on a Playlist: `id`, `name`, `kind`, `trackIds`. `parentId`, `sortOrder`, `accentColor`, and `artworkHash` are optional; omitted or `null` means none.
 
 ### Podcast and Episode
 
@@ -222,6 +227,8 @@ Notes:
 ```
 
 Only episodes **downloaded on the Mac** and inside the sync profile appear. `playPositionMs` / `playState` are the Mac's values at manifest time; the phone uses them only to seed episodes it has never played (see phase 01's local-state rules). `playbackSpeed` on the show is the Mac's per-show override, used as the phone's initial default for that show.
+
+Always present on a Podcast: `id`, `title`. `author`, `descriptionHtml`, `artworkHash`, and `playbackSpeed` are optional. Always present on an Episode: `id`, `podcastId`, `guid`, `title`, `relPath`, `size`, `sha256`, `hasChapters`, `playPositionMs`, `playState`. `publishedAt`, `durationMs`, and `descriptionHtml` are optional: a feed may omit its publication date or duration, and the manifest then omits the key. As with tracks, clients must tolerate any optional field being absent or `null`.
 
 ## 8. Lyrics document
 

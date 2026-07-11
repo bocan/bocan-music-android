@@ -2,7 +2,12 @@ package io.cloudcauldron.bocan.persistence.model.manifest
 
 import kotlinx.serialization.Serializable
 
-/** One track in the manifest. Identity is id, change detection is sha256. */
+/**
+ * One track in the manifest. Identity is id, change detection is sha256.
+ * Only the fields the contract lists as always present are non-null here:
+ * the Mac omits every other key when it has no value (an untagged file), and
+ * a missing key must never fail the sync.
+ */
 @Serializable
 data class ManifestTrack(
     val id: Long,
@@ -11,13 +16,13 @@ data class ManifestTrack(
     val sha256: String,
     val format: String,
     val durationMs: Long,
-    val title: String,
-    val artist: String,
-    val artistId: Long,
-    val albumArtist: String,
-    val albumArtistId: Long,
-    val album: String,
-    val albumId: Long,
+    val title: String? = null,
+    val artist: String? = null,
+    val artistId: Long? = null,
+    val albumArtist: String? = null,
+    val albumArtistId: Long? = null,
+    val album: String? = null,
+    val albumId: Long? = null,
     val trackNumber: Int? = null,
     val trackTotal: Int? = null,
     val discNumber: Int? = null,
@@ -25,7 +30,7 @@ data class ManifestTrack(
     val year: Int? = null,
     val genre: String? = null,
     val composer: String? = null,
-    val bpm: Int? = null,
+    val bpm: Double? = null,
     val rating: Int = 0,
     val loved: Boolean = false,
     val sampleRate: Int? = null,
