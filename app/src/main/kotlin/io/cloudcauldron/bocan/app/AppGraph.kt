@@ -30,6 +30,8 @@ import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsViewModel
 import io.cloudcauldron.bocan.app.sync.SyncCoordinator
 import io.cloudcauldron.bocan.app.sync.SyncSettings
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
+import io.cloudcauldron.bocan.app.widget.WidgetStateStore
+import io.cloudcauldron.bocan.app.widget.WidgetUpdater
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.persistence.BocanDatabase
@@ -43,6 +45,8 @@ import io.cloudcauldron.bocan.playback.PlayerFactory
 import io.cloudcauldron.bocan.playback.PlayerVolume
 import io.cloudcauldron.bocan.playback.SleepTimer
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
+import io.cloudcauldron.bocan.playback.browse.BrowseLabels
+import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
 import io.cloudcauldron.bocan.playback.lyrics.LyricsRepository
 import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
@@ -169,6 +173,23 @@ class AppGraph(val application: Application) {
         QueuePersistence(File(application.filesDir, PLAYBACK_DIR), playbackDispatchers, playbackLog)
     }
 
+    /** The Android Auto browse tree; category titles stay localized in the app's resources. */
+    private val mediaTree by lazy {
+        MediaTree(
+            browseDao = database.browseDao(),
+            labels = BrowseLabels(
+                continueListening = application.getString(R.string.browse_continue),
+                playlists = application.getString(R.string.browse_playlists),
+                albums = application.getString(R.string.browse_albums),
+                artists = application.getString(R.string.browse_artists),
+                podcasts = application.getString(R.string.browse_podcasts),
+                songs = application.getString(R.string.browse_songs)
+            ),
+            artworkUri = { hash -> hash?.let(mediaFileResolver::artworkUri) },
+            dispatchers = playbackDispatchers
+        )
+    }
+
     /** The single object graph the PlaybackService builds its session from. */
     val playbackComponents: PlaybackComponents by lazy {
         PlaybackComponents(
@@ -177,6 +198,7 @@ class AppGraph(val application: Application) {
             playStatsRecorder,
             episodeRecorder,
             queuePersistence,
+            mediaTree,
             playbackDispatchers
         )
     }
@@ -286,6 +308,15 @@ class AppGraph(val application: Application) {
             scope = playbackScope,
             dispatchers = scrobbleDispatchers
         )
+    }
+
+    /**
+     * Start pushing playback state to the home-screen widget for the life of the process.
+     * It observes the shared transport, which the app's player surfaces connect to the
+     * session; the widget need not open its own controller.
+     */
+    fun startWidget() {
+        WidgetUpdater(application, queueController.state, WidgetStateStore(application), playbackScope).start()
     }
 
     fun scrobbleSettingsViewModel(): ScrobbleSettingsViewModel = ScrobbleSettingsViewModel(

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Declares Bocan as an Android Auto media app; the browse tree and playback come from
+     the MediaLibraryService in :core:playback. -->
+<automotiveApp>
+  <uses name="media" />
+</automotiveApp>

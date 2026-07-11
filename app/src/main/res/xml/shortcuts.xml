@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press launcher shortcuts. Each opens MainActivity with a bocan:// deep link the
+     app routes to the matching action. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+  <shortcut
+    android:shortcutId="resume"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_resume_short"
+    android:shortcutLongLabel="@string/shortcut_resume_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="io.cloudcauldron.bocan.android"
+      android:targetClass="io.cloudcauldron.bocan.app.MainActivity"
+      android:data="bocan://resume" />
+  </shortcut>
+  <shortcut
+    android:shortcutId="shuffle"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_shuffle_short"
+    android:shortcutLongLabel="@string/shortcut_shuffle_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="io.cloudcauldron.bocan.android"
+      android:targetClass="io.cloudcauldron.bocan.app.MainActivity"
+      android:data="bocan://shuffle" />
+  </shortcut>
+  <shortcut
+    android:shortcutId="continue"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_continue_short"
+    android:shortcutLongLabel="@string/shortcut_continue_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="io.cloudcauldron.bocan.android"
+      android:targetClass="io.cloudcauldron.bocan.app.MainActivity"
+      android:data="bocan://continue" />
+  </shortcut>
+  <shortcut
+    android:shortcutId="sync"
+    android:enabled="true"
+    android:icon="@mipmap/ic_launcher"
+    android:shortcutShortLabel="@string/shortcut_sync_short"
+    android:shortcutLongLabel="@string/shortcut_sync_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:targetPackage="io.cloudcauldron.bocan.android"
+      android:targetClass="io.cloudcauldron.bocan.app.MainActivity"
+      android:data="bocan://sync" />
+  </shortcut>
+</shortcuts>

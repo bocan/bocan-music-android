@@ -252,4 +252,26 @@
   <string name="scrobble_lastfm_finish">Finish connecting</string>
   <string name="scrobble_save">Save</string>
   <string name="scrobble_cancel">Cancel</string>
+
+  <!-- System integration: Android Auto browse categories, widget, shortcuts -->
+  <string name="browse_continue">Continue Listening</string>
+  <string name="browse_playlists">Playlists</string>
+  <string name="browse_albums">Albums</string>
+  <string name="browse_artists">Artists</string>
+  <string name="browse_podcasts">Podcasts</string>
+  <string name="browse_songs">Songs</string>
+  <string name="widget_description">Bòcan playback controls</string>
+  <string name="widget_nothing_playing">Nothing playing</string>
+  <string name="widget_play">Play</string>
+  <string name="widget_pause">Pause</string>
+  <string name="widget_next">Next</string>
+  <string name="widget_skip_forward">Skip forward</string>
+  <string name="shortcut_resume_short">Resume</string>
+  <string name="shortcut_resume_long">Resume playback</string>
+  <string name="shortcut_shuffle_short">Shuffle</string>
+  <string name="shortcut_shuffle_long">Shuffle library</string>
+  <string name="shortcut_continue_short">Continue</string>
+  <string name="shortcut_continue_long">Continue listening</string>
+  <string name="shortcut_sync_short">Sync</string>
+  <string name="shortcut_sync_long">Sync now</string>
 </resources>

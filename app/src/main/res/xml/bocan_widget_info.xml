@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resizable 4x1 to 4x2 playback widget. Glance renders the content; this metadata sizes
+     and describes it for the launcher. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/widget_description"
+  android:minWidth="250dp"
+  android:minHeight="40dp"
+  android:targetCellWidth="4"
+  android:targetCellHeight="1"
+  android:maxResizeWidth="320dp"
+  android:maxResizeHeight="120dp"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="0"
+  android:initialLayout="@layout/widget_loading"
+  android:previewLayout="@layout/widget_loading"
+  android:widgetCategory="home_screen" />

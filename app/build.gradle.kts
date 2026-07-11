@@ -64,6 +64,11 @@ android {
 
     lint {
         fatal += listOf("NewApi", "MissingPermission")
+        // The Auto MediaBrowserService is the Media3 MediaLibraryService declared in
+        // :core:playback; it is present in the merged manifest with both the
+        // MediaLibraryService and MediaBrowserService actions. This check does not see the
+        // library-declared service, so it misfires here.
+        disable += "MissingMediaBrowserServiceIntentFilter"
     }
 }
 
@@ -92,6 +97,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.palette)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
 
     testImplementation(composeBom)
     testImplementation(libs.junit)

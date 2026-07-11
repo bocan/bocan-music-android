@@ -39,6 +39,7 @@ class BocanApplication :
         appGraph.syncCoordinator.start()
         appGraph.startEffects()
         appGraph.startScrobbling()
+        appGraph.startWidget()
         appGraph.appLog.info("app.start", mapOf("debug" to BuildConfig.DEBUG))
     }
 
