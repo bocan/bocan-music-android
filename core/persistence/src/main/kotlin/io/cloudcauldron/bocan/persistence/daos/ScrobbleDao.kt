@@ -23,6 +23,14 @@ interface ScrobbleDao {
     )
     suspend fun due(now: Instant, limit: Int): List<ScrobbleQueueEntity>
 
+    /** Live, non-dead rows for one provider; phase 09 reads these to dedup before enqueue. */
+    @Query("SELECT * FROM scrobble_queue WHERE provider = :provider AND deadLettered = 0 ORDER BY id")
+    suspend fun activeForProvider(provider: String): List<ScrobbleQueueEntity>
+
+    /** The dead-letter list surfaced in settings with retry and discard actions. */
+    @Query("SELECT * FROM scrobble_queue WHERE deadLettered = 1 ORDER BY id")
+    fun observeDeadLettered(): Flow<List<ScrobbleQueueEntity>>
+
     @Query("UPDATE scrobble_queue SET attempts = :attempts, nextAttemptAt = :nextAttemptAt, deadLettered = :deadLettered WHERE id = :id")
     suspend fun recordAttempt(id: Long, attempts: Int, nextAttemptAt: Instant?, deadLettered: Boolean)
 
