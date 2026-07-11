@@ -1,8 +1,8 @@
 package io.cloudcauldron.bocan.app.player
 
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
+import io.cloudcauldron.bocan.playback.queue.PlaybackTransport
 import io.cloudcauldron.bocan.playback.queue.PlayerUiState
-import io.cloudcauldron.bocan.playback.queue.QueueController
 import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * offers the play verbs the library screens call. Lives for the whole app session
  * (created at the navigation root), so it is not recreated per screen.
  */
-class PlayerViewModel(private val queueController: QueueController, dispatchers: CoroutineDispatchers) {
+class PlayerViewModel(private val queueController: PlaybackTransport, dispatchers: CoroutineDispatchers) {
     private val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
 
     val state: StateFlow<PlayerUiState> = queueController.state

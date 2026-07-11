@@ -76,12 +76,15 @@ androidx.palette. Test: Turbine, Robolectric where needed.
 ## Acceptance criteria
 
 - [ ] Now Playing shows live state, seeks smoothly, and navigates to artist/album.
-- [ ] Queue sheet reorders and removes; changes are reflected in actual playback order.
+  - The screen, view model state mapping, seek-on-release, and artist/album navigation are implemented, but live state and smooth seeking need playback on a device.
+- [x] Queue sheet reorders and removes; changes are reflected in actual playback order.
 - [ ] Synced lyrics auto-scroll in time and tap-to-seek works; unsynced lyrics scroll; absent lyrics show a quiet empty state.
-- [ ] Sleep timer fades out over 10 s and pauses; end-of-track mode works; timer state survives navigating away.
+  - The parser, repository, and active-line-from-position logic are unit-tested and the pane is built (auto-scroll, tap-to-seek, unsynced, empty state), but the visual auto-scroll needs a device.
+- [x] Sleep timer fades out over 10 s and pauses; end-of-track mode works; timer state survives navigating away.
 - [ ] Reduced motion disables auto-scroll animation and ambient background transitions.
-- [ ] Loved and rating render but expose no edit affordance.
-- [ ] All strings localized; TalkBack announces transport state changes.
+  - The reduced-motion branch is implemented in the lyrics scroll and ambient background, but the visual result needs a device.
+- [x] Loved and rating render but expose no edit affordance.
+- [x] All strings localized; TalkBack announces transport state changes.
 
 ## Gotchas
 

@@ -12,7 +12,10 @@ import io.cloudcauldron.bocan.app.library.LibraryViewModel
 import io.cloudcauldron.bocan.app.library.PlaylistDetailViewModel
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
 import io.cloudcauldron.bocan.app.playback.AndroidMediaFileResolver
+import io.cloudcauldron.bocan.app.player.LyricsViewModel
+import io.cloudcauldron.bocan.app.player.NowPlayingViewModel
 import io.cloudcauldron.bocan.app.player.PlayerViewModel
+import io.cloudcauldron.bocan.app.player.QueueViewModel
 import io.cloudcauldron.bocan.app.search.SearchViewModel
 import io.cloudcauldron.bocan.app.sync.SyncCoordinator
 import io.cloudcauldron.bocan.app.sync.SyncSettings
@@ -26,6 +29,10 @@ import io.cloudcauldron.bocan.playback.DatabaseMediaItemSource
 import io.cloudcauldron.bocan.playback.MediaItemFactory
 import io.cloudcauldron.bocan.playback.PlaybackComponents
 import io.cloudcauldron.bocan.playback.PlayerFactory
+import io.cloudcauldron.bocan.playback.PlayerVolume
+import io.cloudcauldron.bocan.playback.SleepTimer
+import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
+import io.cloudcauldron.bocan.playback.lyrics.LyricsRepository
 import io.cloudcauldron.bocan.playback.queue.QueueController
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
@@ -43,6 +50,10 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 
 /**
  * The single manual dependency-injection wiring point. Later phases extend
@@ -136,6 +147,32 @@ class AppGraph(val application: Application) {
 
     /** App-session player facade shared by the mini player and every play action. */
     val playerViewModel: PlayerViewModel by lazy { PlayerViewModel(queueController, playbackDispatchers) }
+
+    private val playerVolume: PlayerVolume = object : PlayerVolume {
+        override suspend fun getVolume(): Float = queueController.currentVolume()
+        override suspend fun setVolume(volume: Float) = queueController.setVolume(volume)
+        override suspend fun pause() = queueController.pause()
+    }
+
+    /** Emits once per track transition, for the sleep timer's end-of-track mode. */
+    private val trackTransitions: Flow<Unit> =
+        queueController.state.map { it.current?.mediaId }.distinctUntilChanged().drop(1).map { }
+
+    /** One sleep timer for the app session; Now Playing observes and drives it. */
+    val sleepTimer: SleepTimer by lazy { SleepTimer(playerVolume, trackTransitions, playbackDispatchers) }
+
+    private val lyricsFetcher = LyricsFetcher { trackId -> syncCoordinator.fetchLyrics(trackId) }
+
+    private val lyricsRepository by lazy {
+        LyricsRepository(database.lyricsDao(), lyricsFetcher, playbackDispatchers, playbackLog)
+    }
+
+    fun nowPlayingViewModel(): NowPlayingViewModel =
+        NowPlayingViewModel(queueController, database.libraryDao(), sleepTimer, playbackDispatchers)
+
+    fun queueViewModel(): QueueViewModel = QueueViewModel(queueController, playbackDispatchers)
+
+    fun lyricsViewModel(): LyricsViewModel = LyricsViewModel(queueController, database.libraryDao(), lyricsRepository, playbackDispatchers)
 
     fun libraryViewModel(): LibraryViewModel = LibraryViewModel(
         libraryDao = database.libraryDao(),

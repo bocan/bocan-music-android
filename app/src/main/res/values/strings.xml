@@ -127,9 +127,45 @@
   <string name="search_clear_recent">Clear recent searches</string>
   <string name="search_no_results">No results for \"%1$s\"</string>
 
-  <!-- Playlists, podcasts, now playing -->
+  <!-- Playlists, podcasts -->
   <string name="playlist_smart_subtitle">Materialized from your Mac</string>
   <string name="podcasts_placeholder_title">Podcasts</string>
   <string name="podcasts_placeholder_message">Podcast listening arrives in a later update.</string>
-  <string name="now_playing_placeholder">Now Playing</string>
+
+  <!-- Now Playing transport -->
+  <string name="action_previous">Previous track</string>
+  <string name="action_next">Next track</string>
+  <string name="action_repeat">Repeat</string>
+  <string name="action_more">More</string>
+  <string name="action_cancel">Cancel</string>
+
+  <!-- Queue -->
+  <string name="queue_title">Queue</string>
+  <string name="queue_up_next">Up next: %1$d, %2$s left</string>
+  <string name="queue_clear">Clear queue</string>
+  <string name="queue_clear_confirm_title">Clear the queue?</string>
+  <string name="queue_reorder_handle">Reorder</string>
+
+  <!-- Lyrics -->
+  <string name="lyrics_toggle">Lyrics</string>
+  <string name="lyrics_none">No lyrics for this track</string>
+  <string name="lyrics_offset">Timing offset %1$d ms</string>
+
+  <!-- Sleep timer -->
+  <string name="sleep_timer_title">Sleep timer</string>
+  <string name="sleep_timer_armed">Sleep timer armed</string>
+  <string name="sleep_timer_minutes">%1$d min</string>
+  <string name="sleep_timer_end_of_track">End of track</string>
+  <string name="sleep_timer_end_of_track_armed">Stopping at the end of this track</string>
+  <string name="sleep_timer_remaining">%1$s remaining</string>
+  <string name="sleep_timer_fading">Fading out…</string>
+  <string name="sleep_timer_extend">Add %1$d minutes</string>
+  <string name="sleep_timer_cancel">Cancel timer</string>
+
+  <!-- Speed -->
+  <string name="speed_title">Playback speed</string>
+  <string name="speed_value">%1$.1fx</string>
+  <string name="speed_slower">Slower</string>
+  <string name="speed_faster">Faster</string>
+  <string name="speed_reset">Reset to normal</string>
 </resources>

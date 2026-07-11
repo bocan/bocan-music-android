@@ -1,22 +1,16 @@
 package io.cloudcauldron.bocan.app.navigation
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import io.cloudcauldron.bocan.app.AppGraph
-import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.library.AlbumDetailScreen
 import io.cloudcauldron.bocan.app.library.ArtistDetailScreen
 import io.cloudcauldron.bocan.app.library.GenreDetailScreen
@@ -25,6 +19,7 @@ import io.cloudcauldron.bocan.app.library.LibraryEmptyActions
 import io.cloudcauldron.bocan.app.library.LibraryScreen
 import io.cloudcauldron.bocan.app.library.PlaylistDetailScreen
 import io.cloudcauldron.bocan.app.pairing.PairingScreen
+import io.cloudcauldron.bocan.app.player.NowPlayingScreen
 import io.cloudcauldron.bocan.app.podcasts.PodcastsPlaceholder
 import io.cloudcauldron.bocan.app.search.SearchScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
@@ -89,7 +84,26 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
             GenreDetailScreen(vm.state, callbacks, navController::popBackStack)
         }
-        composable<Destination.NowPlaying> { NowPlayingPlaceholder() }
+        composable<Destination.NowPlaying> {
+            val nowPlaying = remember { appGraph.nowPlayingViewModel() }
+            val queue = remember { appGraph.queueViewModel() }
+            val lyrics = remember { appGraph.lyricsViewModel() }
+            DisposableEffect(Unit) {
+                onDispose {
+                    nowPlaying.dispose()
+                    queue.dispose()
+                    lyrics.dispose()
+                }
+            }
+            NowPlayingScreen(
+                nowPlaying = nowPlaying,
+                queue = queue,
+                lyrics = lyrics,
+                onBack = { navController.popBackStack() },
+                onOpenArtist = { navController.navigate(Destination.ArtistDetail(it)) },
+                onOpenAlbum = { navController.navigate(Destination.AlbumDetail(it)) }
+            )
+        }
         composable<Destination.Pairing> {
             val vm = remember { appGraph.pairingViewModel() }
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
@@ -100,13 +114,5 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
             SyncStatusScreen(vm)
         }
-    }
-}
-
-/** The Now Playing route is filled in by phase 06; the mini player taps here. */
-@Composable
-private fun NowPlayingPlaceholder() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(stringResource(R.string.now_playing_placeholder), style = MaterialTheme.typography.titleMedium)
     }
 }

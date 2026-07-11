@@ -6,7 +6,10 @@ import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.persistence.BocanDatabase
 import io.cloudcauldron.bocan.persistence.SyncApplier
 import io.cloudcauldron.bocan.persistence.entities.SyncServerEntity
+import io.cloudcauldron.bocan.persistence.model.LyricsKind
+import io.cloudcauldron.bocan.playback.lyrics.FetchResult
 import io.cloudcauldron.bocan.sync.CoroutineDispatchers
+import io.cloudcauldron.bocan.sync.SyncError
 import io.cloudcauldron.bocan.sync.SyncHost
 import io.cloudcauldron.bocan.sync.auto.SyncTriggers
 import io.cloudcauldron.bocan.sync.auto.SyncWorkScheduler
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.HttpUrl
 
@@ -44,6 +48,7 @@ import okhttp3.HttpUrl
  * and translates host callbacks into engine calls. It owns an application-lifetime
  * scope, so a sync survives the UI going away.
  */
+@Suppress("TooManyFunctions")
 class SyncCoordinator(
     private val context: Context,
     private val dispatchers: CoroutineDispatchers,
@@ -100,6 +105,29 @@ class SyncCoordinator(
                 .first { endpoint.value != null }
         }
         engine.syncNow()
+    }
+
+    /**
+     * Fetch a track's lyrics from the paired Mac (sync-protocol.md section 8), for the
+     * lyrics repository. Returns [FetchResult.Unreachable] when the Mac is not currently
+     * visible or the request fails, and [FetchResult.NotFound] on a 404. Never throws.
+     */
+    suspend fun fetchLyrics(trackId: Long): FetchResult = withContext(dispatchers.io) {
+        val base = endpoint.value ?: return@withContext FetchResult.Unreachable
+        val server = trustStore.current() ?: return@withContext FetchResult.Unreachable
+        val api = SyncApi(httpClientFactory().pairedClient(server.certFingerprint), dispatchers)
+        try {
+            val response = api.lyrics(base, trackId)
+            val kind = if (response.kind == LyricsKind.Synced.wire) LyricsKind.Synced else LyricsKind.Unsynced
+            FetchResult.Found(kind, response.text)
+        } catch (expected: SyncError.NotFound) {
+            FetchResult.NotFound
+        } catch (server: SyncError.Server) {
+            if (server.httpStatus == HTTP_NOT_FOUND) FetchResult.NotFound else FetchResult.Unreachable
+        } catch (other: SyncError) {
+            log.debug("lyrics.fetch.failed", mapOf("error" to other.toString()))
+            FetchResult.Unreachable
+        }
     }
 
     /** Total bytes under the media root, for the status screen's storage line. */
@@ -164,5 +192,6 @@ class SyncCoordinator(
         const val STALL_SECONDS = 30L
         const val DISCOVERY_WINDOW_MS = 20_000L
         const val STORAGE_WALK_MS = 5_000L
+        const val HTTP_NOT_FOUND = 404
     }
 }
