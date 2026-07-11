@@ -69,13 +69,13 @@ unit tests are landed as noted.
 - [ ] Android Auto (DHU): browse Continue Listening, Playlists, Albums, Artists, Podcasts, Songs; play from each; artwork shows; skip buttons match item type.
   - The browse tree (`MediaTree`) and its paging are built, wired into the session, and unit tested; `onAddMediaItems` resolves a browsed id to the real local file. DHU browse and playback are the remaining manual check.
 - [ ] Media notification: correct actions per item type, artwork, seekable progress on API 33+.
-  - `NotificationCustomizer.actionsFor` (music vs episode) is unit tested and the skip/speed/shuffle session commands are advertised and handled. The default Media3 notification renders play/pause/prev/next; rendering the episode skip buttons via a custom notification layout is the remaining device polish.
+  - `NotificationCustomizer.actionsFor` (music vs episode) is unit tested, the skip/speed/shuffle session commands are advertised and handled, and the session's custom layout shows the episode skip-back/skip-forward buttons (localized) on a podcast, cleared for music, updated on every item transition. On-device rendering is the manual check.
 - [ ] Widget: controls work, updates within a second of state changes while the process lives, and survives launcher restart.
   - The Glance widget, its `WidgetState` mapper (tested), the persisted store (cold-process render), and the `WidgetUpdater` are built; controls route through a `MediaController`. On-device rendering and control are the manual check.
 - [ ] Bluetooth headunit shows title/artist/album and position; headset buttons work including double-tap next.
   - `MediaMetadata` is populated by `MediaItemFactory` and the session handles media buttons; a headunit/headset pass verifies it.
 - [ ] App shortcuts all function.
-  - The four shortcuts (`shortcuts.xml`) are declared with `bocan://` deep links; routing each link to its action (resume/shuffle/continue/sync) and the `bocan://nowplaying` navigation are a follow-up.
+  - The four shortcuts (`shortcuts.xml`) are declared with `bocan://` deep links, and each is routed: resume, shuffle library, continue the latest in-progress episode, and sync now; the widget's `bocan://nowplaying` link navigates via the nav graph. A device pass confirms each launches its action.
 - [ ] No wakelock or foreground service lingers after pause + widget/Auto disconnect.
   - Governed by the phase 04 service lifecycle; verified on device with a battery/wakelock trace.
 
