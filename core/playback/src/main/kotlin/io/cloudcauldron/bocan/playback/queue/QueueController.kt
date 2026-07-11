@@ -49,9 +49,9 @@ class QueueController(
     private val scope: CoroutineScope,
     private val shuffleInputs: suspend (List<String>) -> List<ShuffleItem> = { ids -> ids.map(::ShuffleItem) },
     private val random: () -> Random = { Random.Default }
-) {
+) : PlaybackTransport {
     private val uiState = MutableStateFlow(PlayerUiState())
-    val state: StateFlow<PlayerUiState> = uiState.asStateFlow()
+    override val state: StateFlow<PlayerUiState> = uiState.asStateFlow()
 
     private var controller: MediaController? = null
     private var shuffleActive: Boolean = false
@@ -62,7 +62,7 @@ class QueueController(
      * stays null and a later call retries: a failed connection must never crash the UI.
      */
     @Suppress("TooGenericExceptionCaught")
-    suspend fun connect() = withContext(dispatchers.main) {
+    override suspend fun connect() = withContext(dispatchers.main) {
         if (controller != null) return@withContext
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         val connected = try {
@@ -82,12 +82,12 @@ class QueueController(
     }
 
     /** Release the controller. */
-    fun release() {
+    override fun release() {
         controller?.release()
         controller = null
     }
 
-    suspend fun playNow(trackIds: List<Long>, startIndex: Int = 0) = onController { controller ->
+    override suspend fun playNow(trackIds: List<Long>, startIndex: Int) = onController { controller ->
         val items = mediaItemSource.resolveTracks(trackIds)
         if (items.isEmpty()) return@onController
         controller.setMediaItems(items, startIndex.coerceIn(0, items.lastIndex), 0L)
@@ -95,45 +95,58 @@ class QueueController(
         controller.play()
     }
 
-    suspend fun playNext(trackIds: List<Long>) = onController { controller ->
+    override suspend fun playNext(trackIds: List<Long>) = onController { controller ->
         val items = mediaItemSource.resolveTracks(trackIds)
         val insertIndex = (controller.currentMediaItemIndex + 1).coerceIn(0, controller.mediaItemCount)
         controller.addMediaItems(insertIndex, items)
     }
 
-    suspend fun addToQueue(trackIds: List<Long>) = onController { controller ->
+    override suspend fun addToQueue(trackIds: List<Long>) = onController { controller ->
         controller.addMediaItems(mediaItemSource.resolveTracks(trackIds))
     }
 
-    suspend fun removeAt(index: Int) = onController { controller ->
+    override suspend fun removeAt(index: Int) = onController { controller ->
         if (index in 0 until controller.mediaItemCount) controller.removeMediaItem(index)
     }
 
-    suspend fun move(from: Int, to: Int) = onController { controller ->
+    override suspend fun move(from: Int, to: Int) = onController { controller ->
         val count = controller.mediaItemCount
         if (from in 0 until count && to in 0 until count) controller.moveMediaItem(from, to)
     }
 
-    suspend fun skipNext() = onController { it.seekToNextMediaItem() }
+    override suspend fun clear() = onController { it.clearMediaItems() }
 
-    suspend fun skipPrevious() = onController { it.seekToPreviousMediaItem() }
+    override suspend fun skipNext() = onController { it.seekToNextMediaItem() }
 
-    suspend fun seekTo(positionMs: Long) = onController { it.seekTo(positionMs) }
+    override suspend fun skipPrevious() = onController { it.seekToPreviousMediaItem() }
 
-    suspend fun togglePlayPause() = onController { controller ->
+    override suspend fun seekTo(positionMs: Long) = onController { it.seekTo(positionMs) }
+
+    override suspend fun togglePlayPause() = onController { controller ->
         if (controller.isPlaying) controller.pause() else controller.play()
     }
 
-    suspend fun setRepeat(mode: RepeatMode) = onController { it.repeatMode = mode.toPlayer() }
+    override suspend fun setRepeat(mode: RepeatMode) = onController { it.repeatMode = mode.toPlayer() }
 
-    suspend fun setSpeed(rate: Float) = onController { it.setPlaybackSpeed(rate) }
+    override suspend fun setSpeed(rate: Float) = onController { it.setPlaybackSpeed(rate) }
+
+    /** Pause without toggling; used by the sleep timer. */
+    override suspend fun pause() = onController { it.pause() }
+
+    /** The current output volume (0..1), or full volume when not connected. */
+    override suspend fun currentVolume(): Float = withContext(dispatchers.main) { controller?.volume ?: FULL_VOLUME }
+
+    /** Set the output volume (0..1); used by the sleep timer fade. Does not push UI state. */
+    override suspend fun setVolume(volume: Float) {
+        withContext(dispatchers.main) { controller?.volume = volume.coerceIn(0f, FULL_VOLUME) }
+    }
 
     /**
      * Turn shuffle on with [strategy] (reordering the upcoming items in place, the
      * current item kept where it is), or off with null (the queue keeps its shuffled
      * order; only the flag clears, matching the Mac).
      */
-    suspend fun setShuffle(strategy: ShuffleStrategy?) = onController { controller ->
+    override suspend fun setShuffle(strategy: ShuffleStrategy?) = onController { controller ->
         if (strategy == null) {
             shuffleActive = false
             pushState()
@@ -211,5 +224,6 @@ class QueueController(
 
     private companion object {
         const val POSITION_TICK_MS = 500L
+        const val FULL_VOLUME = 1f
     }
 }
