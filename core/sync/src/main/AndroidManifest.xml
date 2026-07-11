@@ -9,4 +9,21 @@
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
   <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 
+  <!-- A dataSync foreground service keeps a transfer alive while the user is away
+       from the app. The POST_NOTIFICATIONS runtime permission (Android 13+) is
+       requested by :app before a sync that would surface a progress notification. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <application>
+    <!-- Never started from BOOT_COMPLETED: dataSync services may not be launched
+         from boot on Android 15+. Triggers are discovery, user action, and
+         WorkManager only (sync-protocol.md section 9, phase 03). -->
+    <service
+      android:name=".service.SyncForegroundService"
+      android:exported="false"
+      android:foregroundServiceType="dataSync" />
+  </application>
+
 </manifest>

@@ -56,7 +56,30 @@ sealed class SyncError(message: String, cause: Throwable? = null) : Exception(me
         SyncError("unsupported protocol version $serverVersion (this client speaks $clientVersion)")
 
     /** A response was missing required fields or otherwise malformed. */
-    data class MalformedResponse(val detail: String) : SyncError("malformed response: $detail")
+    data class MalformedResponse(val detail: String, val reason: Throwable? = null) : SyncError("malformed response: $detail", reason)
+
+    // Sync engine (phase 03)
+
+    /**
+     * A file changed on the server since the manifest was fetched: the server
+     * answered a download with 412 (If-Match failed). The engine refetches the
+     * manifest and rebuilds the transfer plan (sync-protocol.md section 6).
+     */
+    data class ManifestStale(val url: String) : SyncError("file changed since manifest: $url")
+
+    /**
+     * A manifest relPath tried to escape the media root (contained "..", a leading
+     * slash, an empty segment, or a backslash). The sync fails safe: no bytes are
+     * written and the database is never touched.
+     */
+    data class UnsafePath(val relPath: String) : SyncError("unsafe relPath rejected: $relPath")
+
+    /** Not enough free space to hold the pending transfer without risking a torn sync. */
+    data class InsufficientStorage(val requiredBytes: Long, val availableBytes: Long) :
+        SyncError("insufficient storage: need $requiredBytes bytes, have $availableBytes")
+
+    /** External storage is unmounted, so getExternalFilesDir returned null. */
+    data object MediaUnavailable : SyncError("external media storage is unavailable")
 
     // Transport
 

@@ -5,9 +5,12 @@ complexity:
   # Room DAOs are declarative SQL surfaces; the design spec fixes their shape.
   TooManyFunctions:
     ignoreAnnotated: ['Dao']
-  # Test fixture builders mirror wide contract objects via named defaults.
+  # Test fixture builders mirror wide contract objects via named defaults, and
+  # stateless Composables take their state plus one lambda per event (the same
+  # Compose accommodation already applied to FunctionNaming and MagicNumber).
   LongParameterList:
     excludes: ['**/test/**']
+    ignoreAnnotated: ['Composable']
 
 style:
   MaxLineLength:

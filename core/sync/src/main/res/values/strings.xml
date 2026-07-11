@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the sync foreground service notification. UI strings for screens
+     live in :app; these belong to :core:sync because the service does. -->
+<resources>
+  <string name="sync_notification_channel_name">Library sync</string>
+  <string name="sync_notification_title">Syncing your library</string>
+  <string name="sync_notification_checking">Checking for changes…</string>
+  <string name="sync_notification_transferring">Downloading %1$d of %2$d</string>
+  <string name="sync_notification_applying">Finishing up…</string>
+  <string name="sync_notification_cancel">Cancel</string>
+</resources>
