@@ -20,6 +20,10 @@ import okhttp3.Response
 @Serializable
 data class PingResponse(val protocolVersion: Int, val serverId: String, val generation: Long)
 
+/** `GET /v1/lyrics/{trackId}` document (sync-protocol.md section 8). `kind` is synced or unsynced. */
+@Serializable
+data class LyricsResponse(val trackId: Long, val kind: String, val text: String)
+
 /**
  * Resolves the current network endpoint of the paired Mac. The host and port are
  * not persisted (identity is the pinned certificate, not the address); they come
@@ -49,6 +53,12 @@ class SyncApi(private val client: OkHttpClient, private val dispatchers: Corouti
     suspend fun manifest(base: HttpUrl): Manifest = withContext(dispatchers.io) {
         val url = base.resolvePath(PATH_MANIFEST)
         execute(url) { body -> ManifestCodec.decode(body) }
+    }
+
+    /** `GET /v1/lyrics/{trackId}`. Throws [SyncError.NotFound] or an http 404 [SyncError.Server] when absent. */
+    suspend fun lyrics(base: HttpUrl, trackId: Long): LyricsResponse = withContext(dispatchers.io) {
+        val url = base.resolvePath("$PATH_LYRICS/$trackId")
+        execute(url) { body -> decode<LyricsResponse>(body) }
     }
 
     private inline fun <T> execute(url: HttpUrl, parse: (String) -> T): T {
@@ -93,6 +103,7 @@ class SyncApi(private val client: OkHttpClient, private val dispatchers: Corouti
     private companion object {
         const val PATH_PING = "v1/ping"
         const val PATH_MANIFEST = "v1/manifest"
+        const val PATH_LYRICS = "v1/lyrics"
         const val MAX_SNIPPET = 200
         val json = Json {
             ignoreUnknownKeys = true
