@@ -1,0 +1,26 @@
+package io.cloudcauldron.bocan.playback
+
+import androidx.media3.common.util.UnstableApi
+import io.cloudcauldron.bocan.playback.queue.QueuePersistence
+import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
+
+/**
+ * The [PlaybackService] reaches its collaborators through the Application, which
+ * implements this interface (manual DI, the same pattern as SyncHost). :core:playback
+ * defines the seam; :app's AppGraph builds the components and the Application exposes
+ * them here.
+ */
+@UnstableApi
+interface PlaybackHost {
+    val playbackComponents: PlaybackComponents
+}
+
+/** The object graph the service needs to build its player, session, and side effects. */
+@UnstableApi
+class PlaybackComponents(
+    val playerFactory: PlayerFactory,
+    val mediaItemSource: MediaItemSource,
+    val statsRecorder: PlayStatsRecorder,
+    val queuePersistence: QueuePersistence,
+    val dispatchers: CoroutineDispatchers
+)

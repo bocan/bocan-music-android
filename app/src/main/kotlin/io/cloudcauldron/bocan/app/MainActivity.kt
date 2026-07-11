@@ -69,7 +69,8 @@ private fun BocanApp(appGraph: AppGraph) {
         }
         Route.Home -> HomeScreen(
             onOpenPairing = { route = Route.Pairing },
-            onOpenSync = { route = Route.SyncStatus }
+            onOpenSync = { route = Route.SyncStatus },
+            onPlayFirstAlbum = { appGraph.playFirstAlbum() }
         )
     }
 }
@@ -88,7 +89,7 @@ private fun RequestNotificationPermission() {
 }
 
 @Composable
-private fun HomeScreen(onOpenPairing: () -> Unit, onOpenSync: () -> Unit) {
+private fun HomeScreen(onOpenPairing: () -> Unit, onOpenSync: () -> Unit, onPlayFirstAlbum: () -> Unit) {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -104,6 +105,9 @@ private fun HomeScreen(onOpenPairing: () -> Unit, onOpenSync: () -> Unit) {
             }
             Button(onClick = onOpenSync) {
                 Text(stringResource(R.string.home_sync_action))
+            }
+            Button(onClick = onPlayFirstAlbum) {
+                Text(stringResource(R.string.home_play_first_album))
             }
         }
     }

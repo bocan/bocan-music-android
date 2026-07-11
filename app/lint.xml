@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Media3's entire player API is annotated @UnstableApi by design; Google ships it
+  that way and documents project-wide opt-in as the intended adoption path. :app
+  wires the Media3-backed playback graph, so opt in here rather than annotating
+  every wiring line. This is opt-in, not a silenced defect.
+-->
+<lint>
+  <issue id="UnsafeOptInUsageError">
+    <option name="opt-in" value="androidx.media3.common.util.UnstableApi" />
+  </issue>
+</lint>

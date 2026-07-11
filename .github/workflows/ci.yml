@@ -27,3 +27,9 @@ jobs:
 
       - name: Lint, test, coverage, and build
         run: ./gradlew check test koverVerify assembleDebug
+
+      # The FFmpeg audio decoder is the only native code in the app. Google Play
+      # requires 16 KB aligned .so files for apps targeting Android 15+, so fail the
+      # build if a dependency bump ever regresses alignment.
+      - name: Verify 16 KB native library alignment
+        run: scripts/check-so-alignment.sh

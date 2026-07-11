@@ -3,6 +3,7 @@
   <string name="app_name">Bòcan Music</string>
   <string name="wordmark">Bòcan</string>
   <string name="home_pair_action">Pair a Mac</string>
+  <string name="home_play_first_album">Play first album (debug)</string>
 
   <!-- Pairing -->
   <string name="pairing_title">Pair with a Mac</string>

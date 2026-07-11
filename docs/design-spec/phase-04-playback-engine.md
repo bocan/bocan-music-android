@@ -81,14 +81,20 @@ Media3 (exoplayer, session, common), FFmpeg decoder artifact per step 1, DataSto
 ## Acceptance criteria
 
 - [ ] A FLAC album plays gapless (manual listening check on device with a known gapless album, plus automated: consecutive items report no `DISCONTINUITY_REASON_AUTO_TRANSITION` gap anomalies).
+  - Needs on-device audio: the player, gapless MediaItem config, and Robolectric STATE_READY proof are in place, but the listening check and gap-anomaly harness require a device this environment does not have.
 - [ ] An APE or WavPack file (unplayable by the platform) plays via the FFmpeg renderer.
+  - Renderer is wired (EXTENSION_RENDERER_MODE_PREFER) and the FFmpeg .so is present and 16 KB aligned (verified), but playing an APE asset needs a device.
 - [ ] ReplayGain audibly and measurably levels two tracks with different gains; peak clamp prevents clipping.
+  - Gain math and PCM scaling with the peak clamp are unit-tested; the audible A/B levelling needs a device.
 - [ ] Lock screen and Bluetooth show correct title/artist/artwork; audio pauses on unplug (becoming-noisy).
+  - MediaMetadata mapping is tested and becoming-noisy is enabled, but the lock screen and Bluetooth surfaces need a device.
 - [ ] Speed 0.5x to 2.0x with pitch preserved.
-- [ ] Queue survives process death, restores paused.
-- [ ] Play/skip stats recorded per the rules table.
+  - setSpeed maps to the player and the Sonic processor preserves pitch, but confirming pitch by ear needs a device.
+- [x] Queue survives process death, restores paused.
+- [x] Play/skip stats recorded per the rules table.
 - [ ] CUE clip tracks play their windows gapless-adjacent.
-- [ ] Kover floor holds for `:core:playback` (pure-logic classes carry the coverage; service glue exempt via annotation-scoped exclusion, documented).
+  - The clip ClippingConfiguration and own-id mapping are unit-tested; gapless-adjacent playback needs a device.
+- [x] Kover floor holds for `:core:playback` (pure-logic classes carry the coverage; service glue exempt via annotation-scoped exclusion, documented).
 
 ## Gotchas
 
