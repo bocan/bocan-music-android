@@ -68,12 +68,13 @@ androidx.security-crypto (or its current replacement per the Context7 check). Te
 ## Acceptance criteria
 
 - [ ] A real Last.fm account receives a scrobble from a device test (manual, documented in the PR).
-- [ ] Offline plays queue and drain without duplicates when connectivity returns.
-- [ ] Dead-letter queue visible and actionable in settings.
-- [ ] Credentials stored encrypted only; log redaction proven.
-- [ ] Podcasts never scrobble.
-- [ ] All three providers implemented behind one interface with per-provider toggles.
-- [ ] Kover floor holds for `:core:scrobble`.
+  - The full signed submit path is covered by `LastFmProviderTests` against MockWebServer (including the `api_sig` and indexed batch params); confirming a real account receives it is an on-device check with live credentials.
+- [x] Offline plays queue and drain without duplicates when connectivity returns.
+- [x] Dead-letter queue visible and actionable in settings.
+- [x] Credentials stored encrypted only; log redaction proven.
+- [x] Podcasts never scrobble.
+- [x] All three providers implemented behind one interface with per-provider toggles.
+- [x] Kover floor holds for `:core:scrobble`.
 
 ## Gotchas
 
