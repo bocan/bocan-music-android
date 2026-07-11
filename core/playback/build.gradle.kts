@@ -49,7 +49,9 @@ kover {
                     "io.cloudcauldron.bocan.playback.queue.QueueController",
                     "io.cloudcauldron.bocan.playback.queue.QueueController$*",
                     "io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder",
-                    "io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder$*"
+                    "io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder$*",
+                    "io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder",
+                    "io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder$*"
                 )
             }
         }

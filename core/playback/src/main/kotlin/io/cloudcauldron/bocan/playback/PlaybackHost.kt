@@ -1,6 +1,7 @@
 package io.cloudcauldron.bocan.playback
 
 import androidx.media3.common.util.UnstableApi
+import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
 
@@ -21,6 +22,7 @@ class PlaybackComponents(
     val playerFactory: PlayerFactory,
     val mediaItemSource: MediaItemSource,
     val statsRecorder: PlayStatsRecorder,
+    val episodeRecorder: EpisodeProgressRecorder,
     val queuePersistence: QueuePersistence,
     val dispatchers: CoroutineDispatchers
 )

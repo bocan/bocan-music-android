@@ -4,6 +4,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.persistence.daos.LibraryDao
+import io.cloudcauldron.bocan.persistence.daos.PodcastDao
 import kotlinx.coroutines.withContext
 
 /**
@@ -16,34 +17,38 @@ interface MediaItemSource {
 
     /** Convenience for the common all-tracks path (the library plays tracks by id). */
     suspend fun resolveTracks(trackIds: List<Long>): List<MediaItem> = resolve(trackIds.map(MediaId::Track))
+
+    /** Convenience for the podcast path (plays episodes by string id). */
+    suspend fun resolveEpisodes(episodeIds: List<String>): List<MediaItem> = resolve(episodeIds.map(MediaId::Episode))
 }
 
 /**
- * The database-backed [MediaItemSource]. Tracks are looked up in one query and
- * mapped through [MediaItemFactory], preserving the caller's requested order. Episode
- * ids are not resolved here yet (podcasts arrive in phase 07); they are logged and
- * skipped rather than silently dropped.
+ * The database-backed [MediaItemSource]. Tracks and episodes are looked up in one query
+ * each and mapped through [MediaItemFactory], preserving the caller's requested order.
  */
 @UnstableApi
 class DatabaseMediaItemSource(
     private val libraryDao: LibraryDao,
+    private val podcastDao: PodcastDao,
     private val factory: MediaItemFactory,
     private val dispatchers: CoroutineDispatchers,
     private val log: AppLog
 ) : MediaItemSource {
     override suspend fun resolve(ids: List<MediaId>): List<MediaItem> = withContext(dispatchers.io) {
         val trackIds = ids.filterIsInstance<MediaId.Track>().map { it.trackId }
-        val episodeIds = ids.filterIsInstance<MediaId.Episode>()
-        if (episodeIds.isNotEmpty()) {
-            log.debug("playback.resolve.episodesSkipped", mapOf("count" to episodeIds.size))
-        }
-        val byId = libraryDao.tracksByIds(trackIds).associateBy { it.id }
+        val episodeIds = ids.filterIsInstance<MediaId.Episode>().map { it.episodeId }
+        val tracksById = libraryDao.tracksByIds(trackIds).associateBy { it.id }
+        val episodesById = if (episodeIds.isEmpty()) emptyMap() else podcastDao.episodesByIds(episodeIds).associateBy { it.id }
         // Preserve the requested order, dropping ids that no longer exist on disk.
-        ids.mapNotNull { id ->
+        val resolved = ids.mapNotNull { id ->
             when (id) {
-                is MediaId.Track -> byId[id.trackId]?.let(factory::forTrack)
-                is MediaId.Episode -> null
+                is MediaId.Track -> tracksById[id.trackId]?.let(factory::forTrack)
+                is MediaId.Episode -> episodesById[id.episodeId]?.let(factory::forEpisode)
             }
         }
+        if (resolved.size < ids.size) {
+            log.debug("playback.resolve.dropped", mapOf("requested" to ids.size, "resolved" to resolved.size))
+        }
+        resolved
     }
 }

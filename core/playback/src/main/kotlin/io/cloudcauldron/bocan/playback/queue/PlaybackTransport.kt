@@ -17,6 +17,8 @@ interface PlaybackTransport {
 
     suspend fun playNow(trackIds: List<Long>, startIndex: Int)
 
+    suspend fun playEpisodes(episodeIds: List<String>, startIndex: Int)
+
     suspend fun playNext(trackIds: List<Long>)
 
     suspend fun addToQueue(trackIds: List<Long>)

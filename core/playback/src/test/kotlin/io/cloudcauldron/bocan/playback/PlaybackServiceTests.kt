@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.cloudcauldron.bocan.persistence.daos.PlayStatsDao
 import io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity
+import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
 import java.time.Instant
@@ -41,6 +42,7 @@ class TestPlaybackApp :
                 override suspend fun resolve(ids: List<MediaId>): List<MediaItem> = emptyList()
             },
             statsRecorder = PlayStatsRecorder(FakePlayStatsDao(), dispatchers, NoopLog),
+            episodeRecorder = EpisodeProgressRecorder(FakeEpisodeStateDao(), FakePodcastDao(), dispatchers, NoopLog),
             queuePersistence = QueuePersistence(cacheDir, dispatchers, NoopLog),
             dispatchers = dispatchers
         )

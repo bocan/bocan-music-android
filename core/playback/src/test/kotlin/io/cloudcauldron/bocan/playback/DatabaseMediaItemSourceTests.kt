@@ -43,6 +43,7 @@ class DatabaseMediaItemSourceTests {
         val dispatcher = UnconfinedTestDispatcher()
         return DatabaseMediaItemSource(
             libraryDao = FakeLibraryDao(tracks),
+            podcastDao = FakePodcastDao(),
             factory = MediaItemFactory(FakeMediaFileResolver()),
             dispatchers = CoroutineDispatchers(io = dispatcher, default = dispatcher, main = dispatcher),
             log = NoopLog

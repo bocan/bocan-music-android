@@ -57,6 +57,7 @@ class PlaybackService : MediaLibraryService() {
             .build()
 
         graph.statsRecorder.attach(player, scope)
+        graph.episodeRecorder.attach(player, scope)
         restoreQueuePaused()
         observeForPersistence()
     }
@@ -85,7 +86,14 @@ class PlaybackService : MediaLibraryService() {
             val items = components.mediaItemSource.resolve(snapshot.mediaIds.mapNotNull(MediaId::parse))
             if (items.isEmpty()) return@launch
             val startIndex = snapshot.index.coerceIn(0, items.lastIndex)
-            val startPositionMs = if (ResumePolicy.shouldResume(snapshot.currentDurationMs)) snapshot.positionMs else 0L
+            // Episodes own their own resume via EpisodeProgressRecorder; the music heuristic
+            // must not also seek them, or the two resume paths fight.
+            val currentIsEpisode = snapshot.mediaIds.getOrNull(startIndex)?.let(MediaId::parse) is MediaId.Episode
+            val startPositionMs = if (!currentIsEpisode && ResumePolicy.shouldResume(snapshot.currentDurationMs)) {
+                snapshot.positionMs
+            } else {
+                0L
+            }
             player.setMediaItems(items, startIndex, startPositionMs)
             player.repeatMode = snapshot.repeatMode.toPlayer()
             player.shuffleModeEnabled = snapshot.shuffleActive

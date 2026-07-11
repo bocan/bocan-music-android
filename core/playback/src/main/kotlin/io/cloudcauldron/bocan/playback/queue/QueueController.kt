@@ -95,6 +95,14 @@ class QueueController(
         controller.play()
     }
 
+    override suspend fun playEpisodes(episodeIds: List<String>, startIndex: Int) = onController { controller ->
+        val items = mediaItemSource.resolveEpisodes(episodeIds)
+        if (items.isEmpty()) return@onController
+        controller.setMediaItems(items, startIndex.coerceIn(0, items.lastIndex), 0L)
+        controller.prepare()
+        controller.play()
+    }
+
     override suspend fun playNext(trackIds: List<Long>) = onController { controller ->
         val items = mediaItemSource.resolveTracks(trackIds)
         val insertIndex = (controller.currentMediaItemIndex + 1).coerceIn(0, controller.mediaItemCount)

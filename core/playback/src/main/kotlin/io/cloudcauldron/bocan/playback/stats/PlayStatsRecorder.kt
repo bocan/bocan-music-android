@@ -7,6 +7,7 @@ import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.persistence.daos.PlayStatsDao
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.MediaId
+import io.cloudcauldron.bocan.playback.podcast.isPodcastMedia
 import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -108,7 +109,7 @@ class PlayStatsRecorder(
                 mediaId = mediaId,
                 trackId = (parsed as? MediaId.Track)?.trackId,
                 playedAt = at,
-                isPodcast = parsed is MediaId.Episode
+                isPodcast = isPodcastMedia(mediaId)
             )
         )
         log.debug("playback.play.recorded", mapOf("mediaId" to mediaId, "sec" to playedSec))
