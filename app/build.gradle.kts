@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kover)
+}
+
+// Last.fm API key and shared secret come from local.properties (never committed). A
+// missing value leaves them empty, which hides the Last.fm provider rather than crashing.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use(::load)
 }
 
 android {
@@ -21,6 +30,9 @@ android {
         }
         versionCode = 1
         versionName = "0.1.0"
+
+        buildConfigField("String", "LASTFM_API_KEY", "\"${localProperties.getProperty("BOCAN_LASTFM_API_KEY", "")}\"")
+        buildConfigField("String", "LASTFM_SHARED_SECRET", "\"${localProperties.getProperty("BOCAN_LASTFM_SHARED_SECRET", "")}\"")
     }
 
     buildTypes {

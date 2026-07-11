@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.Podcasts
+import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +43,7 @@ fun SettingsScreen(
     onOpenPairing: () -> Unit,
     onOpenSync: () -> Unit,
     onOpenEqualizer: () -> Unit,
+    onOpenScrobbling: () -> Unit,
     podcastSettings: PodcastSettingsViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -69,6 +71,11 @@ fun SettingsScreen(
                 headlineContent = { Text(stringResource(R.string.eq_open)) },
                 leadingContent = { Icon(Icons.Rounded.Equalizer, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenEqualizer)
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.scrobble_open)) },
+                leadingContent = { Icon(Icons.Rounded.Radio, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenScrobbling)
             )
             PodcastSettingsSection(podcastSettings)
         }

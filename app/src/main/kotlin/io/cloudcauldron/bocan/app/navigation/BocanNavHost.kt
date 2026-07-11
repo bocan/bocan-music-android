@@ -24,6 +24,7 @@ import io.cloudcauldron.bocan.app.player.NowPlayingScreen
 import io.cloudcauldron.bocan.app.podcasts.PodcastsHomeScreen
 import io.cloudcauldron.bocan.app.podcasts.ShowDetailScreen
 import io.cloudcauldron.bocan.app.search.SearchScreen
+import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
 import io.cloudcauldron.bocan.app.sync.SyncStatusScreen
 
@@ -75,6 +76,7 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
                 onOpenPairing = { navController.navigate(Destination.Pairing) },
                 onOpenSync = { navController.navigate(Destination.SyncStatus) },
                 onOpenEqualizer = { navController.navigate(Destination.Equalizer) },
+                onOpenScrobbling = { navController.navigate(Destination.ScrobbleSettings) },
                 podcastSettings = vm
             )
         }
@@ -129,6 +131,11 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             val vm = remember { appGraph.equalizerViewModel() }
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
             EqualizerScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+        composable<Destination.ScrobbleSettings> {
+            val vm = remember { appGraph.scrobbleSettingsViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            ScrobbleSettingsScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
         composable<Destination.Pairing> {
             val vm = remember { appGraph.pairingViewModel() }

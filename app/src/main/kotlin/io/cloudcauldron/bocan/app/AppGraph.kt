@@ -1,12 +1,15 @@
 package io.cloudcauldron.bocan.app
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
 import io.cloudcauldron.bocan.app.data.EqPreferences
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
 import io.cloudcauldron.bocan.app.data.PodcastPreferences
+import io.cloudcauldron.bocan.app.data.ScrobbleSettings
 import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
@@ -23,6 +26,7 @@ import io.cloudcauldron.bocan.app.podcasts.PodcastsViewModel
 import io.cloudcauldron.bocan.app.podcasts.ShowDetailViewModel
 import io.cloudcauldron.bocan.app.search.SearchViewModel
 import io.cloudcauldron.bocan.app.settings.PodcastSettingsViewModel
+import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsViewModel
 import io.cloudcauldron.bocan.app.sync.SyncCoordinator
 import io.cloudcauldron.bocan.app.sync.SyncSettings
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
@@ -32,6 +36,7 @@ import io.cloudcauldron.bocan.persistence.BocanDatabase
 import io.cloudcauldron.bocan.persistence.SyncApplier
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers as PlaybackDispatchers
 import io.cloudcauldron.bocan.playback.DatabaseMediaItemSource
+import io.cloudcauldron.bocan.playback.MediaId
 import io.cloudcauldron.bocan.playback.MediaItemFactory
 import io.cloudcauldron.bocan.playback.PlaybackComponents
 import io.cloudcauldron.bocan.playback.PlayerFactory
@@ -45,6 +50,17 @@ import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueueController
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
+import io.cloudcauldron.bocan.scrobble.CoroutineDispatchers as ScrobbleDispatchers
+import io.cloudcauldron.bocan.scrobble.ScrobbleService
+import io.cloudcauldron.bocan.scrobble.ScrobbleTrack
+import io.cloudcauldron.bocan.scrobble.auth.KeystoreTokenStore
+import io.cloudcauldron.bocan.scrobble.net.ScrobbleHttp
+import io.cloudcauldron.bocan.scrobble.providers.LastFmConfig
+import io.cloudcauldron.bocan.scrobble.providers.LastFmProvider
+import io.cloudcauldron.bocan.scrobble.providers.ListenBrainzProvider
+import io.cloudcauldron.bocan.scrobble.providers.RockskyProvider
+import io.cloudcauldron.bocan.scrobble.providers.ScrobbleProvider
+import io.cloudcauldron.bocan.scrobble.queue.ScrobbleQueue
 import io.cloudcauldron.bocan.sync.CoroutineDispatchers
 import io.cloudcauldron.bocan.sync.discovery.MacDiscovery
 import io.cloudcauldron.bocan.sync.engine.ArtworkStore
@@ -64,6 +80,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 /**
  * The single manual dependency-injection wiring point. Later phases extend
@@ -235,6 +252,106 @@ class AppGraph(val application: Application) {
 
     fun lyricsViewModel(): LyricsViewModel = LyricsViewModel(queueController, database.libraryDao(), lyricsRepository, playbackDispatchers)
 
+    // Scrobble graph (phase 09). Providers behind one interface, an offline queue, and the
+    // service that bridges the phase 04 stats flow. Credentials live in the Keystore-backed
+    // token store, never the database.
+
+    private val scrobbleDispatchers = ScrobbleDispatchers()
+
+    val scrobbleSettings: ScrobbleSettings by lazy { ScrobbleSettings(application) }
+
+    private val tokenStore by lazy { KeystoreTokenStore(application, scrobbleDispatchers) }
+
+    private val scrobbleHttp by lazy { ScrobbleHttp(OkHttpClient(), scrobbleDispatchers) }
+
+    private val lastFmConfig = LastFmConfig(BuildConfig.LASTFM_API_KEY, BuildConfig.LASTFM_SHARED_SECRET)
+
+    /** Null when the build carries no Last.fm key, which hides the provider rather than crashing. */
+    private val lastFmProvider: LastFmProvider? by lazy {
+        if (lastFmConfig.isConfigured) LastFmProvider(lastFmConfig, tokenStore, scrobbleHttp) else null
+    }
+
+    private val scrobbleProviders: List<ScrobbleProvider> by lazy {
+        listOfNotNull(lastFmProvider, ListenBrainzProvider(tokenStore, scrobbleHttp), RockskyProvider(tokenStore, scrobbleHttp))
+    }
+
+    private val scrobbleQueue by lazy { ScrobbleQueue(database.scrobbleDao(), scrobbleDispatchers) }
+
+    private val scrobbleService: ScrobbleService by lazy {
+        ScrobbleService(
+            providers = scrobbleProviders,
+            queue = scrobbleQueue,
+            metadata = ::resolveScrobbleTrack,
+            enabledProviders = ::enabledScrobbleProviders,
+            scope = playbackScope,
+            dispatchers = scrobbleDispatchers
+        )
+    }
+
+    fun scrobbleSettingsViewModel(): ScrobbleSettingsViewModel = ScrobbleSettingsViewModel(
+        providers = scrobbleProviders,
+        settings = scrobbleSettings,
+        queue = scrobbleQueue,
+        tokens = tokenStore,
+        lastFm = lastFmProvider,
+        dispatchers = scrobbleDispatchers
+    )
+
+    /**
+     * Bridge the phase 04 stats flow into the scrobbler (:core:scrobble cannot import
+     * :core:playback), send now-playing when a track starts, and drain the queue on launch.
+     * Called once from the Application.
+     */
+    fun startScrobbling() {
+        playbackScope.launch {
+            playStatsRecorder.scrobbleEvents.collect { event ->
+                val trackId = event.trackId ?: return@collect
+                scrobbleService.onPlayEligible(trackId, event.playedAt, event.isPodcast)
+            }
+        }
+        playbackScope.launch {
+            var lastSignalled: String? = null
+            queueController.state.collect { state ->
+                val current = state.current?.mediaId
+                if (state.isPlaying && current != null && current != lastSignalled) {
+                    lastSignalled = current
+                    (MediaId.parse(current) as? MediaId.Track)?.let { scrobbleService.onNowPlaying(it.trackId, isPodcast = false) }
+                }
+            }
+        }
+        registerConnectivityDrain()
+        scrobbleService.drain()
+    }
+
+    /** Drain the queue whenever a network becomes available (ACCESS_NETWORK_STATE is merged from :core:sync). */
+    private fun registerConnectivityDrain() {
+        val manager = application.getSystemService(ConnectivityManager::class.java) ?: return
+        manager.registerDefaultNetworkCallback(
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    scrobbleService.drain()
+                }
+            }
+        )
+    }
+
+    private suspend fun resolveScrobbleTrack(trackId: Long): ScrobbleTrack? =
+        database.libraryDao().tracksByIds(listOf(trackId)).firstOrNull()?.let { track ->
+            ScrobbleTrack(
+                title = track.title,
+                artist = track.artistName,
+                album = track.albumName,
+                albumArtist = track.albumArtistName,
+                durationSec = (track.durationMs / MS_PER_SECOND).toInt()
+            )
+        }
+
+    private suspend fun enabledScrobbleProviders(): Set<String> {
+        val toggles = scrobbleSettings.current()
+        if (!toggles.masterEnabled) return emptySet()
+        return toggles.enabledProviders intersect scrobbleProviders.map { it.id }.toSet()
+    }
+
     // Podcasts graph (phase 07).
 
     val podcastPreferences: PodcastPreferences by lazy { PodcastPreferences(application) }
@@ -311,5 +428,6 @@ class AppGraph(val application: Application) {
     private companion object {
         const val DEFAULT_DEVICE_NAME = "Android phone"
         const val PLAYBACK_DIR = "playback"
+        const val MS_PER_SECOND = 1000L
     }
 }

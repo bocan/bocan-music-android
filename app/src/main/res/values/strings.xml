@@ -229,4 +229,27 @@
   <string name="eq_gain_spoken_negative">minus %1$s decibels</string>
   <string name="eq_gain_spoken_zero">0 decibels</string>
   <string name="eq_band_a11y">%1$s, %2$s</string>
+
+  <!-- Scrobbling -->
+  <string name="scrobble_open">Scrobbling</string>
+  <string name="scrobble_title">Scrobbling</string>
+  <string name="scrobble_master">Scrobble my plays</string>
+  <string name="scrobble_master_summary">Send finished plays to the services you connect below. Podcasts are never scrobbled.</string>
+  <string name="scrobble_connect">Connect</string>
+  <string name="scrobble_disconnect">Disconnect</string>
+  <string name="scrobble_connected">Connected as %1$s</string>
+  <string name="scrobble_connected_no_name">Connected</string>
+  <string name="scrobble_not_connected">Not connected</string>
+  <string name="scrobble_enable">Scrobble here</string>
+  <string name="scrobble_queue_depth">%1$d waiting to send</string>
+  <string name="scrobble_queue_empty">Up to date</string>
+  <string name="scrobble_dead_letter_title">Failed submissions</string>
+  <string name="scrobble_retry">Retry</string>
+  <string name="scrobble_discard">Discard</string>
+  <string name="scrobble_token_title">Connect %1$s</string>
+  <string name="scrobble_token_hint">Paste your token</string>
+  <string name="scrobble_token_help">Copy a token from your account page and paste it here.</string>
+  <string name="scrobble_lastfm_finish">Finish connecting</string>
+  <string name="scrobble_save">Save</string>
+  <string name="scrobble_cancel">Cancel</string>
 </resources>

@@ -48,6 +48,9 @@ sealed interface Destination {
     @Serializable
     data object Equalizer : Destination
 
+    @Serializable
+    data object ScrobbleSettings : Destination
+
     companion object {
         const val DEEP_LINK_ALBUM = "bocan://album"
         const val DEEP_LINK_ARTIST = "bocan://artist"
