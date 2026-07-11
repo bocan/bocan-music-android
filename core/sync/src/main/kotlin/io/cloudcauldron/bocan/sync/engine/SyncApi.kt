@@ -61,6 +61,12 @@ class SyncApi(private val client: OkHttpClient, private val dispatchers: Corouti
         execute(url) { body -> decode<LyricsResponse>(body) }
     }
 
+    /** `GET /v1/chapters/{episodeId}`. Returns the raw Podcasting 2.0 JSON body for the caller to parse. */
+    suspend fun chaptersJson(base: HttpUrl, episodeId: String): String = withContext(dispatchers.io) {
+        val url = base.resolvePath("$PATH_CHAPTERS/$episodeId")
+        execute(url) { body -> body }
+    }
+
     private inline fun <T> execute(url: HttpUrl, parse: (String) -> T): T {
         call(url).use { response ->
             if (!response.isSuccessful) throw errorFrom(response)
@@ -104,6 +110,7 @@ class SyncApi(private val client: OkHttpClient, private val dispatchers: Corouti
         const val PATH_PING = "v1/ping"
         const val PATH_MANIFEST = "v1/manifest"
         const val PATH_LYRICS = "v1/lyrics"
+        const val PATH_CHAPTERS = "v1/chapters"
         const val MAX_SNIPPET = 200
         val json = Json {
             ignoreUnknownKeys = true
