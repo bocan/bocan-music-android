@@ -71,6 +71,10 @@ interface LibraryDao {
     @Query("SELECT * FROM tracks WHERE id IN (:ids)")
     suspend fun tracksByIds(ids: List<Long>): List<TrackEntity>
 
+    /** Ids of every downloaded track, for the Shuffle library shortcut. */
+    @Query("SELECT id FROM tracks WHERE downloadState = 'downloaded' ORDER BY id")
+    suspend fun downloadedTrackIds(): List<Long>
+
     @Query(
         """
         SELECT
