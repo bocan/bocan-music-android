@@ -14,6 +14,7 @@ import io.cloudcauldron.bocan.playback.MediaItemFactory
 import io.cloudcauldron.bocan.playback.MediaItemSource
 import io.cloudcauldron.bocan.playback.PlaybackService
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -55,11 +56,21 @@ class QueueController(
     private var controller: MediaController? = null
     private var shuffleActive: Boolean = false
 
-    /** Connect to the running service's session. Idempotent. */
+    /**
+     * Connect to the running service's session. Idempotent. If the session is not
+     * reachable (nothing is playing yet, or the service was rejected), the controller
+     * stays null and a later call retries: a failed connection must never crash the UI.
+     */
+    @Suppress("TooGenericExceptionCaught")
     suspend fun connect() = withContext(dispatchers.main) {
         if (controller != null) return@withContext
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-        val connected = MediaController.Builder(context, token).buildAsync().await()
+        val connected = try {
+            MediaController.Builder(context, token).buildAsync().await()
+        } catch (expected: Exception) {
+            // Expected when no session exists yet; leave the controller null to retry later.
+            return@withContext
+        }
         connected.addListener(
             object : Player.Listener {
                 override fun onEvents(player: Player, events: Player.Events) = pushState()
@@ -186,7 +197,15 @@ class QueueController(
     }
 
     private suspend fun <T> ListenableFuture<T>.await(): T = suspendCancellableCoroutine { cont ->
-        addListener({ cont.resume(get()) }, MoreExecutors.directExecutor())
+        addListener({
+            try {
+                cont.resume(get())
+            } catch (failure: java.util.concurrent.ExecutionException) {
+                cont.resumeWithException(failure.cause ?: failure)
+            } catch (interrupted: InterruptedException) {
+                cont.resumeWithException(interrupted)
+            }
+        }, MoreExecutors.directExecutor())
         cont.invokeOnCancellation { cancel(false) }
     }
 
