@@ -12,6 +12,8 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
+import io.cloudcauldron.bocan.playback.audio.EffectsChain
+import io.cloudcauldron.bocan.playback.audio.ReplayGainValues
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.queue.QueueSnapshot
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
@@ -43,6 +45,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var player: ExoPlayer
     private lateinit var session: MediaLibrarySession
     private lateinit var persistence: QueuePersistence
+    private lateinit var effectsChain: EffectsChain
 
     private val components: PlaybackComponents get() = (application as PlaybackHost).playbackComponents
 
@@ -52,14 +55,46 @@ class PlaybackService : MediaLibraryService() {
         scope = CoroutineScope(SupervisorJob() + graph.dispatchers.main)
         player = graph.playerFactory.create()
         persistence = graph.queuePersistence
+        effectsChain = graph.effectsChain
 
         session = MediaLibrarySession.Builder(this, player, LibraryCallback())
             .build()
 
         graph.statsRecorder.attach(player, scope)
         graph.episodeRecorder.attach(player, scope)
+        bindEffects()
         restoreQueuePaused()
         observeForPersistence()
+    }
+
+    /**
+     * Bind the effects chain to the running player: skip silence is a player property,
+     * the per-item ReplayGain factor comes from the current item's tag, and the fade
+     * envelope tracks position. The chain applies the rest (EQ, bass, limiter) through
+     * its processors, driven by the settings observer in the app graph.
+     */
+    private fun bindEffects() {
+        effectsChain.bind(
+            EffectsChain.Binding(
+                skipSilence = { enabled -> player.skipSilenceEnabled = enabled },
+                currentItemValues = { player.currentMediaItem?.localConfiguration?.tag as? ReplayGainValues },
+                scope = scope
+            )
+        )
+        player.addListener(
+            object : Player.Listener {
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    val values = mediaItem?.localConfiguration?.tag as? ReplayGainValues ?: ReplayGainValues.NONE
+                    effectsChain.onItemTransition(values)
+                }
+            }
+        )
+        scope.launch {
+            while (currentCoroutineContext().isActive) {
+                delay(FADE_TICK_MS)
+                if (player.isPlaying) effectsChain.crossfader.applyPositionFade(player.currentPosition, player.duration)
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession = session
@@ -166,5 +201,6 @@ class PlaybackService : MediaLibraryService() {
     private companion object {
         const val ROOT_ID = "root"
         const val PERSIST_INTERVAL_MS = 5_000L
+        const val FADE_TICK_MS = 200L
     }
 }

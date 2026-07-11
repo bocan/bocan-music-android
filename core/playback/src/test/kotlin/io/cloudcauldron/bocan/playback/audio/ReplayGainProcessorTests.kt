@@ -43,6 +43,24 @@ class ReplayGainProcessorTests {
     }
 
     @Test
+    fun `the fade factor multiplies the replay gain factor`() {
+        val processor = configured(C.ENCODING_PCM_16BIT)
+        processor.setFactor(1.0)
+        processor.setFadeFactor(0.5f)
+        processor.queueInput(input16(1000, -2000, 30000))
+        assertEquals(listOf<Short>(500, -1000, 15000), readShorts(processor.output))
+    }
+
+    @Test
+    fun `a full fade silences the output`() {
+        val processor = configured(C.ENCODING_PCM_16BIT)
+        processor.setFactor(1.0)
+        processor.setFadeFactor(0f)
+        processor.queueInput(input16(1000, -2000, 30000))
+        assertEquals(listOf<Short>(0, 0, 0), readShorts(processor.output))
+    }
+
+    @Test
     fun `unity passes samples through unchanged`() {
         val processor = configured(C.ENCODING_PCM_16BIT)
         processor.setFactor(ReplayGainMath.UNITY)

@@ -13,12 +13,18 @@ import java.nio.ByteOrder
  * ReplayGain factor. It is inserted into the [androidx.media3.exoplayer.audio.DefaultAudioSink]
  * chain by the RenderersFactory.
  *
- * The factor is computed off-thread by [ReplayGainMath] whenever the current item
- * changes and published to [currentFactor], a `@Volatile` field the audio thread
- * reads. The audio thread never allocates, locks, or computes gain here: it reads
- * one volatile double and scales. A factor of exactly [ReplayGainMath.UNITY] with
- * [ReplayGainMode.Off] semantics still copies samples unchanged, so the chain stays
- * uniform, but the multiply is skipped as a fast path.
+ * This is the chain's single gain stage. Two contributions multiply here:
+ *
+ *  - the ReplayGain [factor], computed off-thread by [ReplayGainMath] whenever the
+ *    current item changes; and
+ *  - a [fadeFactor] (0..1) the [Crossfader] ramps for "fade between tracks" and the
+ *    short fade before a manual skip.
+ *
+ * Both live in the gain stage on purpose (phase 08 gotcha): the sleep timer owns
+ * `player.volume`, while ReplayGain and fades compose here instead of fighting it. The
+ * audio thread never allocates, locks, or computes gain: it reads two volatile doubles,
+ * multiplies once, and scales. An effective gain of exactly [ReplayGainMath.UNITY]
+ * copies samples unchanged as a fast path, so the chain stays byte-faithful when idle.
  *
  * Supports 16-bit and float PCM, the two encodings ExoPlayer feeds an audio
  * processor; any other encoding is rejected so the sink can convert upstream.
@@ -28,12 +34,20 @@ class ReplayGainProcessor : BaseAudioProcessor() {
     @Volatile
     private var factor: Double = ReplayGainMath.UNITY
 
-    /** Update the gain applied from the next processed buffer onward. */
+    @Volatile
+    private var fadeFactor: Double = ReplayGainMath.UNITY
+
+    /** Update the ReplayGain factor applied from the next processed buffer onward. */
     fun setFactor(newFactor: Double) {
         factor = newFactor
     }
 
-    /** The gain currently applied, for tests and diagnostics. */
+    /** Update the fade multiplier (0..1) applied from the next processed buffer onward. */
+    fun setFadeFactor(newFadeFactor: Float) {
+        fadeFactor = newFadeFactor.toDouble().coerceIn(0.0, 1.0)
+    }
+
+    /** The ReplayGain factor currently applied, for tests and diagnostics. */
     val currentFactor: Double get() = factor
 
     override fun onConfigure(inputAudioFormat: AudioFormat): AudioFormat {
@@ -51,7 +65,7 @@ class ReplayGainProcessor : BaseAudioProcessor() {
 
         val output = replaceOutputBuffer(size).order(ByteOrder.nativeOrder())
         val input = inputBuffer.order(ByteOrder.nativeOrder())
-        val gain = factor
+        val gain = factor * fadeFactor
 
         if (inputAudioFormat.encoding == C.ENCODING_PCM_16BIT) {
             var i = position

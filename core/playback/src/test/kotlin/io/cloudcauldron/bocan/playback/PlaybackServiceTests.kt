@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.cloudcauldron.bocan.persistence.daos.PlayStatsDao
 import io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity
+import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
@@ -37,7 +38,7 @@ class TestPlaybackApp :
     override val playbackComponents: PlaybackComponents by lazy {
         val dispatchers = CoroutineDispatchers()
         PlaybackComponents(
-            playerFactory = PlayerFactory(this),
+            playerFactory = PlayerFactory(this, EffectsChain(dispatchers)),
             mediaItemSource = object : MediaItemSource {
                 override suspend fun resolve(ids: List<MediaId>): List<MediaItem> = emptyList()
             },
@@ -63,7 +64,7 @@ class PlaybackServiceTests {
     @Test
     fun `the player prepared with a silent source reaches ready`() {
         val context = ApplicationProvider.getApplicationContext<TestPlaybackApp>()
-        val player = PlayerFactory(context).create()
+        val player = PlayerFactory(context, EffectsChain(CoroutineDispatchers())).create()
         try {
             player.setMediaSource(SilenceMediaSource(SILENCE_DURATION_US))
             player.prepare()

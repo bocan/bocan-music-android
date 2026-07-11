@@ -25,4 +25,7 @@ class PlaybackComponents(
     val episodeRecorder: EpisodeProgressRecorder,
     val queuePersistence: QueuePersistence,
     val dispatchers: CoroutineDispatchers
-)
+) {
+    /** The effects chain the service binds to its player, reached through the [playerFactory]. */
+    val effectsChain get() = playerFactory.effectsChain
+}

@@ -8,7 +8,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
-import io.cloudcauldron.bocan.playback.audio.ReplayGainProcessor
+import io.cloudcauldron.bocan.playback.audio.EffectsChain
 
 /**
  * Constructs the single [ExoPlayer] the service owns. The construction is the whole
@@ -17,23 +17,24 @@ import io.cloudcauldron.bocan.playback.audio.ReplayGainProcessor
  *  - [DefaultRenderersFactory] in EXTENSION_RENDERER_MODE_PREFER, so the FFmpeg
  *    audio renderer (loaded reflectively when the extension is on the classpath)
  *    is preferred for formats the platform decoders cannot handle (APE, WavPack).
- *  - A [DefaultAudioSink] with the [ReplayGainProcessor] inserted ahead of the
- *    default silence-skipping and Sonic (speed and pitch) processors, so gain is
- *    applied first and speed changes still preserve pitch.
+ *  - A [DefaultAudioSink] with the [EffectsChain] processors inserted ahead of the
+ *    default silence-skipping and Sonic (speed and pitch) processors, in the fixed
+ *    order EQ, bass boost, ReplayGain gain, limiter guard, so gain is applied inside
+ *    the shaped signal and speed changes still preserve pitch.
  *  - Music audio attributes with audio focus handled by the player, becoming-noisy
  *    handling on (pause when headphones unplug), and a local wake lock while playing.
  *
- * The [replayGainProcessor] and [ExoPlayer.getAudioSessionId] are the seams phase 08
- * attaches its EQ and effects to.
+ * The [effectsChain] and [ExoPlayer.getAudioSessionId] are the seams the service binds
+ * the EQ, effects, and per-item ReplayGain factor to.
  */
 @UnstableApi
-class PlayerFactory(private val context: Context, val replayGainProcessor: ReplayGainProcessor = ReplayGainProcessor()) {
+class PlayerFactory(private val context: Context, val effectsChain: EffectsChain) {
     fun create(): ExoPlayer {
         val renderersFactory = object : DefaultRenderersFactory(context) {
             override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink =
                 DefaultAudioSink.Builder(context)
                     .setEnableFloatOutput(enableFloatOutput)
-                    .setAudioProcessors(arrayOf(replayGainProcessor))
+                    .setAudioProcessors(effectsChain.audioProcessors())
                     .build()
             // enableAudioTrackPlaybackParams is intentionally left at its default
             // (off): speed and pitch are handled in software by the Sonic processor
