@@ -51,6 +51,12 @@ sealed interface Destination {
     @Serializable
     data object ScrobbleSettings : Destination
 
+    @Serializable
+    data object AppearanceSettings : Destination
+
+    @Serializable
+    data object About : Destination
+
     companion object {
         const val DEEP_LINK_ALBUM = "bocan://album"
         const val DEEP_LINK_ARTIST = "bocan://artist"

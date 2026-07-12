@@ -16,10 +16,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import io.cloudcauldron.bocan.app.components.LocalArtworkResolver
+import io.cloudcauldron.bocan.app.data.AppearanceSettings
 import io.cloudcauldron.bocan.app.home.HomeScaffold
 import io.cloudcauldron.bocan.app.theme.BocanTheme
 
@@ -30,7 +33,8 @@ class MainActivity : ComponentActivity() {
         val appGraph = (application as BocanApplication).appGraph
         handleShortcutIntent(intent)
         setContent {
-            BocanTheme {
+            val appearance by appGraph.appearancePreferences.settings.collectAsState(initial = AppearanceSettings())
+            BocanTheme(appearance) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     RequestNotificationPermission()
                     CompositionLocalProvider(LocalArtworkResolver provides { hash: String? -> appGraph.artworkFile(hash) }) {

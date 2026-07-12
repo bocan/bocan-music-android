@@ -8,11 +8,13 @@ import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
+import io.cloudcauldron.bocan.app.data.AppearancePreferences
 import io.cloudcauldron.bocan.app.data.EqPreferences
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
 import io.cloudcauldron.bocan.app.data.PlaybackPreferences
 import io.cloudcauldron.bocan.app.data.PodcastPreferences
 import io.cloudcauldron.bocan.app.data.ScrobbleSettings
+import io.cloudcauldron.bocan.app.data.ThemeMode
 import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
@@ -342,6 +344,21 @@ class AppGraph(val application: Application) {
 
     /** Playback-behaviour settings (resume on reconnect). */
     val playbackPreferences: PlaybackPreferences by lazy { PlaybackPreferences(application) }
+
+    /** Theme mode, dynamic color, and pure-black dark; the activity's theme observes these. */
+    val appearancePreferences: AppearancePreferences by lazy { AppearancePreferences(application) }
+
+    fun setThemeMode(mode: ThemeMode) {
+        playbackScope.launch { appearancePreferences.setThemeMode(mode) }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        playbackScope.launch { appearancePreferences.setDynamicColor(enabled) }
+    }
+
+    fun setPureBlack(enabled: Boolean) {
+        playbackScope.launch { appearancePreferences.setPureBlack(enabled) }
+    }
 
     private val headphoneReconnectMonitor: HeadphoneReconnectMonitor by lazy {
         HeadphoneReconnectMonitor(

@@ -29,6 +29,8 @@ import io.cloudcauldron.bocan.app.podcasts.ShowDetailScreen
 import io.cloudcauldron.bocan.app.search.SearchScreen
 import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
+import io.cloudcauldron.bocan.app.settings.sections.AppearanceCallbacks
+import io.cloudcauldron.bocan.app.settings.sections.AppearanceSettingsScreen
 import io.cloudcauldron.bocan.app.settings.sections.SyncSettingsScreen
 import io.cloudcauldron.bocan.sync.pairing.PairingState
 
@@ -144,6 +146,17 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             val vm = remember { appGraph.scrobbleSettingsViewModel() }
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
             ScrobbleSettingsScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+        composable<Destination.AppearanceSettings> {
+            AppearanceSettingsScreen(
+                settings = appGraph.appearancePreferences.settings,
+                callbacks = AppearanceCallbacks(
+                    onSetThemeMode = appGraph::setThemeMode,
+                    onSetDynamicColor = appGraph::setDynamicColor,
+                    onSetPureBlack = appGraph::setPureBlack,
+                    onBack = { navController.popBackStack() }
+                )
+            )
         }
         composable<Destination.Pairing> {
             val vm = remember { appGraph.pairingViewModel() }
