@@ -4,5 +4,9 @@ local.properties
 .idea/
 .DS_Store
 *.keystore
+*.jks
+keystore.properties
+play-service-account*.json
+dist/
 captures/
 .kotlin/
