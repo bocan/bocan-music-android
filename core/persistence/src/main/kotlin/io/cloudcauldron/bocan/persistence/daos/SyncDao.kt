@@ -64,6 +64,10 @@ interface SyncDao {
     @Query("UPDATE tracks SET downloadState = :state WHERE id IN (:ids) OR clipSourceTrackId IN (:ids)")
     suspend fun setTrackDownloadState(ids: List<Long>, state: DownloadState)
 
+    /** Flip every track at once; remove-all-synced-media resets the library to pending. */
+    @Query("UPDATE tracks SET downloadState = :state")
+    suspend fun setAllTrackDownloadStates(state: DownloadState)
+
     // Derived albums and artists
 
     @Query("DELETE FROM albums")
@@ -114,6 +118,10 @@ interface SyncDao {
 
     @Query("UPDATE episodes SET downloadState = :state WHERE id IN (:ids)")
     suspend fun setEpisodeDownloadState(ids: List<String>, state: DownloadState)
+
+    /** Flip every episode at once; remove-all-synced-media resets podcasts to pending. */
+    @Query("UPDATE episodes SET downloadState = :state")
+    suspend fun setAllEpisodeDownloadStates(state: DownloadState)
 
     // Local-state seeding: insert-if-missing, never overwrite
 
