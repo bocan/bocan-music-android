@@ -3,6 +3,9 @@ package io.cloudcauldron.bocan.app.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -27,6 +30,7 @@ import io.cloudcauldron.bocan.app.search.SearchScreen
 import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
 import io.cloudcauldron.bocan.app.sync.SyncStatusScreen
+import io.cloudcauldron.bocan.sync.pairing.PairingState
 
 /**
  * The single navigation graph: the four bottom destinations plus the detail, search,
@@ -144,6 +148,17 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
         composable<Destination.Pairing> {
             val vm = remember { appGraph.pairingViewModel() }
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            val uiState by vm.state.collectAsState()
+            LaunchedEffect(uiState.pairing) {
+                if (uiState.pairing is PairingState.Paired) {
+                    // Pairing done: start the first sync and land on the library, which shows
+                    // sync progress. Otherwise the user is stranded on the pairing screen.
+                    appGraph.syncNow()
+                    navController.navigate(Destination.Library) {
+                        popUpTo(Destination.Library) { inclusive = true }
+                    }
+                }
+            }
             PairingScreen(vm)
         }
         composable<Destination.SyncStatus> {

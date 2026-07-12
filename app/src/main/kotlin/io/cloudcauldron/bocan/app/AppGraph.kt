@@ -505,6 +505,9 @@ class AppGraph(val application: Application) {
         dispatchers = dispatchers
     )
 
+    /** Start a foreground sync now: the post-pairing handoff and the Sync Now action share this. */
+    fun syncNow() = SyncForegroundService.start(application, force = true)
+
     /** A fresh view model for one pairing flow; the caller disposes it. */
     fun pairingViewModel(): PairingViewModel = PairingViewModel(
         discovery = macDiscovery,
