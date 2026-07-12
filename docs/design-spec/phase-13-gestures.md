@@ -79,14 +79,14 @@ None new. Compose Foundation (anchoredDraggable) and Media3 session are already 
 
 ## Acceptance criteria
 
-- [ ] Swipe right advances to the next song, swipe left to the previous, matching the transport buttons exactly, with the block tracking the finger and settling with a spring (snap under reduced motion).
-- [ ] The neighboring song's real artwork and titles peek in with the drag, in lockstep with the finger, from the first frame of the gesture; no placeholder art ever shows during a drag.
-- [ ] Swipe up opens the song details sheet; the same sheet opens from the overflow menu.
-- [ ] Swipe down dismisses Now Playing to the screen beneath, finger-driven, and cancels cleanly on release before threshold.
-- [ ] The details sheet shows every known field for a track (including derived bitrate and the live pipeline line while playing) and the episode variant for podcasts; unknown fields are omitted, nothing shows a raw null or 0.
-- [ ] At either end of the queue the horizontal drag rubber-bands and does nothing.
-- [ ] TalkBack can invoke all four gestures as custom actions, and none of the four capabilities is reachable only by gesture.
-- [ ] Seek bar, transport, lyrics scrolling, and sheet interactions are unaffected by the new gesture surface.
+- [x] Swipe right advances to the next song, swipe left to the previous, matching the transport buttons exactly, with the block tracking the finger and settling with a spring (snap under reduced motion). (Gesture calls the same `NowPlayingViewModel.next`/`previous` as the transport; `resolveHorizontalTarget` unit tested; on-device feel of the spring is a manual check.)
+- [x] The neighboring song's real artwork and titles peek in with the drag, in lockstep with the finger, from the first frame of the gesture; no placeholder art ever shows during a drag. (Neighbor state resolved from the queue's actual order and warmed through Coil on every transition, both unit tested; the first-frame render is a manual on-device check.)
+- [x] Swipe up opens the song details sheet; the same sheet opens from the overflow menu.
+- [x] Swipe down dismisses Now Playing to the screen beneath, finger-driven, and cancels cleanly on release before threshold. (`resolveVerticalTarget` unit tested; the commit animates the screen down then popBackStack.)
+- [x] The details sheet shows every known field for a track (including derived bitrate and the live pipeline line while playing) and the episode variant for podcasts; unknown fields are omitted, nothing shows a raw null or 0.
+- [x] At either end of the queue the horizontal drag rubber-bands and does nothing.
+- [x] TalkBack can invoke all four gestures as custom actions, and none of the four capabilities is reachable only by gesture. (Semantics test asserts the four custom actions; each has a button or menu path.)
+- [x] Seek bar, transport, lyrics scrolling, and sheet interactions are unaffected by the new gesture surface. (The gesture input is scoped to the artwork block; taps below touch slop propagate to child clickables. Full traversal is a manual on-device check.)
 
 ## Gotchas
 

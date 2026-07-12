@@ -2,12 +2,14 @@ package io.cloudcauldron.bocan.app.player
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Speed
@@ -30,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,16 +42,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.podcasts.ChaptersSheet
 import io.cloudcauldron.bocan.playback.SleepTimerState
 import io.cloudcauldron.bocan.playback.podcast.ChaptersParser
+import kotlin.math.roundToInt
 
 /**
  * The full-screen Now Playing: ambient artwork background, artwork or lyrics, tappable
@@ -61,6 +70,7 @@ fun NowPlayingScreen(
     nowPlaying: NowPlayingViewModel,
     queue: QueueViewModel,
     lyrics: LyricsViewModel,
+    songDetails: SongDetailsViewModel,
     onBack: () -> Unit,
     onOpenArtist: (Long) -> Unit,
     onOpenAlbum: (Long) -> Unit,
@@ -73,10 +83,29 @@ fun NowPlayingScreen(
     var showSleep by remember { mutableStateOf(false) }
     var showSpeed by remember { mutableStateOf(false) }
     var showChapters by remember { mutableStateOf(false) }
+    var showDetails by remember { mutableStateOf(false) }
+
+    val reducedMotion = isReducedMotion(LocalContext.current)
+    val gesture = rememberPlayerGestureState()
+    gesture.hasPrevious = ui.previous != null
+    gesture.hasNext = ui.next != null
+    val gestureActions = PlayerGestureActions(
+        onNext = nowPlaying::next,
+        onPrevious = nowPlaying::previous,
+        onOpenDetails = { showDetails = true },
+        onDismiss = onBack
+    )
+    val gestureLabels = PlayerGestureLabels(
+        next = stringResource(R.string.gesture_next_track),
+        previous = stringResource(R.string.gesture_previous_track),
+        details = stringResource(R.string.gesture_song_details),
+        close = stringResource(R.string.gesture_close_player)
+    )
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .offset { IntOffset(0, if (reducedMotion) 0 else gesture.verticalOffset.roundToInt()) }
             .ambientBackground(ui.artworkUri)
             .systemBarsPadding()
             .padding(horizontal = 20.dp)
@@ -91,14 +120,19 @@ fun NowPlayingScreen(
             onToggleLyrics = { showLyrics = !showLyrics },
             onQueue = { showQueue = true },
             onChapters = { showChapters = true },
-            onEqualizer = onOpenEqualizer
+            onEqualizer = onOpenEqualizer,
+            onSongDetails = { showDetails = true }
         )
         if (showLyrics) {
             val lyricsUi by lyrics.state.collectAsState()
             LyricsPane(lyricsUi, onSeekToLine = lyrics::seekToLine, modifier = Modifier.weight(1f))
         } else {
-            ArtworkAndMeta(
+            ArtworkStrip(
                 ui = ui,
+                gesture = gesture,
+                reducedMotion = reducedMotion,
+                actions = gestureActions,
+                labels = gestureLabels,
                 onOpenArtist = { ui.display.artistId?.let(onOpenArtist) },
                 onOpenAlbum = { ui.display.albumId?.let(onOpenAlbum) },
                 modifier = Modifier.weight(1f)
@@ -155,6 +189,12 @@ fun NowPlayingScreen(
             onDismiss = { showChapters = false }
         )
     }
+    if (showDetails) {
+        val detailsUi by songDetails.state.collectAsState()
+        // Fetch the live pipeline line whenever the sheet opens or the item changes underneath.
+        LaunchedEffect(showDetails, ui.artworkUri, ui.title) { songDetails.refreshPipeline() }
+        SongDetailsSheet(state = detailsUi, onDismiss = { showDetails = false })
+    }
 }
 
 @Composable
@@ -168,7 +208,8 @@ private fun TopRow(
     onToggleLyrics: () -> Unit,
     onQueue: () -> Unit,
     onChapters: () -> Unit,
-    onEqualizer: () -> Unit
+    onEqualizer: () -> Unit,
+    onSongDetails: () -> Unit
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -206,6 +247,10 @@ private fun TopRow(
                 menuOpen = false
                 onToggleLyrics()
             }
+            OverflowItem(Icons.Rounded.Info, R.string.song_details_title) {
+                menuOpen = false
+                onSongDetails()
+            }
             if (hasChapters) {
                 OverflowItem(Icons.AutoMirrored.Rounded.List, R.string.chapters_title) {
                     menuOpen = false
@@ -229,8 +274,82 @@ private fun OverflowItem(icon: androidx.compose.ui.graphics.vector.ImageVector, 
     )
 }
 
+/**
+ * The gesture surface: the current card plus, during a horizontal drag, the real previous
+ * and next cards tracking in from the opposite edge as one strip (right = next). The block
+ * follows the finger; the settle and peek are suppressed under reduced motion, where the
+ * content swaps with no slide.
+ */
 @Composable
-private fun ArtworkAndMeta(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOpenAlbum: () -> Unit, modifier: Modifier) {
+private fun ArtworkStrip(
+    ui: NowPlayingUiState,
+    gesture: PlayerGestureState,
+    reducedMotion: Boolean,
+    actions: PlayerGestureActions,
+    labels: PlayerGestureLabels,
+    onOpenArtist: () -> Unit,
+    onOpenAlbum: () -> Unit,
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clipToBounds()
+            .playerGestures(gesture, reducedMotion, actions, labels)
+    ) {
+        if (!reducedMotion) {
+            val width = gesture.widthPx
+            val offset = gesture.horizontalOffset
+            // Swipe right commits to next, so the next card peeks in from the left edge.
+            ui.next?.let { neighbor ->
+                NeighborCard(neighbor, Modifier.offset { IntOffset((offset - width).roundToInt(), 0) })
+            }
+            ui.previous?.let { neighbor ->
+                NeighborCard(neighbor, Modifier.offset { IntOffset((offset + width).roundToInt(), 0) })
+            }
+        }
+        CurrentCard(
+            ui = ui,
+            onOpenArtist = onOpenArtist,
+            onOpenAlbum = onOpenAlbum,
+            modifier = Modifier
+                .fillMaxSize()
+                .offset { IntOffset(if (reducedMotion) 0 else gesture.horizontalOffset.roundToInt(), 0) }
+        )
+    }
+}
+
+/** The peeking previous or next card: real artwork and titles, no placeholder, no controls. */
+@Composable
+private fun NeighborCard(neighbor: NeighborDisplay, modifier: Modifier) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier.fillMaxSize().clearAndSetSemantics {}
+    ) {
+        UriArtwork(
+            uri = neighbor.artworkUri,
+            modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(RoundedCornerShape(16.dp))
+        )
+        Text(
+            text = neighbor.title,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 20.dp)
+        )
+        Text(
+            text = neighbor.artist,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun CurrentCard(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOpenAlbum: () -> Unit, modifier: Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

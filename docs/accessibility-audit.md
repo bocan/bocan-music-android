@@ -48,6 +48,12 @@ checks; everything testable in JVM tests is covered by
 - Queue rows expose Move up, Move down, and Remove from queue as custom
   accessibility actions; long-press-drag and swipe-to-dismiss are invisible to
   accessibility services.
+- Now Playing gesture surface (phase 13): the four swipe gestures each have a
+  custom accessibility action (Next track, Previous track, Song details, Close
+  player) and a non-gesture path (transport buttons, the Song details overflow
+  item, the collapse button), so no capability is reachable only by gesture. The
+  song details sheet is read-only, one merged "label, value" row per known
+  field, with the title marked as a heading.
 - The lyrics timing-offset chip was a focusable button with a no-op click (a
   dead stop in traversal); it is now plain text.
 

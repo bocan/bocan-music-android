@@ -8,6 +8,8 @@ import android.os.Build
 import android.provider.Settings
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
+import coil3.SingletonImageLoader
+import coil3.request.ImageRequest
 import io.cloudcauldron.bocan.app.data.AppearancePreferences
 import io.cloudcauldron.bocan.app.data.EqPreferences
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
@@ -31,6 +33,7 @@ import io.cloudcauldron.bocan.app.player.LyricsViewModel
 import io.cloudcauldron.bocan.app.player.NowPlayingViewModel
 import io.cloudcauldron.bocan.app.player.PlayerViewModel
 import io.cloudcauldron.bocan.app.player.QueueViewModel
+import io.cloudcauldron.bocan.app.player.SongDetailsViewModel
 import io.cloudcauldron.bocan.app.podcasts.PodcastsViewModel
 import io.cloudcauldron.bocan.app.podcasts.ShowDetailViewModel
 import io.cloudcauldron.bocan.app.search.SearchViewModel
@@ -293,8 +296,24 @@ class AppGraph(val application: Application) {
         chaptersRepository = chaptersRepository,
         preferences = podcastPreferences,
         sleepTimer = sleepTimer,
+        dispatchers = playbackDispatchers,
+        prefetchArtwork = ::warmArtwork
+    )
+
+    fun songDetailsViewModel(): SongDetailsViewModel = SongDetailsViewModel(
+        transport = queueController,
+        libraryDao = database.libraryDao(),
+        podcastDao = database.podcastDao(),
+        episodeStateDao = database.episodeStateDao(),
+        playStatsDao = database.playStatsDao(),
         dispatchers = playbackDispatchers
     )
+
+    /** Warm a neighbor's artwork into Coil's cache so the gesture peek renders it on the first frame. */
+    private fun warmArtwork(uri: String?) {
+        if (uri == null) return
+        SingletonImageLoader.get(application).enqueue(ImageRequest.Builder(application).data(uri).build())
+    }
 
     fun queueViewModel(): QueueViewModel = QueueViewModel(queueController, playbackDispatchers)
 

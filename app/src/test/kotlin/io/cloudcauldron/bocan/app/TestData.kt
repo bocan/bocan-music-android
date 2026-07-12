@@ -77,6 +77,19 @@ class FakeLibraryDao : LibraryDao {
     override fun observeDownloadCounts(): Flow<DownloadCounts> = countsFlow
 }
 
+/** A PlayStatsDao backed by an in-memory map, for view-model tests. */
+class FakePlayStatsDao : io.cloudcauldron.bocan.persistence.daos.PlayStatsDao {
+    val stats = mutableMapOf<Long, io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity>()
+
+    override fun observeStats(trackId: Long): Flow<io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity?> =
+        MutableStateFlow(stats[trackId])
+    override suspend fun stats(trackId: Long): io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity? = stats[trackId]
+    override suspend fun pruneOrphanedBefore(cutoff: Instant) = Unit
+    override suspend fun upsert(stats: io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity) {
+        this.stats[stats.trackId] = stats
+    }
+}
+
 /** A PlaylistDao backed by a state flow. */
 class FakePlaylistDao : PlaylistDao {
     val playlistsFlow = MutableStateFlow<List<PlaylistEntity>>(emptyList())

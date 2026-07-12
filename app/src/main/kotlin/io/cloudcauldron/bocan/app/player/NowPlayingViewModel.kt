@@ -11,7 +11,9 @@ import io.cloudcauldron.bocan.playback.SleepTimerState
 import io.cloudcauldron.bocan.playback.podcast.Chapter
 import io.cloudcauldron.bocan.playback.podcast.ChaptersParser
 import io.cloudcauldron.bocan.playback.podcast.ChaptersRepository
+import io.cloudcauldron.bocan.playback.queue.NowPlayingItem
 import io.cloudcauldron.bocan.playback.queue.PlaybackTransport
+import io.cloudcauldron.bocan.playback.queue.PlayerUiState
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +34,13 @@ import kotlinx.coroutines.launch
 
 /** The current track's Mac-owned display metadata (loved and rating are display-only here). */
 data class TrackDisplay(val loved: Boolean = false, val rating: Int = 0, val albumId: Long? = null, val artistId: Long? = null)
+
+/**
+ * The display fields for a queue neighbor, so the gesture peek can render the real card of
+ * the previous or next item before the user commits. Null in the UI state at an end of the
+ * queue, which is the gesture machine's cue to rubber-band.
+ */
+data class NeighborDisplay(val title: String, val artist: String, val artworkUri: String?)
 
 /** The podcast slice of Now Playing state: present only while an episode is current. */
 data class PodcastNowPlaying(
@@ -63,7 +72,9 @@ data class NowPlayingUiState(
     val speed: Float = 1.0f,
     val display: TrackDisplay = TrackDisplay(),
     val sleepTimer: SleepTimerState = SleepTimerState.Idle,
-    val podcast: PodcastNowPlaying = PodcastNowPlaying()
+    val podcast: PodcastNowPlaying = PodcastNowPlaying(),
+    val previous: NeighborDisplay? = null,
+    val next: NeighborDisplay? = null
 )
 
 /**
@@ -81,9 +92,25 @@ class NowPlayingViewModel(
     private val chaptersRepository: ChaptersRepository,
     private val preferences: PodcastPreferencesSource,
     private val sleepTimer: SleepTimer,
-    dispatchers: CoroutineDispatchers
+    dispatchers: CoroutineDispatchers,
+    private val prefetchArtwork: (String?) -> Unit = {}
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
+
+    init {
+        // Warm both neighbors' artwork the moment a transition settles, keyed by their uris,
+        // so the first frame of a drag renders the real image instead of a placeholder flash.
+        // Read from the queue's actual (possibly shuffled) order, never library order.
+        scope.launch {
+            transport.state
+                .map { neighborsOf(it) }
+                .distinctUntilChanged()
+                .collect { (previous, next) ->
+                    prefetchArtwork(previous?.artworkUri)
+                    prefetchArtwork(next?.artworkUri)
+                }
+        }
+    }
 
     private val currentDisplay =
         transport.state.map { it.current?.mediaId }
@@ -108,6 +135,7 @@ class NowPlayingViewModel(
                 intervals
             ->
             val current = player.current
+            val (previous, next) = neighborsOf(player)
             NowPlayingUiState(
                 hasItem = current != null,
                 title = current?.title.orEmpty(),
@@ -122,7 +150,9 @@ class NowPlayingViewModel(
                 speed = player.speed,
                 display = display,
                 sleepTimer = timer,
-                podcast = context.toUi(player.positionMs, intervals.first, intervals.second)
+                podcast = context.toUi(player.positionMs, intervals.first, intervals.second),
+                previous = previous,
+                next = next
             )
         }.stateIn(scope, SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), NowPlayingUiState())
 
@@ -207,6 +237,15 @@ class NowPlayingViewModel(
     private fun launch(block: suspend () -> Unit) {
         scope.launch { block() }
     }
+
+    /** The previous and next queue entries as neighbor display, null at the ends. */
+    private fun neighborsOf(player: PlayerUiState): Pair<NeighborDisplay?, NeighborDisplay?> {
+        val index = player.queueIndex
+        if (index < 0) return null to null
+        return player.queue.getOrNull(index - 1)?.toNeighbor() to player.queue.getOrNull(index + 1)?.toNeighbor()
+    }
+
+    private fun NowPlayingItem.toNeighbor() = NeighborDisplay(title = title, artist = artist.orEmpty(), artworkUri = artworkUri)
 
     /** The per-episode facts resolved off the transport; folded with live position into UI. */
     private data class PodcastContext(

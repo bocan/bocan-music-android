@@ -187,6 +187,45 @@
   <string name="action_more">More</string>
   <string name="action_cancel">Cancel</string>
 
+  <!-- Now Playing gestures and song details -->
+  <string name="gesture_next_track">Next track</string>
+  <string name="gesture_previous_track">Previous track</string>
+  <string name="gesture_song_details">Song details</string>
+  <string name="gesture_close_player">Close player</string>
+  <string name="song_details_title">Song details</string>
+  <string name="song_details_row_a11y">%1$s, %2$s</string>
+  <string name="song_details_artist">Artist</string>
+  <string name="song_details_album">Album</string>
+  <string name="song_details_album_artist">Album artist</string>
+  <string name="song_details_year">Year</string>
+  <string name="song_details_genre">Genre</string>
+  <string name="song_details_track">Track</string>
+  <string name="song_details_disc">Disc</string>
+  <string name="song_details_number">%1$d</string>
+  <string name="song_details_number_of_total">%1$d of %2$d</string>
+  <string name="song_details_format">Format</string>
+  <string name="song_details_lossless">Lossless</string>
+  <string name="song_details_format_lossless_a11y">%1$s, lossless</string>
+  <string name="song_details_duration">Duration</string>
+  <string name="song_details_size">Size</string>
+  <string name="song_details_bitrate">Bitrate</string>
+  <string name="song_details_bitrate_value">%1$s kbps</string>
+  <string name="song_details_plays">Plays</string>
+  <string name="song_details_last_played">Last played</string>
+  <string name="song_details_loved">Loved</string>
+  <string name="song_details_loved_yes">Yes</string>
+  <string name="song_details_rating">Rating</string>
+  <string name="song_details_rating_value">%1$d of %2$d</string>
+  <string name="song_details_pipeline">Playing at</string>
+  <string name="song_details_sample_rate">%1$s kHz</string>
+  <string name="song_details_bit_depth">%1$d-bit</string>
+  <string name="song_details_channels_mono">Mono</string>
+  <string name="song_details_channels_stereo">Stereo</string>
+  <string name="song_details_channels_other">%1$d channels</string>
+  <string name="song_details_show">Show</string>
+  <string name="song_details_published">Published</string>
+  <string name="song_details_position">Position</string>
+
   <!-- Queue -->
   <string name="queue_title">Queue</string>
   <plurals name="queue_up_next">

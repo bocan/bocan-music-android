@@ -152,17 +152,20 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             val nowPlaying = remember { appGraph.nowPlayingViewModel() }
             val queue = remember { appGraph.queueViewModel() }
             val lyrics = remember { appGraph.lyricsViewModel() }
+            val songDetails = remember { appGraph.songDetailsViewModel() }
             DisposableEffect(Unit) {
                 onDispose {
                     nowPlaying.dispose()
                     queue.dispose()
                     lyrics.dispose()
+                    songDetails.dispose()
                 }
             }
             NowPlayingScreen(
                 nowPlaying = nowPlaying,
                 queue = queue,
                 lyrics = lyrics,
+                songDetails = songDetails,
                 onBack = { navController.popBackStack() },
                 onOpenArtist = { navController.navigate(Destination.ArtistDetail(it)) },
                 onOpenAlbum = { navController.navigate(Destination.AlbumDetail(it)) },

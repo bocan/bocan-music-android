@@ -13,8 +13,10 @@ import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -27,7 +29,7 @@ class NowPlayingViewModelTests {
         override suspend fun pause() = Unit
     }
 
-    private fun viewModel(transport: FakePlaybackTransport): NowPlayingViewModel {
+    private fun viewModel(transport: FakePlaybackTransport, prefetch: (String?) -> Unit = {}): NowPlayingViewModel {
         val d = UnconfinedTestDispatcher()
         val dispatchers = CoroutineDispatchers(io = d, default = d, main = d)
         val sleepTimer = SleepTimer(noopVolume, emptyFlow(), dispatchers)
@@ -39,9 +41,22 @@ class NowPlayingViewModelTests {
             chaptersRepository = chapters,
             preferences = FakePodcastPreferences(),
             sleepTimer = sleepTimer,
-            dispatchers = dispatchers
+            dispatchers = dispatchers,
+            prefetchArtwork = prefetch
         )
     }
+
+    private fun item(mediaId: String, title: String, art: String?) = io.cloudcauldron.bocan.playback.queue.NowPlayingItem(
+        mediaId = mediaId,
+        title = title,
+        artist = "A",
+        album = "Al",
+        artworkUri = art,
+        durationMs = 1
+    )
+
+    private fun queueState(index: Int, vararg items: io.cloudcauldron.bocan.playback.queue.NowPlayingItem) =
+        io.cloudcauldron.bocan.playback.queue.PlayerUiState(current = items.getOrNull(index), queue = items.toList(), queueIndex = index)
 
     @Test
     fun `cycle repeat advances off to all to one to off`() = runTest {
@@ -69,6 +84,48 @@ class NowPlayingViewModelTests {
         val vm = viewModel(transport)
         vm.toggleShuffle()
         assertNull(transport.shuffles.last())
+        vm.dispose()
+    }
+
+    @Test
+    fun `a middle item resolves both neighbors from the queue order`() = runTest {
+        val transport = FakePlaybackTransport(
+            queueState(1, item("track:1", "One", "artA"), item("track:2", "Two", "artB"), item("track:3", "Three", "artC"))
+        )
+        val vm = viewModel(transport)
+        val state = vm.state.first { it.hasItem }
+        assertEquals("One", state.previous?.title)
+        assertEquals("Three", state.next?.title)
+        assertEquals("artC", state.next?.artworkUri)
+        vm.dispose()
+    }
+
+    @Test
+    fun `the ends of the queue yield null neighbors`() = runTest {
+        val transport = FakePlaybackTransport(queueState(0, item("track:1", "One", null), item("track:2", "Two", null)))
+        val vm = viewModel(transport)
+        val first = vm.state.first { it.hasItem }
+        assertNull(first.previous)
+        assertEquals("Two", first.next?.title)
+        transport.emit(queueState(1, item("track:1", "One", null), item("track:2", "Two", null)))
+        val last = vm.state.first { it.hasItem && it.next == null }
+        assertEquals("One", last.previous?.title)
+        assertNull(last.next)
+        vm.dispose()
+    }
+
+    @Test
+    fun `a queue mutation re-warms both neighbors through Coil`() = runTest {
+        val warmed = mutableListOf<String?>()
+        val transport = FakePlaybackTransport(
+            queueState(1, item("track:1", "One", "artA"), item("track:2", "Two", "artB"), item("track:3", "Three", "artC"))
+        )
+        val vm = viewModel(transport) { warmed += it }
+        assertTrue(warmed.contains("artA") && warmed.contains("artC"))
+        transport.emit(
+            queueState(1, item("track:1", "One", "artA"), item("track:2", "Two", "artB"), item("track:9", "Nine", "artZ"))
+        )
+        assertTrue(warmed.contains("artZ"))
         vm.dispose()
     }
 }
