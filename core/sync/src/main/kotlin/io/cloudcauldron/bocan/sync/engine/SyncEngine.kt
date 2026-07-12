@@ -22,7 +22,12 @@ import okhttp3.HttpUrl
 class SyncTransport(val endpoints: SyncEndpointProvider, val api: SyncApi, val transferrer: FileTransferrer)
 
 /** The local persistence and filesystem the engine writes through. */
-class SyncStore(val applier: SyncApplier, val mediaLayout: MediaLayout, val pendingDownloads: suspend () -> Int)
+class SyncStore(
+    val applier: SyncApplier,
+    val mediaLayout: MediaLayout,
+    val pendingDownloads: suspend () -> Int,
+    val artworkPresent: (String) -> Boolean
+)
 
 /** Test seams and tuning with production defaults. */
 class SyncConfig(val now: () -> Instant = Instant::now, val freeSpaceBytes: (() -> Long?)? = null)
@@ -144,7 +149,7 @@ class SyncEngine(
             // must be captured here, because after apply the DB matches the manifest
             // and nothing would look departed anymore.
             val plan = store.applier.plan(manifest)
-            val queue = transport.transferrer.buildQueue(plan)
+            val queue = transport.transferrer.buildQueue(plan, artworkNeeded(manifest, store.artworkPresent))
             ensureSpace(queue.bytesTotal)
             stateFlow.value = SyncState.Transferring(0, queue.filesTotal, 0, queue.bytesTotal, "")
             val outcome = try {
@@ -217,4 +222,18 @@ class SyncEngine(
         const val PHASE_DATABASE = "database"
         const val PHASE_CLEANUP = "cleanup"
     }
+}
+
+/**
+ * Every manifest-referenced artwork hash whose file is not on disk. Artwork is
+ * content-addressed, so disk is the one source of truth: this heals wiped or
+ * missing artwork on any run that gets past the generation short-circuit.
+ */
+private fun artworkNeeded(manifest: Manifest, present: (String) -> Boolean): List<String> {
+    val referenced = buildSet {
+        manifest.tracks.forEach { it.artworkHash?.let(::add) }
+        manifest.playlists.forEach { it.artworkHash?.let(::add) }
+        manifest.podcasts.forEach { it.artworkHash?.let(::add) }
+    }
+    return referenced.filterNot(present).sorted()
 }

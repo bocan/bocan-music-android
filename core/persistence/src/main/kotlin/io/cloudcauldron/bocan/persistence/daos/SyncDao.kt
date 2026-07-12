@@ -122,15 +122,4 @@ interface SyncDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun seedEpisodeStates(rows: List<EpisodeStateEntity>)
-
-    // Artwork the local library already references
-
-    @Query(
-        """
-        SELECT artworkHash FROM tracks WHERE artworkHash IS NOT NULL
-        UNION SELECT artworkHash FROM playlists WHERE artworkHash IS NOT NULL
-        UNION SELECT artworkHash FROM podcasts WHERE artworkHash IS NOT NULL
-        """
-    )
-    suspend fun knownArtworkHashes(): List<String>
 }

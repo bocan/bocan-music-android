@@ -56,9 +56,13 @@ class FileTransferrer(
         val episodeId: String? = null
     )
 
-    /** Build the ordered queue. May throw [io.cloudcauldron.bocan.sync.SyncError.UnsafePath] for a hostile relPath. */
-    fun buildQueue(plan: SyncApplier.Plan): Queue {
-        val artwork = plan.artworkHashesNeeded.map(::artworkItem)
+    /**
+     * Build the ordered queue from the database diff plus the artwork hashes the
+     * engine found missing on disk. May throw
+     * [io.cloudcauldron.bocan.sync.SyncError.UnsafePath] for a hostile relPath.
+     */
+    fun buildQueue(plan: SyncApplier.Plan, artworkHashes: List<String>): Queue {
+        val artwork = artworkHashes.map(::artworkItem)
         val tracks = plan.tracksToDownload
             .sortedWith(compareBy({ it.albumName }, { it.discNumber ?: 1 }, { it.trackNumber ?: Int.MAX_VALUE }, { it.id }))
             .map(::trackItem)

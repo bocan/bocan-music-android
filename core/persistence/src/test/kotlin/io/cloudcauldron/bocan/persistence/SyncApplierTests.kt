@@ -24,7 +24,6 @@ class SyncApplierTests {
         assertEquals(listOf(101L, 102L, 103L, 105L), plan.tracksToDownload.map { it.id })
         assertEquals(3, plan.episodesToDownload.size)
         assertTrue(plan.relPathsToDelete.isEmpty())
-        assertEquals(3, plan.artworkHashesNeeded.size)
 
         val albums = db.libraryDao().observeAlbumsByName().firstList()
         val loveless = albums.single { it.id == 55L }
@@ -65,25 +64,41 @@ class SyncApplierTests {
     }
 
     @Test
-    fun `re-applying the same manifest changes nothing and plans nothing`() = runDbTest { db ->
+    fun `re-applying the same manifest changes nothing and plans nothing once downloads landed`() = runDbTest { db ->
         val applier = fixedClockApplier(db)
         applier.apply(fixtureManifest())
+        applier.markDownloaded(ALL_SOURCE_TRACKS, ALL_EPISODES)
         val before = db.syncDao().allTracks() to db.syncDao().allEpisodes()
 
         val plan = applier.apply(fixtureManifest())
 
         assertTrue(plan.tracksToDownload.isEmpty())
         assertTrue(plan.episodesToDownload.isEmpty())
-        assertTrue(plan.artworkHashesNeeded.isEmpty())
         assertTrue(plan.relPathsToDelete.isEmpty())
         assertEquals(before, db.syncDao().allTracks() to db.syncDao().allEpisodes())
+    }
+
+    @Test
+    fun `pending and failed rows are re-planned until they download`() = runDbTest { db ->
+        val applier = fixedClockApplier(db)
+        applier.apply(fixtureManifest())
+        applier.markDownloaded(listOf(101L), listOf("e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6"))
+        db.syncDao().setTrackDownloadState(listOf(102L), DownloadState.Failed)
+
+        val plan = applier.apply(fixtureManifest())
+
+        assertEquals(listOf(102L, 103L, 105L), plan.tracksToDownload.map { it.id }.sorted())
+        assertEquals(
+            listOf("a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8", "f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7"),
+            plan.episodesToDownload.map { it.id }.sorted()
+        )
     }
 
     @Test
     fun `sha256 change replans the download and keeps play stats`() = runDbTest { db ->
         val applier = fixedClockApplier(db)
         applier.apply(fixtureManifest())
-        applier.markDownloaded(listOf(101L, 102L, 103L), emptyList())
+        applier.markDownloaded(ALL_SOURCE_TRACKS, ALL_EPISODES)
         db.playStatsDao().recordPlay(101L, playedSec = 200, at = FIXED_NOW)
 
         val changed = fixtureManifest().let { m ->
@@ -140,7 +155,7 @@ class SyncApplierTests {
     fun `metadata-only change updates the row without planning a download`() = runDbTest { db ->
         val applier = fixedClockApplier(db)
         applier.apply(fixtureManifest())
-        applier.markDownloaded(listOf(101L, 102L, 103L), emptyList())
+        applier.markDownloaded(ALL_SOURCE_TRACKS, ALL_EPISODES)
 
         val rerated = fixtureManifest().let { m ->
             m.copy(tracks = m.tracks.map { if (it.id == 103L) it.copy(rating = 80) else it })
@@ -159,7 +174,7 @@ class SyncApplierTests {
         val plan = applier.apply(fixtureManifest())
         assertTrue(plan.tracksToDownload.none { it.id == 104L })
 
-        applier.markDownloaded(listOf(103L), emptyList())
+        applier.markDownloaded(ALL_SOURCE_TRACKS, ALL_EPISODES)
         assertEquals(
             DownloadState.Downloaded,
             db.syncDao().allTracks().single { it.id == 104L }.downloadState
@@ -254,5 +269,15 @@ class SyncApplierTests {
 
         assertTrue(db.syncDao().allPodcasts().isEmpty())
         assertTrue(db.syncDao().allEpisodes().isEmpty())
+    }
+
+    private companion object {
+        /** Every non-clip track in manifest-small.json (104 is a clip of 103). */
+        val ALL_SOURCE_TRACKS = listOf(101L, 102L, 103L, 105L)
+        val ALL_EPISODES = listOf(
+            "e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6",
+            "f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7",
+            "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8"
+        )
     }
 }

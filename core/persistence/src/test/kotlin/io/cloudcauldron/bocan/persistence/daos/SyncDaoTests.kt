@@ -3,8 +3,6 @@ package io.cloudcauldron.bocan.persistence.daos
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import io.cloudcauldron.bocan.persistence.FIXED_NOW
-import io.cloudcauldron.bocan.persistence.fixedClockApplier
-import io.cloudcauldron.bocan.persistence.fixtureManifest
 import io.cloudcauldron.bocan.persistence.pairedServer
 import io.cloudcauldron.bocan.persistence.runDbTest
 import org.junit.Assert.assertEquals
@@ -38,12 +36,5 @@ class SyncDaoTests {
         dao.replaceServer(pairedServer().copy(serverId = "another-mac", pairedAt = FIXED_NOW))
 
         assertEquals("another-mac", dao.server()?.serverId)
-    }
-
-    @Test
-    fun `known artwork hashes union all referencing tables`() = runDbTest { db ->
-        fixedClockApplier(db).apply(fixtureManifest())
-        val known = db.syncDao().knownArtworkHashes().toSet()
-        assertEquals(3, known.size)
     }
 }

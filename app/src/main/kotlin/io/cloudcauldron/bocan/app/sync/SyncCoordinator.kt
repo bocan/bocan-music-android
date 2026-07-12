@@ -212,7 +212,8 @@ class SyncCoordinator(
             store = SyncStore(
                 applier = applier,
                 mediaLayout = mediaLayout,
-                pendingDownloads = { database.libraryDao().observeDownloadCounts().first().pending }
+                pendingDownloads = { database.libraryDao().observeDownloadCounts().first().pending },
+                artworkPresent = { artworkStore.existing(it) != null }
             ),
             dispatchers = dispatchers,
             scope = appScope

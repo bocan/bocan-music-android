@@ -114,6 +114,31 @@ class SyncEngineTests {
     }
 
     @Test
+    fun `a wiped media root re-downloads files and artwork on the next sync`() = runBlocking {
+        pair(generation = 0)
+        val art = backend.artwork("a1")
+        val t1 = backend.track(1, "A/Album/01.flac", artworkHash = art)
+        backend.publish(manifest(generation = 4, tracks = listOf(t1), episodes = listOf(backend.episode("ep1"))))
+        val engine = engine()
+        engine.syncNow()
+        assertTrue(engine.state.value is SyncState.Done)
+
+        // Remove all synced media: files gone, rows flipped back to pending, pairing intact.
+        mediaLayout.mediaRoot()!!.deleteRecursively()
+        db.syncDao().setTrackDownloadState(listOf(1L), DownloadState.Pending)
+        db.syncDao().setEpisodeDownloadState(listOf("ep1"), DownloadState.Pending)
+
+        engine.syncNow()
+
+        assertTrue(engine.state.value is SyncState.Done)
+        assertTrue(mediaLayout.trackFile("A/Album/01.flac").isFile)
+        assertTrue(mediaLayout.episodeFile("Podcasts/4/ep1.mp3").isFile)
+        assertTrue(ArtworkStore(mediaLayout).fileFor(art).isFile)
+        assertTrue(db.syncDao().allTracks().all { it.downloadState == DownloadState.Downloaded })
+        assertEquals(DownloadState.Downloaded, db.syncDao().allEpisodes().single().downloadState)
+    }
+
+    @Test
     fun `a departed track is deleted from disk and db after apply while play stats survive`() = runBlocking {
         pair(generation = 0)
         val keep = backend.track(1, "A/Album/01.flac")
@@ -207,7 +232,8 @@ class SyncEngineTests {
             store = SyncStore(
                 applier = SyncApplier(db) { FIXED_NOW },
                 mediaLayout = mediaLayout,
-                pendingDownloads = { db.libraryDao().observeDownloadCounts().first().pending }
+                pendingDownloads = { db.libraryDao().observeDownloadCounts().first().pending },
+                artworkPresent = { ArtworkStore(mediaLayout).existing(it) != null }
             ),
             dispatchers = dispatchers,
             scope = CoroutineScope(dispatchers.default),

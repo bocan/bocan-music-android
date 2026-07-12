@@ -26,17 +26,22 @@ import java.time.Instant
 class SyncApplier(private val db: BocanDatabase, private val now: () -> Instant = Instant::now) {
     private val log = AppLog.forCategory(LogCategory.Persistence)
 
+    /**
+     * The database-side diff: rows whose bytes are not verified on disk (new,
+     * changed, still pending, or failed) and the paths a sync would delete.
+     * Artwork is planned by the engine from the manifest and the filesystem,
+     * because artwork presence is a disk truth, not a database one.
+     */
     data class Plan(
         val tracksToDownload: List<TrackEntity>,
         val episodesToDownload: List<EpisodeEntity>,
-        val artworkHashesNeeded: List<String>,
         val relPathsToDelete: List<String>
     )
 
     /** Pure read plus diff: what a sync of this manifest would transfer and delete. */
     suspend fun plan(manifest: Manifest): Plan {
         val dao = db.syncDao()
-        return resolve(manifest, dao.allTracks(), dao.allEpisodes(), dao.knownArtworkHashes(), now()).plan
+        return resolve(manifest, dao.allTracks(), dao.allEpisodes(), now()).plan
     }
 
     /** The plan, plus the transactional write that makes the manifest current. */
@@ -54,7 +59,7 @@ class SyncApplier(private val db: BocanDatabase, private val now: () -> Instant 
         )
         val plan = db.withWriteTransaction {
             val dao = db.syncDao()
-            val resolution = resolve(manifest, dao.allTracks(), dao.allEpisodes(), dao.knownArtworkHashes(), syncedAt)
+            val resolution = resolve(manifest, dao.allTracks(), dao.allEpisodes(), syncedAt)
             writeSyncedTables(dao, manifest, resolution)
             seedLocalState(dao, manifest, resolution)
             dao.recordApplied(manifest.generation, syncedAt)
@@ -66,7 +71,6 @@ class SyncApplier(private val db: BocanDatabase, private val now: () -> Instant 
                 "generation" to manifest.generation,
                 "tracksToDownload" to plan.tracksToDownload.size,
                 "episodesToDownload" to plan.episodesToDownload.size,
-                "artworkNeeded" to plan.artworkHashesNeeded.size,
                 "pathsToDelete" to plan.relPathsToDelete.size
             )
         )
@@ -96,7 +100,6 @@ class SyncApplier(private val db: BocanDatabase, private val now: () -> Instant 
         manifest: Manifest,
         existingTracks: List<TrackEntity>,
         existingEpisodes: List<EpisodeEntity>,
-        knownArtworkHashes: List<String>,
         syncedAt: Instant
     ): Resolution {
         val manifestTracks = sanitizedTracks(manifest)
@@ -110,15 +113,16 @@ class SyncApplier(private val db: BocanDatabase, private val now: () -> Instant 
         val manifestTrackIds = manifestTracks.mapTo(mutableSetOf()) { it.id }
         val manifestEpisodeIds = manifest.episodes.mapTo(mutableSetOf()) { it.id }
 
+        // Anything not verified on disk is (re-)planned: new and sha-changed rows
+        // resolve to pending above, and rows still pending or failed from an earlier
+        // run keep that state, so failures and wiped media retry on the next sync.
         val plan = Plan(
             tracksToDownload = trackEntities.filter { track ->
-                track.clipSourceTrackId == null &&
-                    existingById[track.id]?.sha256 != track.sha256
+                track.clipSourceTrackId == null && track.downloadState != DownloadState.Downloaded
             },
             episodesToDownload = episodeEntities.filter { episode ->
-                existingEpisodesById[episode.id]?.sha256 != episode.sha256
+                episode.downloadState != DownloadState.Downloaded
             },
-            artworkHashesNeeded = artworkHashesNeeded(manifest, knownArtworkHashes),
             relPathsToDelete = relPathsToDelete(manifestTracks, manifest.episodes, existingTracks, existingEpisodes)
         )
         return Resolution(
@@ -158,16 +162,6 @@ class SyncApplier(private val db: BocanDatabase, private val now: () -> Instant 
             states[clipTrack.id] = states.getValue(clipTrack.clip!!.sourceTrackId)
         }
         return states
-    }
-
-    private fun artworkHashesNeeded(manifest: Manifest, knownArtworkHashes: List<String>): List<String> {
-        val known = knownArtworkHashes.toSet()
-        val referenced = buildSet {
-            manifest.tracks.forEach { it.artworkHash?.let(::add) }
-            manifest.playlists.forEach { it.artworkHash?.let(::add) }
-            manifest.podcasts.forEach { it.artworkHash?.let(::add) }
-        }
-        return (referenced - known).sorted()
     }
 
     private fun relPathsToDelete(
