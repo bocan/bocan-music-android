@@ -64,13 +64,16 @@ OSS licenses tooling only.
 
 ## Acceptance criteria
 
-- [ ] Settings hub complete; every toggle wired to real behaviour; unpair and remove-media flows confirmed and working.
+- [x] Settings hub complete; every toggle wired to real behaviour; unpair and remove-media flows confirmed and working.
 - [ ] Onboarding takes a fresh install to playing music without touching anything else.
-- [ ] TalkBack audit doc committed with zero open blockers; all fixes landed.
-- [ ] Both themes clean across the matrix; no hardcoded colors remain in composables.
+  - The flow, its latch, and the pair-then-first-sync embedding are built and unit tested (fresh install to onboarding, paired install to library, skip re-enterable); walking a real fresh install through to audible music needs a device and a paired Mac.
+- [x] TalkBack audit doc committed with zero open blockers; all fixes landed.
+- [x] Both themes clean across the matrix; no hardcoded colors remain in composables.
 - [ ] en-XA run shows no truncation/concatenation defects; guards in CI.
-- [ ] Every user-reachable error renders a helpful localized message.
+  - The CI guards (UserVisibleStringConcatenation, BareTextLiteral) are live in detekt, every code-level concatenation and missing plural from the audit is fixed, and pseudoLocalesEnabled is on for debug; the visual en-XA truncation pass needs a device or emulator.
+- [x] Every user-reachable error renders a helpful localized message.
 - [ ] Performance baselines re-verified and recorded.
+  - Code-level re-check: list rows keep stable keys and single contentTypes, the new settings and onboarding screens introduce no per-frame work, storage sizing runs only on terminal sync states, and nothing new holds a wakelock. Cold launch, the 10k-track Perfetto trace, and seek latency need a mid-range device.
 
 ## Gotchas
 
