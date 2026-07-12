@@ -86,7 +86,15 @@ class SyncCoordinator(
     }
 
     override fun launchSync(force: Boolean) {
-        appScope.launch { engine()?.syncNow(force) }
+        appScope.launch {
+            if (trustStore.current() == null) return@launch
+            // Hold a non-terminal state so the foreground service stays alive while
+            // discovery locates the Mac, then sync. Without the wait, a Sync Now issued
+            // before the endpoint resolves fails at once with ServerUnreachable.
+            syncStateFlow.value = SyncState.CheckingManifest
+            awaitEndpoint()
+            engine()?.syncNow(force)
+        }
     }
 
     override fun cancelSync() {
@@ -95,7 +103,18 @@ class SyncCoordinator(
 
     override suspend fun runScheduledSync() {
         val engine = engine() ?: return
-        // Give discovery up to 20 s to locate the paired Mac, then sync if needed.
+        awaitEndpoint()
+        engine.syncNow()
+    }
+
+    /**
+     * Suspend until discovery has resolved the paired Mac's live endpoint, up to
+     * [DISCOVERY_WINDOW_MS]; returns at once when one is already known. Every sync
+     * entry point awaits this so a sync triggered before discovery has located the
+     * Mac waits for it instead of failing immediately with ServerUnreachable.
+     */
+    private suspend fun awaitEndpoint() {
+        if (endpoint.value != null) return
         withTimeoutOrNull(DISCOVERY_WINDOW_MS) {
             discovery.discover()
                 .onEach { macs ->
@@ -104,7 +123,6 @@ class SyncCoordinator(
                 }
                 .first { endpoint.value != null }
         }
-        engine.syncNow()
     }
 
     /**
