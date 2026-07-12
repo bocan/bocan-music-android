@@ -42,12 +42,15 @@ release-please action, Gradle Play Publisher (when Play configured).
 
 ## Acceptance criteria
 
-- [ ] Push-to-release requires no manual steps beyond merging the release PR.
+- [x] Push-to-release requires no manual steps beyond merging the release PR. (release-please.yml maintains the version PR and tags on merge; release.yml builds, signs, and attaches artifacts on the resulting publish. Mechanism complete; the first end-to-end run happens on the next release PR.)
 - [ ] Signed release APK on the GitHub release page with checksums; version and changelog correct.
+      Awaits the upload keystore secret (BOCAN_KEYSTORE_BASE64) and one release run; the release.yml step and versionCode/changelog wiring are done and locally verified (versionCode 100 for 0.1.0).
 - [ ] R8 release build passes the full manual smoke.
+      The minified assembleRelease builds green locally with the FFmpeg keep rules verified against the packaged .so; the on-device smoke of every flow is a manual gate in docs/release-checklist.md.
 - [ ] Upgrade-in-place proven.
-- [ ] Data-safety and permissions docs committed; store listing draft present.
-- [ ] F-Droid decision recorded with a working path.
+      Device-only test (install previous, add data, install over it); recorded as a gate in docs/release-checklist.md.
+- [x] Data-safety and permissions docs committed; store listing draft present. (store/data-safety.md, store/permissions.md, store/listing.md.)
+- [x] F-Droid decision recorded with a working path. (docs/fdroid.md: build the FFmpeg extension from source in CI, with the flavor-without-decoder fallback recorded.)
 
 ## Gotchas
 
