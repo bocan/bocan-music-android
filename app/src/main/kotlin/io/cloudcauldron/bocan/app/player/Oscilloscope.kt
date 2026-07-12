@@ -20,6 +20,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.tanh
 
 /**
  * A permanently running oscilloscope for the Now Playing screen: it renders the live output
@@ -140,7 +141,9 @@ private class OscilloscopeRenderer(private val source: WaveformSource) : GLSurfa
         var i = 0
         while (i < points) {
             val x = -1f + 2f * i / (points - 1)
-            val y = (wave[i] * Y_SCALE).coerceIn(-Y_LIMIT, Y_LIMIT)
+            // Drive the amplitude for a bold trace, then let tanh roll off smoothly near the
+            // edges so loud passages fill the strip without hard-clipping into flat tops.
+            val y = tanh(wave[i] * DRIVE) * Y_SCALE
             val hue = i.toFloat() / (points - 1)
             vertices[v++] = x
             vertices[v++] = y - halfThicknessNdc
@@ -177,8 +180,8 @@ private class OscilloscopeRenderer(private val source: WaveformSource) : GLSurfa
         const val NANOS_PER_SECOND = 1_000_000_000f
         const val LINE_THICKNESS_PX = 2.5f
         const val DEFAULT_HALF_THICKNESS = 0.02f
-        const val Y_SCALE = 0.9f
-        const val Y_LIMIT = 0.98f
+        const val Y_SCALE = 0.92f
+        const val DRIVE = 3.2f
 
         val VERTEX_SHADER = """
             attribute vec2 aPos;
