@@ -57,6 +57,7 @@ import io.cloudcauldron.bocan.playback.PlayerFactory
 import io.cloudcauldron.bocan.playback.PlayerVolume
 import io.cloudcauldron.bocan.playback.SleepTimer
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
+import io.cloudcauldron.bocan.playback.audio.WaveformSource
 import io.cloudcauldron.bocan.playback.browse.BrowseLabels
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
@@ -154,8 +155,11 @@ class AppGraph(val application: Application) {
 
     private val mediaFileResolver = AndroidMediaFileResolver(mediaLayout, artworkStore)
 
-    /** The audio effects chain (EQ, bass boost, ReplayGain gain, limiter) shared by the player and settings. */
+    /** The audio effects chain (EQ, bass boost, ReplayGain gain, limiter, waveform tap) shared by the player and settings. */
     val effectsChain = EffectsChain(playbackDispatchers)
+
+    /** The post-effects waveform the Now Playing oscilloscope reads, tapped off the audio thread. */
+    val waveformSource: WaveformSource get() = effectsChain.waveformTap
 
     /** Builds the single ExoPlayer with the effects chain inserted in the sink. */
     val playerFactory = PlayerFactory(application, effectsChain)

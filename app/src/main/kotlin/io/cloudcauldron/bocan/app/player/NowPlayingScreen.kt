@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.podcasts.ChaptersSheet
 import io.cloudcauldron.bocan.playback.SleepTimerState
+import io.cloudcauldron.bocan.playback.audio.WaveformSource
 import io.cloudcauldron.bocan.playback.podcast.ChaptersParser
 import kotlin.math.roundToInt
 
@@ -71,6 +73,7 @@ fun NowPlayingScreen(
     queue: QueueViewModel,
     lyrics: LyricsViewModel,
     songDetails: SongDetailsViewModel,
+    waveform: WaveformSource,
     onBack: () -> Unit,
     onOpenArtist: (Long) -> Unit,
     onOpenAlbum: (Long) -> Unit,
@@ -161,6 +164,18 @@ fun NowPlayingScreen(
                 onShuffleLongPress = nowPlaying::toggleShuffle,
                 onCycleRepeat = nowPlaying::cycleRepeat,
                 modifier = Modifier.padding(vertical = 12.dp)
+            )
+        }
+        // The oscilloscope fills the strip the mini player used to occupy on this screen.
+        // It is dropped while a sheet is open so the sheet's scrim is never punched through.
+        val anySheetOpen = showQueue || showSleep || showSpeed || showChapters || showDetails
+        if (!anySheetOpen) {
+            Oscilloscope(
+                source = waveform,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(bottom = 8.dp)
             )
         }
     }
@@ -300,12 +315,13 @@ private fun ArtworkStrip(
         if (!reducedMotion) {
             val width = gesture.widthPx
             val offset = gesture.horizontalOffset
-            // Swipe right commits to next, so the next card peeks in from the left edge.
+            // Pager convention: a leftward swipe advances, so the next card peeks in from the
+            // right edge and the previous card from the left.
             ui.next?.let { neighbor ->
-                NeighborCard(neighbor, Modifier.offset { IntOffset((offset - width).roundToInt(), 0) })
+                NeighborCard(neighbor, Modifier.offset { IntOffset((offset + width).roundToInt(), 0) })
             }
             ui.previous?.let { neighbor ->
-                NeighborCard(neighbor, Modifier.offset { IntOffset((offset + width).roundToInt(), 0) })
+                NeighborCard(neighbor, Modifier.offset { IntOffset((offset - width).roundToInt(), 0) })
             }
         }
         CurrentCard(

@@ -166,6 +166,7 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
                 queue = queue,
                 lyrics = lyrics,
                 songDetails = songDetails,
+                waveform = appGraph.waveformSource,
                 onBack = { navController.popBackStack() },
                 onOpenArtist = { navController.navigate(Destination.ArtistDetail(it)) },
                 onOpenAlbum = { navController.navigate(Destination.AlbumDetail(it)) },

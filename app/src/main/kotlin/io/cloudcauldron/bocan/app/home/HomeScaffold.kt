@@ -66,16 +66,23 @@ fun HomeScaffold(appGraph: AppGraph, modifier: Modifier = Modifier) {
         )
     }
 
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    // On the full Now Playing screen the transport controls are already present, and the
+    // oscilloscope takes the mini player's strip, so the docked mini player is redundant there.
+    val onNowPlaying = backStackEntry?.destination?.hierarchy?.any { it.hasRoute(Destination.NowPlaying::class) } == true
+
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column {
-                MiniPlayerBar(
-                    state = playerState,
-                    onPlayPause = player::togglePlayPause,
-                    onTap = { navController.navigate(Destination.NowPlaying) }
-                )
+                if (!onNowPlaying) {
+                    MiniPlayerBar(
+                        state = playerState,
+                        onPlayPause = player::togglePlayPause,
+                        onTap = { navController.navigate(Destination.NowPlaying) }
+                    )
+                }
                 HomeBottomBar(navController)
             }
         }
