@@ -29,7 +29,7 @@ import io.cloudcauldron.bocan.app.podcasts.ShowDetailScreen
 import io.cloudcauldron.bocan.app.search.SearchScreen
 import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
-import io.cloudcauldron.bocan.app.sync.SyncStatusScreen
+import io.cloudcauldron.bocan.app.settings.sections.SyncSettingsScreen
 import io.cloudcauldron.bocan.sync.pairing.PairingState
 
 /**
@@ -164,7 +164,11 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
         composable<Destination.SyncStatus> {
             val vm = remember { appGraph.syncStatusViewModel() }
             DisposableEffect(Unit) { onDispose { vm.dispose() } }
-            SyncStatusScreen(vm)
+            SyncSettingsScreen(
+                viewModel = vm,
+                onPair = { navController.navigate(Destination.Pairing) },
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

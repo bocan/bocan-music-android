@@ -486,27 +486,45 @@ class AppGraph(val application: Application) {
 
     fun searchViewModel(): SearchViewModel = SearchViewModel(database.searchDao(), libraryPreferences, dispatchers)
 
-    /** A fresh view model for the sync status screen; the caller disposes it. */
+    /** A fresh view model for the sync settings surface; the caller disposes it. */
     fun syncStatusViewModel(): SyncStatusViewModel = SyncStatusViewModel(
         sources = SyncStatusViewModel.Sources(
             syncState = syncCoordinator.syncState,
             server = database.syncDao().observeServer(),
             counts = database.libraryDao().observeDownloadCounts(),
-            autoSync = syncSettings.autoSyncEnabled,
-            chargingOnly = syncSettings.chargingOnly,
+            toggles = SyncStatusViewModel.ToggleFlows(
+                syncOnDiscovery = syncSettings.syncOnDiscovery,
+                periodicSync = syncSettings.periodicSync,
+                chargingOnly = syncSettings.chargingOnly
+            ),
             storageBytes = syncCoordinator::storageBytes
         ),
         actions = SyncStatusViewModel.Actions(
             syncNow = { SyncForegroundService.start(application, force = true) },
             cancel = syncCoordinator::cancelSync,
-            setAutoSync = syncCoordinator::setAutoSync,
-            setChargingOnly = syncCoordinator::setChargingOnly
+            toggles = SyncStatusViewModel.ToggleActions(
+                setSyncOnDiscovery = syncCoordinator::setSyncOnDiscovery,
+                setPeriodicSync = syncCoordinator::setPeriodicSync,
+                setChargingOnly = syncCoordinator::setChargingOnly
+            ),
+            unpair = syncCoordinator::unpair,
+            removeAllMedia = ::removeAllSyncedMedia
         ),
         dispatchers = dispatchers
     )
 
     /** Start a foreground sync now: the post-pairing handoff and the Sync Now action share this. */
     fun syncNow() = SyncForegroundService.start(application, force = true)
+
+    /**
+     * The confirmed remove-all-synced-media action: stop and clear playback first
+     * (the files are about to vanish under the player), then delete and flip the
+     * library back to pending. Pairing and play history are untouched.
+     */
+    suspend fun removeAllSyncedMedia() {
+        queueController.clear()
+        syncCoordinator.removeAllSyncedMedia()
+    }
 
     /** A fresh view model for one pairing flow; the caller disposes it. */
     fun pairingViewModel(): PairingViewModel = PairingViewModel(

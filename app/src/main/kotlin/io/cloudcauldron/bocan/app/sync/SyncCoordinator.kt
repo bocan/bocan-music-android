@@ -6,6 +6,7 @@ import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.persistence.BocanDatabase
 import io.cloudcauldron.bocan.persistence.SyncApplier
 import io.cloudcauldron.bocan.persistence.entities.SyncServerEntity
+import io.cloudcauldron.bocan.persistence.model.DownloadState
 import io.cloudcauldron.bocan.persistence.model.LyricsKind
 import io.cloudcauldron.bocan.playback.lyrics.FetchResult
 import io.cloudcauldron.bocan.sync.CoroutineDispatchers
@@ -76,7 +77,7 @@ class SyncCoordinator(
         discovery = discovery.discover(),
         pairedFingerprint = { trustStore.current()?.certFingerprint },
         endpoint = endpoint,
-        onPairedVisible = { if (settings.autoSyncEnabled.value) SyncForegroundService.start(context, force = false) }
+        onPairedVisible = { if (settings.syncOnDiscovery.value) SyncForegroundService.start(context, force = false) }
     )
 
     /** Start the always-on discovery trigger and schedule the periodic worker. */
@@ -174,8 +175,12 @@ class SyncCoordinator(
             ?: 0L
     } ?: 0L
 
-    fun setAutoSync(enabled: Boolean) {
-        settings.setAutoSync(enabled)
+    fun setSyncOnDiscovery(enabled: Boolean) {
+        settings.setSyncOnDiscovery(enabled)
+    }
+
+    fun setPeriodicSync(enabled: Boolean) {
+        settings.setPeriodicSync(enabled)
         applyWorkerSchedule()
     }
 
@@ -184,8 +189,41 @@ class SyncCoordinator(
         applyWorkerSchedule()
     }
 
+    /**
+     * Forget the paired Mac: stop any run, clear the pinned certificate row, and
+     * cancel the periodic worker. Synced media, the library tables, and play
+     * history all stay: re-pairing (even with another Mac) syncs over them.
+     */
+    fun unpair() {
+        cancelSync()
+        scheduler.cancelPeriodic()
+        appScope.launch {
+            trustStore.clear()
+            endpoint.value = null
+            cached = null
+            syncStateFlow.value = SyncState.Idle
+            log.info("sync.unpaired", emptyMap())
+        }
+    }
+
+    /**
+     * Delete every synced file on this phone and flip the library back to pending,
+     * without unpairing and without touching local-state tables (play history,
+     * episode positions). The next sync re-downloads everything; a racing engine
+     * write can at worst leave one partial file, which that sync re-verifies.
+     */
+    suspend fun removeAllSyncedMedia() {
+        cancelSync()
+        withContext(dispatchers.io) {
+            mediaLayout.mediaRoot()?.deleteRecursively()
+            database.syncDao().setAllTrackDownloadStates(DownloadState.Pending)
+            database.syncDao().setAllEpisodeDownloadStates(DownloadState.Pending)
+            log.info("sync.mediaRemoved", emptyMap())
+        }
+    }
+
     private fun applyWorkerSchedule() {
-        if (settings.autoSyncEnabled.value) {
+        if (settings.periodicSync.value) {
             scheduler.schedulePeriodic(settings.chargingOnly.value)
         } else {
             scheduler.cancelPeriodic()

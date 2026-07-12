@@ -62,8 +62,22 @@
   <string name="sync_failures_title">Some items could not be downloaded</string>
   <string name="sync_failure_row">%1$s (%2$s)</string>
 
-  <string name="sync_auto_label">Sync automatically over Wi-Fi</string>
+  <string name="sync_on_discovery_label">Sync when your Mac appears</string>
+  <string name="sync_on_discovery_summary">Start syncing as soon as your paired Mac shows up on the network.</string>
+  <string name="sync_periodic_label">Sync in the background</string>
+  <string name="sync_periodic_summary">Check for changes every few hours while on Wi-Fi.</string>
   <string name="sync_charging_label">Only sync while charging</string>
+  <string name="sync_state_transferring_a11y">Downloading files</string>
+
+  <string name="sync_fingerprint_tail">Certificate fingerprint ends in %1$s</string>
+  <string name="sync_unpair_action">Unpair</string>
+  <string name="sync_unpair_confirm_title">Unpair from %1$s?</string>
+  <string name="sync_unpair_confirm_message">This phone will stop syncing. Your music stays on the phone, and pairing again brings everything back in sync.</string>
+  <string name="sync_remove_media_action">Remove all synced media</string>
+  <string name="sync_remove_media_confirm_title">Remove all synced media?</string>
+  <string name="sync_remove_media_confirm_message">This deletes every synced song, episode, and cover from this phone to free up space. It only touches the phone: your Mac keeps everything, you stay paired, and your play history is kept. The next sync downloads your library again.</string>
+  <string name="sync_remove_media_confirm_action">Delete from this phone</string>
+  <string name="sync_remove_media_working">Removing synced media…</string>
 
   <string name="sync_banner_transferring">Syncing: %1$d of %2$d</string>
 
