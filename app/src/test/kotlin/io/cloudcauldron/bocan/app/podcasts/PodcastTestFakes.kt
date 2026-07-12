@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** A show entity with sensible defaults for tests. */
-fun podcast(id: Long, title: String = "Show $id", defaultSpeed: Double? = null): PodcastEntity =
-    PodcastEntity(id, title, author = "Author $id", descriptionHtml = null, artworkHash = null, defaultSpeed = defaultSpeed)
+fun podcast(id: Long, title: String = "Show $id", defaultSpeed: Double? = null, artworkHash: String? = null): PodcastEntity =
+    PodcastEntity(id, title, author = "Author $id", descriptionHtml = null, artworkHash = artworkHash, defaultSpeed = defaultSpeed)
 
 /** An episode entity with sensible defaults for tests. */
 fun episode(

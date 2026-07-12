@@ -28,8 +28,8 @@ data class EpisodeUi(
     val progress: EpisodeProgressUi
 )
 
-/** A continue-listening card: an in-progress episode with its remaining time and progress ring. */
-data class ContinueUi(val episodeId: String, val title: String, val progress: Float, val remainingMs: Long)
+/** A continue-listening card: an in-progress episode with its remaining time, progress ring, and show art. */
+data class ContinueUi(val episodeId: String, val title: String, val progress: Float, val remainingMs: Long, val artworkHash: String?)
 
 fun PodcastEntity.toUi(unplayed: Int): ShowUi = ShowUi(id, title, author, artworkHash, unplayed)
 
@@ -44,11 +44,12 @@ fun EpisodeProgressRow.toUi(): EpisodeUi = EpisodeUi(
     progress = progressOf(PlayState.fromWireOrNull(playStateWire.orEmpty()), playPositionMs ?: 0, episode.durationMs)
 )
 
-fun EpisodeWithProgress.toContinueUi(): ContinueUi = ContinueUi(
+fun EpisodeWithProgress.toContinueUi(artworkHash: String?): ContinueUi = ContinueUi(
     episodeId = episode.id,
     title = episode.title,
     progress = fractionOf(playPositionMs, episode.durationMs),
-    remainingMs = (episode.durationMs - playPositionMs).coerceAtLeast(0)
+    remainingMs = (episode.durationMs - playPositionMs).coerceAtLeast(0),
+    artworkHash = artworkHash
 )
 
 private fun progressOf(state: PlayState?, positionMs: Long, durationMs: Long): EpisodeProgressUi = when (state) {

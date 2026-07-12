@@ -44,6 +44,23 @@ class PodcastsViewModelTests {
     }
 
     @Test
+    fun `a continue-listening card carries its show artwork hash`() = runTest {
+        dao.shows.value = listOf(podcast(1, artworkHash = "showart1"))
+        dao.continueListening.value = listOf(
+            EpisodeWithProgress(episode("e1", podcastId = 1, durationMs = 600_000), playPositionMs = 100_000, lastPlayedAt = Instant.EPOCH)
+        )
+        val vm = viewModel()
+
+        vm.state.test {
+            var state = awaitItem()
+            while (state.continueListening.isEmpty()) state = awaitItem()
+            assertEquals("showart1", state.continueListening.first().artworkHash)
+            cancelAndIgnoreRemainingEvents()
+        }
+        vm.dispose()
+    }
+
+    @Test
     fun `unplayed badges compute per show and update reactively when marked played`() = runTest {
         dao.shows.value = listOf(podcast(1), podcast(2))
         dao.unplayedCounts.value = listOf(UnplayedCount(podcastId = 1, unplayed = 3), UnplayedCount(podcastId = 2, unplayed = 0))

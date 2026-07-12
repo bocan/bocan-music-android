@@ -93,7 +93,7 @@ private fun ContinueShelf(items: List<ContinueUi>, onResume: (String) -> Unit) {
                         .semantics(mergeDescendants = true) { contentDescription = cardDescription }
                 ) {
                     Box(modifier = Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp))) {
-                        ArtworkImage(artworkHash = null, modifier = Modifier.fillMaxSize())
+                        ArtworkImage(artworkHash = card.artworkHash, modifier = Modifier.fillMaxSize())
                     }
                     Text(
                         card.title,

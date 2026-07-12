@@ -27,8 +27,9 @@ class PodcastsViewModel(podcastDao: PodcastDao, dispatchers: CoroutineDispatcher
             podcastDao.observeUnplayedCounts()
         ) { continuing, shows, counts ->
             val unplayedById = counts.associate { it.podcastId to it.unplayed }
+            val artworkByPodcast = shows.associate { it.id to it.artworkHash }
             PodcastsUiState(
-                continueListening = continuing.map { it.toContinueUi() },
+                continueListening = continuing.map { it.toContinueUi(artworkByPodcast[it.episode.podcastId]) },
                 shows = shows.map { it.toUi(unplayedById[it.id] ?: 0) }
             )
         }.stateIn(scope, SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), PodcastsUiState())
