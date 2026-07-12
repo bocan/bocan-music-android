@@ -52,15 +52,18 @@ fun Oscilloscope(source: WaveformSource, modifier: Modifier = Modifier) {
 }
 
 /**
- * A transparent [GLSurfaceView] hosting the [OscilloscopeRenderer]. Media-overlay z-order
- * lets it composite over the ambient background rather than behind the window.
+ * A transparent [GLSurfaceView] hosting the [OscilloscopeRenderer]. An RGBA config, a
+ * translucent holder, and top z-order give it real per-pixel alpha, so the cleared
+ * background is transparent and the ambient gradient shows through the trace. It only ever
+ * renders on the bare Now Playing view (the caller drops it while a sheet is open), so
+ * drawing on top is safe.
  */
 private class OscilloscopeSurfaceView(context: Context, source: WaveformSource) : GLSurfaceView(context) {
     init {
         setEGLContextClientVersion(2)
         setEGLConfigChooser(RGBA_BITS, RGBA_BITS, RGBA_BITS, RGBA_BITS, DEPTH_BITS, STENCIL_BITS)
         holder.setFormat(PixelFormat.TRANSLUCENT)
-        setZOrderMediaOverlay(true)
+        setZOrderOnTop(true)
         setRenderer(OscilloscopeRenderer(source))
         renderMode = RENDERMODE_CONTINUOUSLY
     }
