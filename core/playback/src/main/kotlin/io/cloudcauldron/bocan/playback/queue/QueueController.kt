@@ -2,10 +2,13 @@ package io.cloudcauldron.bocan.playback.queue
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
@@ -13,6 +16,9 @@ import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.MediaItemFactory
 import io.cloudcauldron.bocan.playback.MediaItemSource
 import io.cloudcauldron.bocan.playback.PlaybackService
+import io.cloudcauldron.bocan.playback.session.AudioFormatResult
+import io.cloudcauldron.bocan.playback.session.AudioPipelineFormat
+import io.cloudcauldron.bocan.playback.session.SessionCommands
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.random.Random
@@ -143,6 +149,27 @@ class QueueController(
 
     /** The current output volume (0..1), or full volume when not connected. */
     override suspend fun currentVolume(): Float = withContext(dispatchers.main) { controller?.volume ?: FULL_VOLUME }
+
+    /**
+     * Ask the service for the live decoder format via the GET_AUDIO_FORMAT command. A
+     * MediaController cannot read the decoder Format itself, so it round-trips through the
+     * session. Any failure (not connected, command unavailable, session error) resolves to
+     * null so the details sheet simply omits the pipeline line.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun currentAudioFormat(): AudioPipelineFormat? = withContext(dispatchers.main) {
+        val controller = controller ?: return@withContext null
+        val command = SessionCommand(SessionCommands.GET_AUDIO_FORMAT, Bundle.EMPTY)
+        if (!controller.isSessionCommandAvailable(command)) return@withContext null
+        val result = try {
+            controller.sendCustomCommand(command, Bundle.EMPTY).await()
+        } catch (expected: Exception) {
+            // Expected when the session drops mid-request; render no pipeline line, never an error.
+            return@withContext null
+        }
+        if (result.resultCode != SessionResult.RESULT_SUCCESS) return@withContext null
+        AudioFormatResult.fromBundle(result.extras)
+    }
 
     /** Set the output volume (0..1); used by the sleep timer fade. Does not push UI state. */
     override suspend fun setVolume(volume: Float) {

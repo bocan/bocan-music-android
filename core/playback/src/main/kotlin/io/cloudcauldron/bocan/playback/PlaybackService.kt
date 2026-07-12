@@ -24,6 +24,7 @@ import io.cloudcauldron.bocan.playback.queue.QueueSnapshot
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.fromPlayer
 import io.cloudcauldron.bocan.playback.queue.toPlayer
+import io.cloudcauldron.bocan.playback.session.AudioFormatResult
 import io.cloudcauldron.bocan.playback.session.SessionCommands as BocanCommands
 import io.cloudcauldron.bocan.playback.stats.ResumePolicy
 import kotlinx.coroutines.CoroutineScope
@@ -203,6 +204,12 @@ class PlaybackService : MediaLibraryService() {
             customCommand: SessionCommand,
             args: android.os.Bundle
         ): ListenableFuture<SessionResult> {
+            if (customCommand.customAction == BocanCommands.GET_AUDIO_FORMAT) {
+                val format = AudioFormatResult.fromExoFormat(player.audioFormat)
+                return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_SUCCESS, AudioFormatResult.toBundle(format))
+                )
+            }
             handleCommand(customCommand.customAction)
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }

@@ -1,5 +1,6 @@
 package io.cloudcauldron.bocan.playback.queue
 
+import io.cloudcauldron.bocan.playback.session.AudioPipelineFormat
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -48,4 +49,12 @@ interface PlaybackTransport {
     suspend fun currentVolume(): Float
 
     suspend fun setVolume(volume: Float)
+
+    /**
+     * The live decoder format of the current item (sample rate, channels, codec, bit
+     * depth), for the song details sheet. Null when not connected, when the session does
+     * not answer, or when nothing usable is playing; callers render no pipeline line and
+     * never surface an error.
+     */
+    suspend fun currentAudioFormat(): AudioPipelineFormat?
 }

@@ -19,8 +19,15 @@ object SessionCommands {
     const val CYCLE_SPEED = NAMESPACE + "cycle_speed"
     const val TOGGLE_SHUFFLE = NAMESPACE + "toggle_shuffle"
 
+    /**
+     * A query command, not a transport action: the app process asks the service for the
+     * live decoder format (which a MediaController cannot read) and the service answers
+     * with an [AudioFormatResult] Bundle. Phone-internal only, never a notification button.
+     */
+    const val GET_AUDIO_FORMAT = NAMESPACE + "get_audio_format"
+
     /** Every custom action, for advertising in the connection result and building buttons. */
-    val ALL: List<String> = listOf(SKIP_BACK, SKIP_FORWARD, CYCLE_SPEED, TOGGLE_SHUFFLE)
+    val ALL: List<String> = listOf(SKIP_BACK, SKIP_FORWARD, CYCLE_SPEED, TOGGLE_SHUFFLE, GET_AUDIO_FORMAT)
 
     /** The [SessionCommand] for [action]. */
     @UnstableApi

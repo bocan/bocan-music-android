@@ -4,6 +4,7 @@ import io.cloudcauldron.bocan.playback.queue.PlaybackTransport
 import io.cloudcauldron.bocan.playback.queue.PlayerUiState
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
+import io.cloudcauldron.bocan.playback.session.AudioPipelineFormat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -68,4 +69,7 @@ class FakePlaybackTransport(initial: PlayerUiState = PlayerUiState()) : Playback
     override suspend fun setVolume(volume: Float) {
         this.volume = volume
     }
+
+    var audioFormat: AudioPipelineFormat? = null
+    override suspend fun currentAudioFormat(): AudioPipelineFormat? = audioFormat
 }
