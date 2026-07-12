@@ -57,7 +57,12 @@ class KeystoreDeviceIdentity private constructor(override val certificate: X509C
             val now = Instant.now()
             val spec = KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_SIGN)
                 .setAlgorithmParameterSpec(ECGenParameterSpec(CURVE))
-                .setDigests(KeyProperties.DIGEST_SHA256)
+                // DIGEST_NONE is required alongside SHA-256: Conscrypt's TLS 1.3 client-auth
+                // path pre-hashes the handshake transcript and asks the Keystore for a raw
+                // (NONEwithECDSA) signature of that digest. A key that permits only
+                // DIGEST_SHA256 refuses the raw operation, so the CertificateVerify signature
+                // fails ("EcdsaMethodDoSign") and the mutual-TLS handshake never completes.
+                .setDigests(KeyProperties.DIGEST_NONE, KeyProperties.DIGEST_SHA256)
                 .setCertificateSubject(X500Principal("CN=${DeviceCommonName.random()}"))
                 .setCertificateSerialNumber(BigInteger(SERIAL_BITS, SecureRandom()))
                 .setCertificateNotBefore(Date.from(now))
