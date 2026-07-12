@@ -1,5 +1,16 @@
 config:
   validation: true
+  # The bocan ruleset ships from :detekt-rules; keep validation quiet where the
+  # plugin jar is absent (the rules module itself).
+  excludes: 'bocan.*'
+
+bocan:
+  UserVisibleStringConcatenation:
+    active: true
+    excludes: ['**/test/**', '**/androidTest/**']
+  BareTextLiteral:
+    active: true
+    excludes: ['**/test/**', '**/androidTest/**']
 
 complexity:
   # Room DAOs are declarative SQL surfaces; the design spec fixes their shape.

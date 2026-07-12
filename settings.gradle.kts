@@ -29,6 +29,7 @@ dependencyResolutionManagement {
 rootProject.name = "bocan-music-android"
 
 include(":app")
+include(":detekt-rules")
 include(":core:observability")
 include(":core:persistence")
 include(":core:sync")

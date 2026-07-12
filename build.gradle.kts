@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.room) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.kover) apply false
 }
@@ -21,5 +22,12 @@ subprojects {
     extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
         buildUponDefaultConfig = true
         config.setFrom(rootProject.files("detekt.yml"))
+    }
+
+    // The repo's own rules (bocan ruleset); the rules module cannot depend on itself.
+    if (name != "detekt-rules") {
+        dependencies {
+            add("detektPlugins", project(":detekt-rules"))
+        }
     }
 }
