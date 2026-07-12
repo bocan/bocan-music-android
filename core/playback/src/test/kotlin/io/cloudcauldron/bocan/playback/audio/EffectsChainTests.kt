@@ -22,10 +22,16 @@ import org.robolectric.annotation.Config
 @Config(sdk = [36])
 class EffectsChainTests {
     @Test
-    fun `the chain exposes its four processors in order`() {
+    fun `the chain exposes its processors in order, tap last`() {
         val chain = EffectsChain(CoroutineDispatchers())
         assertEquals(
-            listOf(chain.eqProcessor, chain.bassBoostProcessor, chain.replayGainProcessor, chain.limiterProcessor),
+            listOf(
+                chain.eqProcessor,
+                chain.bassBoostProcessor,
+                chain.replayGainProcessor,
+                chain.limiterProcessor,
+                chain.waveformTap
+            ),
             chain.audioProcessors().toList()
         )
     }

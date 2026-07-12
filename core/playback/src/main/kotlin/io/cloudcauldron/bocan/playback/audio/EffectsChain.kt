@@ -29,7 +29,8 @@ class EffectsChain(
     val eqProcessor: EqProcessor = EqProcessor(),
     val bassBoostProcessor: BassBoostProcessor = BassBoostProcessor(),
     val replayGainProcessor: ReplayGainProcessor = ReplayGainProcessor(),
-    val limiterProcessor: LimiterProcessor = LimiterProcessor()
+    val limiterProcessor: LimiterProcessor = LimiterProcessor(),
+    val waveformTap: WaveformTap = WaveformTap()
 ) {
     /** The fade gain stage is the ReplayGain processor: fades and ReplayGain compose there. */
     val crossfader = Crossfader({ gain -> replayGainProcessor.setFadeFactor(gain) }, dispatchers)
@@ -49,8 +50,13 @@ class EffectsChain(
     /** The player-held seams the service supplies once its player exists. */
     class Binding(val skipSilence: SkipSilence, val currentItemValues: () -> ReplayGainValues?, val scope: CoroutineScope)
 
-    /** The processors in the fixed chain order for [androidx.media3.exoplayer.audio.DefaultAudioSink]. */
-    fun audioProcessors(): Array<AudioProcessor> = arrayOf(eqProcessor, bassBoostProcessor, replayGainProcessor, limiterProcessor)
+    /**
+     * The processors in the fixed chain order for [androidx.media3.exoplayer.audio.DefaultAudioSink].
+     * The waveform tap is last, a pass-through that reads the fully shaped signal for the
+     * oscilloscope without altering it.
+     */
+    fun audioProcessors(): Array<AudioProcessor> =
+        arrayOf(eqProcessor, bassBoostProcessor, replayGainProcessor, limiterProcessor, waveformTap)
 
     /** Apply the full effects state: the EQ curve and bass shelf are gated by the master [EqState.enabled]. */
     fun applySettings(state: EqState) {
