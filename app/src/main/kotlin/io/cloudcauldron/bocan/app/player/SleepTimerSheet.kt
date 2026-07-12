@@ -17,6 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.playback.SleepDuration
@@ -39,7 +43,21 @@ fun SleepTimerSheet(
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
-            Text(stringResource(R.string.sleep_timer_title), modifier = Modifier.padding(bottom = 12.dp))
+            // Announce arming and fading once per state change; the countdown itself stays quiet.
+            val announced = when (state) {
+                is SleepTimerState.Counting, SleepTimerState.WaitingForTrackEnd -> stringResource(R.string.sleep_timer_armed)
+                SleepTimerState.Fading -> stringResource(R.string.sleep_timer_fading)
+                SleepTimerState.Idle -> stringResource(R.string.sleep_timer_title)
+            }
+            Text(
+                text = stringResource(R.string.sleep_timer_title),
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        contentDescription = announced
+                    }
+            )
             when (state) {
                 is SleepTimerState.Counting -> ArmedControls(
                     label = stringResource(

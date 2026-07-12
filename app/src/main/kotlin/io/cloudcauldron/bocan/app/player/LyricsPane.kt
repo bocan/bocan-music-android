@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,9 +59,10 @@ private fun SyncedLyrics(lines: List<LyricLine>, activeIndex: Int, offsetMs: Lon
     LazyColumn(state = listState, modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 120.dp)) {
         if (offsetMs != 0L) {
             item(key = "offset") {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(stringResource(R.string.lyrics_offset, offsetMs)) },
+                Text(
+                    text = stringResource(R.string.lyrics_offset, offsetMs),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }

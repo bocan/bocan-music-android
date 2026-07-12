@@ -46,25 +46,28 @@ fun TrackRow(track: TrackUi, onClick: () -> Unit, onLongClick: () -> Unit, modif
         track.durationLabel
     ) + loved + pending
 
+    // Pending rows dim the artwork only; text keeps full-opacity theme tokens so
+    // it never drops below the 4.5:1 contrast floor in either theme.
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { contentDescription = description }
-            .alpha(if (track.pending) PENDING_ALPHA else 1f)
     ) {
         ArtworkImage(
             artworkHash = track.artworkHash,
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(6.dp))
+                .alpha(if (track.pending) PENDING_ALPHA else 1f)
         )
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.padding(end = 8.dp).weight(1f)) {
             Text(
                 text = track.title,
                 style = MaterialTheme.typography.bodyLarge,
+                color = if (track.pending) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

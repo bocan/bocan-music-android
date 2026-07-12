@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import io.cloudcauldron.bocan.app.components.ArtworkImage
@@ -54,7 +55,10 @@ fun PlaylistsScreen(playlists: List<PlaylistEntity>, onOpen: (Long) -> Unit, mod
 
 @Composable
 private fun PlaylistLeading(playlist: PlaylistEntity) {
+    // A synced accent can be any hex; fall back to primary when it would sit
+    // below the 3:1 non-text contrast floor against the list surface.
     val accent = parseAccent(playlist.accentColor)
+        ?.takeIf { contrastRatio(it, MaterialTheme.colorScheme.surface) >= MIN_ICON_CONTRAST }
     when {
         playlist.artworkHash != null -> ArtworkImage(
             artworkHash = playlist.artworkHash,
@@ -97,3 +101,13 @@ private fun parseAccent(hex: String?): Color? {
 }
 
 private const val INDENT_DP = 16
+
+/** WCAG contrast ratio between two opaque colors. */
+private fun contrastRatio(foreground: Color, background: Color): Float {
+    val lighter = maxOf(foreground.luminance(), background.luminance())
+    val darker = minOf(foreground.luminance(), background.luminance())
+    return (lighter + LUMINANCE_OFFSET) / (darker + LUMINANCE_OFFSET)
+}
+
+private const val MIN_ICON_CONTRAST = 3f
+private const val LUMINANCE_OFFSET = 0.05f

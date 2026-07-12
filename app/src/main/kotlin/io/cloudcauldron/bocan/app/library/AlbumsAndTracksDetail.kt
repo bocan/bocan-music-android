@@ -2,7 +2,6 @@ package io.cloudcauldron.bocan.app.library
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +14,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.AlbumCell
@@ -38,7 +38,7 @@ fun AlbumsAndTracksDetail(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(title, maxLines = 1) },
+                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { BackButton(onBack) }
             )
         }
@@ -50,7 +50,7 @@ fun AlbumsAndTracksDetail(
         ) {
             if (albums.isNotEmpty()) {
                 item(key = "albums", contentType = "albums-row") {
-                    LazyRow(modifier = Modifier.fillMaxWidth().height(220.dp)) {
+                    LazyRow(modifier = Modifier.fillMaxWidth()) {
                         items(albums, key = { it.id }, contentType = { "album" }) { album ->
                             AlbumCell(
                                 album = album,

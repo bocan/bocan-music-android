@@ -29,7 +29,9 @@ private val paletteCache = LruCache<String, Int>(32)
 /**
  * A subtle ambient wash behind Now Playing, derived from the artwork's palette on a
  * background dispatcher and cached per artwork Uri. Disabled under battery saver, and
- * the colour transition snaps rather than animates under reduced motion.
+ * the colour transition snaps rather than animates under reduced motion. The alpha is
+ * capped low enough that onSurface and onSurfaceVariant text drawn over the washed
+ * background keeps a 4.5:1 contrast floor whatever the artwork supplies.
  */
 @Composable
 fun Modifier.ambientBackground(artworkUri: String?): Modifier {
@@ -64,7 +66,7 @@ private suspend fun extractAmbient(context: Context, artworkUri: String): Int? =
     swatch?.rgb?.also { paletteCache.put(artworkUri, it) }
 }
 
-private const val AMBIENT_ALPHA = 0.55f
+private const val AMBIENT_ALPHA = 0.3f
 private const val AMBIENT_ANIM_MS = 600
 private const val SAMPLE_SIZE = 4
 private const val MAX_COLORS = 16

@@ -67,12 +67,15 @@ fun ShowNotesSheet(title: String, descriptionHtml: String?, onDismiss: () -> Uni
             } else {
                 val sanitized = ShowNotesSanitizer.sanitize(html)
                 val onSurface = MaterialTheme.colorScheme.onSurface.toArgb()
+                val linkColor = MaterialTheme.colorScheme.primary.toArgb()
                 AndroidView(
                     factory = { viewContext ->
                         TextView(viewContext).apply { movementMethod = LinkMovementMethod.getInstance() }
                     },
                     update = { view ->
                         view.setTextColor(onSurface)
+                        // Links follow the theme too, not the legacy platform accent.
+                        view.setLinkTextColor(linkColor)
                         val rendered = HtmlCompat.fromHtml(sanitized, HtmlCompat.FROM_HTML_MODE_COMPACT)
                         view.text = interceptLinks(rendered) { url ->
                             if (ShowNotesLinks.isSecure(url)) openLink(context, url) else pendingInsecureUrl = url

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.playback.audio.EqBands
@@ -93,7 +95,13 @@ fun EqualizerScreen(viewModel: EqualizerViewModel, onBack: () -> Unit, modifier:
 
 @Composable
 private fun MasterSwitch(enabled: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = enabled, role = Role.Switch, onValueChange = onToggle)
+            .padding(vertical = 8.dp)
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(R.string.eq_enable), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -102,7 +110,7 @@ private fun MasterSwitch(enabled: Boolean, onToggle: (Boolean) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = enabled, onCheckedChange = onToggle)
+        Switch(checked = enabled, onCheckedChange = null)
     }
 }
 
@@ -166,7 +174,13 @@ private fun ReplayGainChip(labelRes: Int, selected: Boolean, onClick: () -> Unit
 
 @Composable
 private fun SkipSilenceToggle(enabled: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = enabled, role = Role.Switch, onValueChange = onToggle)
+            .padding(vertical = 8.dp)
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(R.string.eq_skip_silence), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -175,7 +189,7 @@ private fun SkipSilenceToggle(enabled: Boolean, onToggle: (Boolean) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = enabled, onCheckedChange = onToggle)
+        Switch(checked = enabled, onCheckedChange = null)
     }
 }
 

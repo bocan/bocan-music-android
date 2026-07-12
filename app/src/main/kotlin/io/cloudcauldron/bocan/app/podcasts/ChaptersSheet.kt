@@ -14,12 +14,17 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.playback.podcast.Chapter
 
 /** The chapters list: tap a chapter to seek there, with the active chapter highlighted. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChaptersSheet(chapters: List<Chapter>, activeIndex: Int, onSeek: (Long) -> Unit, onDismiss: () -> Unit) {
+    val playingNow = stringResource(R.string.chapter_playing_a11y)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
             itemsIndexed(chapters, key = { index, _ -> index }) { index, chapter ->
@@ -38,6 +43,7 @@ fun ChaptersSheet(chapters: List<Chapter>, activeIndex: Int, onSeek: (Long) -> U
                             onSeek(chapter.startTimeMs)
                             onDismiss()
                         }
+                        .semantics { if (active) stateDescription = playingNow }
                 )
             }
         }

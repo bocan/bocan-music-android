@@ -35,6 +35,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
@@ -125,16 +129,63 @@ private fun QueueList(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove:
                         if (target != index) onMove(index, target)
                         draggingIndex = -1
                         dragOffset = 0f
-                    }
+                    },
+                    accessibilityActions = queueRowActions(index, state.items.lastIndex, onMove, onRemove)
                 )
             }
         }
     }
 }
 
+/**
+ * Move-up, move-down, and remove as TalkBack custom actions, because long-press
+ * drag and swipe-to-dismiss are invisible to accessibility services.
+ */
 @Composable
-private fun QueueRow(item: QueueItemUi, dragOffset: Float, onDragStart: () -> Unit, onDrag: (Float) -> Unit, onDragEnd: () -> Unit) {
+private fun queueRowActions(
+    index: Int,
+    lastIndex: Int,
+    onMove: (Int, Int) -> Unit,
+    onRemove: (Int) -> Unit
+): List<CustomAccessibilityAction> = buildList {
+    val moveUp = stringResource(R.string.queue_move_up)
+    val moveDown = stringResource(R.string.queue_move_down)
+    val remove = stringResource(R.string.queue_remove)
+    if (index > 0) {
+        add(
+            CustomAccessibilityAction(moveUp) {
+                onMove(index, index - 1)
+                true
+            }
+        )
+    }
+    if (index < lastIndex) {
+        add(
+            CustomAccessibilityAction(moveDown) {
+                onMove(index, index + 1)
+                true
+            }
+        )
+    }
+    add(
+        CustomAccessibilityAction(remove) {
+            onRemove(index)
+            true
+        }
+    )
+}
+
+@Composable
+private fun QueueRow(
+    item: QueueItemUi,
+    dragOffset: Float,
+    onDragStart: () -> Unit,
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit,
+    accessibilityActions: List<CustomAccessibilityAction>
+) {
     val background = if (item.isCurrent) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+    val nowPlaying = stringResource(R.string.queue_now_playing_a11y)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -143,6 +194,10 @@ private fun QueueRow(item: QueueItemUi, dragOffset: Float, onDragStart: () -> Un
             .graphicsLayer { translationY = dragOffset }
             .background(background)
             .padding(horizontal = 16.dp)
+            .semantics(mergeDescendants = true) {
+                customActions = accessibilityActions
+                if (item.isCurrent) stateDescription = nowPlaying
+            }
     ) {
         ArtworkImage(artworkHash = null, modifier = Modifier.size(44.dp))
         Text(
@@ -158,7 +213,8 @@ private fun QueueRow(item: QueueItemUi, dragOffset: Float, onDragStart: () -> Un
             contentDescription = stringResource(R.string.queue_reorder_handle),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
-                .size(28.dp)
+                .size(48.dp)
+                .padding(10.dp)
                 .pointerInput(item.mediaId) {
                     detectDragGesturesAfterLongPress(
                         onDragStart = { onDragStart() },

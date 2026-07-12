@@ -20,6 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 
@@ -46,7 +50,15 @@ fun SpeedSheet(speed: Float, onSpeed: (Float) -> Unit, onDismiss: () -> Unit) {
                 FilledIconButton(onClick = { onSpeed((speed - STEP).coerceIn(MIN_SPEED, MAX_SPEED)) }) {
                     Icon(Icons.Rounded.Remove, contentDescription = stringResource(R.string.speed_slower))
                 }
-                Text(stringResource(R.string.speed_value, speed), style = MaterialTheme.typography.headlineSmall)
+                val speedText = stringResource(R.string.speed_value, speed)
+                Text(
+                    text = speedText,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        contentDescription = speedText
+                    }
+                )
                 FilledIconButton(onClick = { onSpeed((speed + STEP).coerceIn(MIN_SPEED, MAX_SPEED)) }) {
                     Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.speed_faster))
                 }

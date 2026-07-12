@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -35,6 +36,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import io.cloudcauldron.bocan.app.R
@@ -95,7 +99,13 @@ fun ScrobbleSettingsScreen(viewModel: ScrobbleSettingsViewModel, onBack: () -> U
 
 @Composable
 private fun MasterRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = enabled, role = Role.Switch, onValueChange = onToggle)
+            .padding(vertical = 12.dp)
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(R.string.scrobble_master), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -104,7 +114,7 @@ private fun MasterRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = enabled, onCheckedChange = onToggle)
+        Switch(checked = enabled, onCheckedChange = null)
     }
 }
 
@@ -116,23 +126,7 @@ private fun ProviderRow(provider: ScrobbleProviderRow, viewModel: ScrobbleSettin
     var awaitingLastFm by remember { mutableStateOf(false) }
 
     HorizontalDivider()
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(provider.displayName, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = when {
-                    provider.connected && provider.username != null -> stringResource(R.string.scrobble_connected, provider.username)
-                    provider.connected -> stringResource(R.string.scrobble_connected_no_name)
-                    else -> stringResource(R.string.scrobble_not_connected)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (provider.connected) {
-            Switch(checked = provider.enabled, onCheckedChange = { viewModel.setProviderEnabled(provider.id, it) })
-        }
-    }
+    ProviderHeader(provider, viewModel)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
         if (provider.connected) {
             OutlinedButton(onClick = { viewModel.disconnect(provider.id) }) { Text(stringResource(R.string.scrobble_disconnect)) }
@@ -166,6 +160,32 @@ private fun ProviderRow(provider: ScrobbleProviderRow, viewModel: ScrobbleSettin
             },
             onDismiss = { showTokenDialog = false }
         )
+    }
+}
+
+@Composable
+private fun ProviderHeader(provider: ScrobbleProviderRow, viewModel: ScrobbleSettingsViewModel) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(provider.displayName, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = when {
+                    provider.connected && provider.username != null -> stringResource(R.string.scrobble_connected, provider.username)
+                    provider.connected -> stringResource(R.string.scrobble_connected_no_name)
+                    else -> stringResource(R.string.scrobble_not_connected)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (provider.connected) {
+            val switchLabel = stringResource(R.string.scrobble_enable_a11y, provider.displayName)
+            Switch(
+                checked = provider.enabled,
+                onCheckedChange = { viewModel.setProviderEnabled(provider.id, it) },
+                modifier = Modifier.semantics { contentDescription = switchLabel }
+            )
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
@@ -59,10 +62,10 @@ fun TransportControls(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val shuffleTint = if (shuffleActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-        Icon(
-            imageVector = Icons.Rounded.Shuffle,
-            contentDescription = stringResource(R.string.action_shuffle),
-            tint = shuffleTint,
+        val shuffleState = stringResource(if (shuffleActive) R.string.state_on else R.string.state_off)
+        // A 48 dp target with the icon centred; tint alone never carries the state.
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .clip(CircleShape)
                 .combinedClickable(
@@ -71,8 +74,16 @@ fun TransportControls(
                     onClick = onShuffle,
                     onLongClick = onShuffleLongPress
                 )
-                .size(28.dp)
-        )
+                .size(48.dp)
+                .semantics { stateDescription = shuffleState }
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Shuffle,
+                contentDescription = stringResource(R.string.action_shuffle),
+                tint = shuffleTint,
+                modifier = Modifier.size(28.dp)
+            )
+        }
         IconButton(onClick = onPrevious) {
             Icon(Icons.Rounded.SkipPrevious, contentDescription = stringResource(R.string.action_previous))
         }
@@ -87,7 +98,14 @@ fun TransportControls(
             Icon(Icons.Rounded.SkipNext, contentDescription = stringResource(R.string.action_next))
         }
         val repeatActive = repeatMode != RepeatMode.Off
-        IconButton(onClick = onCycleRepeat) {
+        val repeatState = stringResource(
+            when (repeatMode) {
+                RepeatMode.Off -> R.string.repeat_state_off
+                RepeatMode.All -> R.string.repeat_state_all
+                RepeatMode.One -> R.string.repeat_state_one
+            }
+        )
+        IconButton(onClick = onCycleRepeat, modifier = Modifier.semantics { stateDescription = repeatState }) {
             Icon(
                 imageVector = if (repeatMode == RepeatMode.One) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                 contentDescription = stringResource(R.string.action_repeat),

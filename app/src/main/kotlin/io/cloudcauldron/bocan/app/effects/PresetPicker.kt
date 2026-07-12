@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -74,7 +75,11 @@ private fun deleteIcon(preset: EqPreset, onDelete: (String) -> Unit): (@Composab
         Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = stringResource(R.string.eq_delete_preset),
-            modifier = Modifier.padding(start = 4.dp).clickable { onDelete(preset.id) }
+            // Pad inside the clickable so the touch target reaches 48 dp.
+            modifier = Modifier
+                .clickable { onDelete(preset.id) }
+                .padding(start = 4.dp)
+                .minimumInteractiveComponentSize()
         )
     }
 }

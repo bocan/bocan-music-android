@@ -24,7 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
@@ -41,6 +44,8 @@ import io.cloudcauldron.bocan.playback.queue.PlayerUiState
 fun MiniPlayerBar(state: PlayerUiState, onPlayPause: () -> Unit, onTap: () -> Unit, modifier: Modifier = Modifier) {
     val current = state.current ?: return
     val progress = if (state.durationMs > 0) (state.positionMs.toFloat() / state.durationMs).coerceIn(0f, 1f) else 0f
+    val reducedMotion = isReducedMotion(LocalContext.current)
+    val barDescription = stringResource(R.string.mini_player_a11y, current.title, current.artist.orEmpty())
     Surface(tonalElevation = 3.dp, modifier = modifier.fillMaxWidth()) {
         Column {
             Row(
@@ -55,13 +60,18 @@ fun MiniPlayerBar(state: PlayerUiState, onPlayPause: () -> Unit, onTap: () -> Un
                     modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp))
                 )
                 Spacer(Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
+                // One TalkBack sentence for the whole bar; the play button keeps its own.
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics(mergeDescendants = true) { contentDescription = barDescription }
+                ) {
                     Text(
                         text = current.title,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.basicMarquee()
+                        modifier = if (reducedMotion) Modifier else Modifier.basicMarquee()
                     )
                     current.artist?.let { artist ->
                         Text(

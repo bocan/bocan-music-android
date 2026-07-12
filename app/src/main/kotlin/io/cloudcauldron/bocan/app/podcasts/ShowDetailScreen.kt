@@ -44,7 +44,7 @@ fun ShowDetailScreen(viewModel: ShowDetailViewModel, onBack: () -> Unit, modifie
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(ui.header.title, maxLines = 1) },
+                title = { Text(ui.header.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))

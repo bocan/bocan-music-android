@@ -28,7 +28,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
@@ -79,7 +82,14 @@ private fun ContinueShelf(items: List<ContinueUi>, onResume: (String) -> Unit) {
         )
         LazyRow {
             items(items, key = { it.episodeId }) { card ->
-                Column(modifier = Modifier.width(200.dp).padding(end = 12.dp).clickable { onResume(card.episodeId) }) {
+                val cardDescription = stringResource(R.string.podcasts_resume_a11y, card.title)
+                Column(
+                    modifier = Modifier
+                        .width(200.dp)
+                        .padding(end = 12.dp)
+                        .clickable { onResume(card.episodeId) }
+                        .semantics(mergeDescendants = true) { contentDescription = cardDescription }
+                ) {
                     Box(modifier = Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(10.dp))) {
                         ArtworkImage(artworkHash = null, modifier = Modifier.fillMaxSize())
                     }
@@ -99,7 +109,17 @@ private fun ContinueShelf(items: List<ContinueUi>, onResume: (String) -> Unit) {
 
 @Composable
 private fun ShowCell(show: ShowUi, onClick: () -> Unit) {
-    Column(modifier = Modifier.padding(8.dp).clickable(onClick = onClick)) {
+    val cellDescription = if (show.unplayedCount > 0) {
+        pluralStringResource(R.plurals.show_cell_unplayed_a11y, show.unplayedCount, show.title, show.author.orEmpty(), show.unplayedCount)
+    } else {
+        stringResource(R.string.show_cell_a11y, show.title, show.author.orEmpty())
+    }
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = cellDescription }
+    ) {
         Box {
             ArtworkImage(
                 artworkHash = show.artworkHash,

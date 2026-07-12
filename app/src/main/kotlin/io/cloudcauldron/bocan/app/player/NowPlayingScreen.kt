@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -277,7 +279,14 @@ private fun ArtworkAndMeta(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOp
 
 @Composable
 private fun LovedAndRating(loved: Boolean, rating: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+    val stars = rating.coerceIn(0, MAX_STARS)
+    val ratingDescription = if (stars > 0) stringResource(R.string.rating_a11y, stars, MAX_STARS) else null
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .semantics(mergeDescendants = true) { ratingDescription?.let { contentDescription = it } }
+    ) {
         if (loved) {
             Icon(
                 Icons.Rounded.Favorite,
@@ -286,7 +295,6 @@ private fun LovedAndRating(loved: Boolean, rating: Int) {
                 modifier = Modifier.size(18.dp).padding(end = 8.dp)
             )
         }
-        val stars = rating.coerceIn(0, MAX_STARS)
         repeat(stars) {
             Icon(
                 Icons.Rounded.Star,
