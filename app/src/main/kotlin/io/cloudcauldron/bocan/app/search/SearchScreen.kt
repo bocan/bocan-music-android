@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -36,7 +37,7 @@ import io.cloudcauldron.bocan.app.library.LibraryCallbacks
 @Composable
 fun SearchScreen(viewModel: SearchViewModel, callbacks: LibraryCallbacks, modifier: Modifier = Modifier) {
     val ui by viewModel.state.collectAsState()
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 8.dp)) {
+    Column(modifier = modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 8.dp)) {
         OutlinedTextField(
             value = ui.query,
             onValueChange = viewModel::onQueryChange,

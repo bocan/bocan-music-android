@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
@@ -110,7 +110,7 @@ fun NowPlayingScreen(
             .fillMaxSize()
             .offset { IntOffset(0, if (reducedMotion) 0 else gesture.verticalOffset.roundToInt()) }
             .ambientBackground(ui.artworkUri)
-            .systemBarsPadding()
+            .statusBarsPadding()
             .padding(horizontal = 20.dp)
     ) {
         TopRow(

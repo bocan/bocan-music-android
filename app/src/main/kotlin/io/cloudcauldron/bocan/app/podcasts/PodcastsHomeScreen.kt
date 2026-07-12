@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -47,19 +48,20 @@ fun PodcastsHomeScreen(
     modifier: Modifier = Modifier
 ) {
     val ui by viewModel.state.collectAsState()
+    val rootModifier = modifier.statusBarsPadding()
     if (ui.shows.isEmpty() && ui.continueListening.isEmpty()) {
         EmptyState(
             icon = Icons.Rounded.Podcasts,
             title = stringResource(R.string.podcasts_empty_title),
             message = stringResource(R.string.podcasts_empty_message),
-            modifier = modifier
+            modifier = rootModifier
         )
         return
     }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
         contentPadding = PaddingValues(12.dp),
-        modifier = modifier.fillMaxSize()
+        modifier = rootModifier.fillMaxSize()
     ) {
         if (ui.continueListening.isNotEmpty()) {
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {

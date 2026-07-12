@@ -1,6 +1,7 @@
 package io.cloudcauldron.bocan.app.home
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -73,6 +74,9 @@ fun HomeScaffold(appGraph: AppGraph, modifier: Modifier = Modifier) {
 
     Scaffold(
         modifier = modifier,
+        // Each screen owns its own top inset (a TopAppBar, or its own status-bar padding), so
+        // the shell must not also reserve the status bar, or the two stack into a doubled gap.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column {
