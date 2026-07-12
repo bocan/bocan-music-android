@@ -33,7 +33,7 @@ class WaveformTapTests {
     }
 
     @Test
-    fun `the published frame is the decimated newest window`() {
+    fun `each published point is the signed peak of its decimation window`() {
         val tap = configured(C.ENCODING_PCM_FLOAT)
         // Exactly enough frames to fill the ring once: pointCount * decimation.
         val total = tap.pointCount * DECIMATION
@@ -41,10 +41,21 @@ class WaveformTapTests {
         feedFloat(tap, input)
         val frame = FloatArray(tap.pointCount)
         assertTrue(tap.copyInto(frame))
-        // Chronological oldest to newest: point k is input sample 8k (every 8th, offset 0).
-        assertEquals(input[0], frame[0], EPSILON)
-        assertEquals(input[DECIMATION], frame[1], EPSILON)
-        assertEquals(input[(tap.pointCount - 1) * DECIMATION], frame[tap.pointCount - 1], EPSILON)
+        // The ramp rises within each window, so the peak is the window's last sample (8k + 7).
+        assertEquals(input[DECIMATION - 1], frame[0], EPSILON)
+        assertEquals(input[2 * DECIMATION - 1], frame[1], EPSILON)
+        assertEquals(input[total - 1], frame[tap.pointCount - 1], EPSILON)
+    }
+
+    @Test
+    fun `the peak keeps the sign of the loudest sample in a window`() {
+        val tap = configured(C.ENCODING_PCM_FLOAT)
+        // One window (8 samples) whose largest magnitude is negative.
+        val window = floatArrayOf(0.1f, -0.2f, 0.3f, -0.9f, 0.2f, -0.1f, 0.0f, 0.4f)
+        feedFloat(tap, window)
+        val frame = FloatArray(tap.pointCount)
+        assertTrue(tap.copyInto(frame))
+        assertEquals(-0.9f, frame.last(), EPSILON)
     }
 
     @Test

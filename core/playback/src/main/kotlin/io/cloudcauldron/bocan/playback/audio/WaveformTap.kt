@@ -8,6 +8,7 @@ import androidx.media3.common.util.UnstableApi
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
 
 /**
  * A read-only view of the most recent output waveform, for the Now Playing oscilloscope.
@@ -40,10 +41,13 @@ interface WaveformSource {
 class WaveformTap(override val pointCount: Int = DEFAULT_POINTS) :
     BaseAudioProcessor(),
     WaveformSource {
-    // Audio-thread-owned decimated mono ring and its write cursor.
+    // Audio-thread-owned decimated mono ring and its write cursor. Each ring entry is the
+    // signed peak (largest magnitude) of its decimation window, so fast transients and bass
+    // punch survive the downsample instead of being missed between sampled points.
     private val ring = FloatArray(pointCount)
     private var writeIndex = 0
     private var decimationCounter = 0
+    private var windowPeak = 0f
     private var channelCount = 0
     private var sampling = false
 
@@ -64,6 +68,7 @@ class WaveformTap(override val pointCount: Int = DEFAULT_POINTS) :
         ring.fill(0f)
         writeIndex = 0
         decimationCounter = 0
+        windowPeak = 0f
         publish()
     }
 
@@ -96,11 +101,15 @@ class WaveformTap(override val pointCount: Int = DEFAULT_POINTS) :
                 offset += bytesPerSample
                 channel++
             }
-            if (decimationCounter == 0) {
-                ring[writeIndex] = sum / channelCount
+            val mono = sum / channelCount
+            if (abs(mono) > abs(windowPeak)) windowPeak = mono
+            decimationCounter++
+            if (decimationCounter == DECIMATION) {
+                ring[writeIndex] = windowPeak
                 writeIndex = (writeIndex + 1) % pointCount
+                windowPeak = 0f
+                decimationCounter = 0
             }
-            decimationCounter = (decimationCounter + 1) % DECIMATION
             frame += frameBytes
         }
     }
