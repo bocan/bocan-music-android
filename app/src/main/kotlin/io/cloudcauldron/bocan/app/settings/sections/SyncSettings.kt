@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -192,8 +193,11 @@ private fun StatusBlock(uiState: SyncStatusUiState) {
     )
     LastSyncedText(uiState)
     Text(stringResource(R.string.sync_generation, uiState.generation), style = MaterialTheme.typography.bodyMedium)
+    val downloaded = pluralStringResource(R.plurals.sync_count_downloaded, uiState.counts.downloaded, uiState.counts.downloaded)
+    val pendingCount = pluralStringResource(R.plurals.sync_count_pending, uiState.counts.pending, uiState.counts.pending)
+    val failed = pluralStringResource(R.plurals.sync_count_failed, uiState.counts.failed, uiState.counts.failed)
     Text(
-        stringResource(R.string.sync_counts, uiState.counts.downloaded, uiState.counts.pending, uiState.counts.failed),
+        stringResource(R.string.sync_counts_joined, downloaded, pendingCount, failed),
         style = MaterialTheme.typography.bodyMedium
     )
 }

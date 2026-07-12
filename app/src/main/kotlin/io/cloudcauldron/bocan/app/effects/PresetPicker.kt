@@ -51,7 +51,7 @@ fun PresetPicker(
             FilterChip(
                 selected = preset.id == activePresetId,
                 onClick = { onSelect(preset) },
-                label = { Text(preset.name) },
+                label = { Text(presetDisplayName(preset)) },
                 trailingIcon = deleteIcon(preset, onDelete)
             )
         }
@@ -106,3 +106,26 @@ private fun SavePresetDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit)
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.eq_cancel)) } }
     )
 }
+
+/**
+ * Built-in preset names ship as string resources so they reach translators; the
+ * stable ids come from core. A user-saved preset keeps the name the user typed.
+ */
+@Composable
+private fun presetDisplayName(preset: EqPreset): String {
+    val res = BUILT_IN_NAMES[preset.id] ?: return preset.name
+    return stringResource(res)
+}
+
+private val BUILT_IN_NAMES = mapOf(
+    "bocan.flat" to R.string.eq_preset_flat,
+    "bocan.rock" to R.string.eq_preset_rock,
+    "bocan.jazz" to R.string.eq_preset_jazz,
+    "bocan.classical" to R.string.eq_preset_classical,
+    "bocan.electronic" to R.string.eq_preset_electronic,
+    "bocan.vocal_boost" to R.string.eq_preset_vocal_boost,
+    "bocan.bass_boost" to R.string.eq_preset_bass_boost,
+    "bocan.treble_boost" to R.string.eq_preset_treble_boost,
+    "bocan.loudness" to R.string.eq_preset_loudness,
+    "bocan.spoken_word" to R.string.eq_preset_spoken_word
+)

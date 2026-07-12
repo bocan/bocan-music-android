@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -63,8 +64,9 @@ fun QueueSheet(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove: (Int) 
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Text(
-                text = stringResource(
-                    R.string.queue_up_next,
+                text = pluralStringResource(
+                    R.plurals.queue_up_next,
+                    state.upNextCount,
                     state.upNextCount,
                     DateUtils.formatElapsedTime(state.upNextRemainingMs / 1000)
                 ),

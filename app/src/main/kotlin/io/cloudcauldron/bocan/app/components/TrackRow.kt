@@ -36,15 +36,11 @@ import io.cloudcauldron.bocan.app.library.TrackUi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackRow(track: TrackUi, onClick: () -> Unit, onLongClick: () -> Unit, modifier: Modifier = Modifier) {
-    val loved = if (track.loved) stringResource(R.string.track_loved_a11y) else ""
-    val pending = if (track.pending) stringResource(R.string.track_pending_a11y) else ""
-    val description = stringResource(
-        R.string.track_row_a11y,
-        track.title,
-        track.artist,
-        track.album,
-        track.durationLabel
-    ) + loved + pending
+    val description = listOfNotNull(
+        stringResource(R.string.track_row_a11y, track.title, track.artist, track.album, track.durationLabel),
+        stringResource(R.string.track_loved_a11y).takeIf { track.loved },
+        stringResource(R.string.track_pending_a11y).takeIf { track.pending }
+    ).joinToString(separator = "")
 
     // Pending rows dim the artwork only; text keeps full-opacity theme tokens so
     // it never drops below the 4.5:1 contrast floor in either theme.

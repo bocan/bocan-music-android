@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -78,7 +79,7 @@ fun SleepTimerSheet(
                         FilterChip(
                             selected = false,
                             onClick = { onStart(SleepDuration.Fixed(minutes * MINUTE_MS)) },
-                            label = { Text(stringResource(R.string.sleep_timer_minutes, minutes)) }
+                            label = { Text(pluralStringResource(R.plurals.sleep_timer_minutes, minutes, minutes)) }
                         )
                     }
                     FilterChip(
@@ -97,7 +98,7 @@ private fun ArmedControls(label: String, onExtend: (Int) -> Unit, onCancel: () -
     Column {
         Text(label, modifier = Modifier.padding(bottom = 12.dp))
         Button(onClick = { onExtend(EXTEND_MINUTES) }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.sleep_timer_extend, EXTEND_MINUTES))
+            Text(pluralStringResource(R.plurals.sleep_timer_extend, EXTEND_MINUTES, EXTEND_MINUTES))
         }
         OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             Text(stringResource(R.string.sleep_timer_cancel))

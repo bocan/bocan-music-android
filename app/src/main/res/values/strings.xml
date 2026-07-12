@@ -45,7 +45,19 @@
   <string name="sync_last_synced">Last synced %1$s</string>
   <string name="sync_never_synced">Not synced yet</string>
   <string name="sync_generation">Library version %1$d</string>
-  <string name="sync_counts">%1$d downloaded, %2$d pending, %3$d failed</string>
+  <string name="sync_counts_joined">%1$s, %2$s, %3$s</string>
+  <plurals name="sync_count_downloaded">
+    <item quantity="one">%1$d downloaded</item>
+    <item quantity="other">%1$d downloaded</item>
+  </plurals>
+  <plurals name="sync_count_pending">
+    <item quantity="one">%1$d pending</item>
+    <item quantity="other">%1$d pending</item>
+  </plurals>
+  <plurals name="sync_count_failed">
+    <item quantity="one">%1$d failed</item>
+    <item quantity="other">%1$d failed</item>
+  </plurals>
   <string name="sync_storage_used">%1$s used on this device</string>
 
   <string name="sync_state_idle">Idle</string>
@@ -177,7 +189,10 @@
 
   <!-- Queue -->
   <string name="queue_title">Queue</string>
-  <string name="queue_up_next">Up next: %1$d, %2$s left</string>
+  <plurals name="queue_up_next">
+    <item quantity="one">Up next: %1$d track, %2$s left</item>
+    <item quantity="other">Up next: %1$d tracks, %2$s left</item>
+  </plurals>
   <string name="queue_clear">Clear queue</string>
   <string name="queue_clear_confirm_title">Clear the queue?</string>
   <string name="queue_reorder_handle">Reorder</string>
@@ -194,12 +209,18 @@
   <!-- Sleep timer -->
   <string name="sleep_timer_title">Sleep timer</string>
   <string name="sleep_timer_armed">Sleep timer armed</string>
-  <string name="sleep_timer_minutes">%1$d min</string>
+  <plurals name="sleep_timer_minutes">
+    <item quantity="one">%1$d minute</item>
+    <item quantity="other">%1$d minutes</item>
+  </plurals>
   <string name="sleep_timer_end_of_track">End of track</string>
   <string name="sleep_timer_end_of_track_armed">Stopping at the end of this track</string>
   <string name="sleep_timer_remaining">%1$s remaining</string>
   <string name="sleep_timer_fading">Fading out…</string>
-  <string name="sleep_timer_extend">Add %1$d minutes</string>
+  <plurals name="sleep_timer_extend">
+    <item quantity="one">Add %1$d minute</item>
+    <item quantity="other">Add %1$d minutes</item>
+  </plurals>
   <string name="sleep_timer_cancel">Cancel timer</string>
 
   <!-- Podcasts -->
@@ -283,6 +304,18 @@
   <string name="eq_gain_spoken_negative">minus %1$s decibels</string>
   <string name="eq_gain_spoken_zero">0 decibels</string>
   <string name="eq_band_a11y">%1$s, %2$s</string>
+  <string name="number_positive">+%1$s</string>
+  <string name="number_negative">-%1$s</string>
+  <string name="eq_preset_flat">Flat</string>
+  <string name="eq_preset_rock">Rock</string>
+  <string name="eq_preset_jazz">Jazz</string>
+  <string name="eq_preset_classical">Classical</string>
+  <string name="eq_preset_electronic">Electronic</string>
+  <string name="eq_preset_vocal_boost">Vocal Boost</string>
+  <string name="eq_preset_bass_boost">Bass Boost</string>
+  <string name="eq_preset_treble_boost">Treble Boost</string>
+  <string name="eq_preset_loudness">Loudness</string>
+  <string name="eq_preset_spoken_word">Spoken Word</string>
 
   <!-- Scrobbling -->
   <string name="scrobble_open">Scrobbling</string>
@@ -296,9 +329,13 @@
   <string name="scrobble_not_connected">Not connected</string>
   <string name="scrobble_enable">Scrobble here</string>
   <string name="scrobble_enable_a11y">Scrobble to %1$s</string>
-  <string name="scrobble_queue_depth">%1$d waiting to send</string>
+  <plurals name="scrobble_queue_depth">
+    <item quantity="one">%1$d play waiting to send</item>
+    <item quantity="other">%1$d plays waiting to send</item>
+  </plurals>
   <string name="scrobble_queue_empty">Up to date</string>
   <string name="scrobble_dead_letter_title">Failed submissions</string>
+  <string name="scrobble_dead_letter_row">%1$s: %2$s</string>
   <string name="scrobble_retry">Retry</string>
   <string name="scrobble_discard">Discard</string>
   <string name="scrobble_token_title">Connect %1$s</string>

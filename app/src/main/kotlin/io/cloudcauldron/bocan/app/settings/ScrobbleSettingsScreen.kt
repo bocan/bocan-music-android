@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -76,7 +77,7 @@ fun ScrobbleSettingsScreen(viewModel: ScrobbleSettingsViewModel, onBack: () -> U
             val queueText = if (ui.queueDepth == 0) {
                 stringResource(R.string.scrobble_queue_empty)
             } else {
-                stringResource(R.string.scrobble_queue_depth, ui.queueDepth)
+                pluralStringResource(R.plurals.scrobble_queue_depth, ui.queueDepth, ui.queueDepth)
             }
             Text(
                 text = queueText,
@@ -193,7 +194,7 @@ private fun ProviderHeader(provider: ScrobbleProviderRow, viewModel: ScrobbleSet
 private fun DeadLetterItem(row: DeadLetterRow, viewModel: ScrobbleSettingsViewModel) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(
-            text = "${row.provider}: ${row.title}",
+            text = stringResource(R.string.scrobble_dead_letter_row, row.provider, row.title),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f)
         )

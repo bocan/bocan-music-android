@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import io.cloudcauldron.bocan.app.R
 import kotlin.math.abs
 
 /** A labelled horizontal slider whose current value is announced as its state description. */
@@ -55,12 +56,13 @@ internal fun SectionLabel(labelRes: Int) {
     )
 }
 
-/** A signed one-decimal number, ASCII hyphen for negatives, never a dash. */
+/** A signed one-decimal number; the sign placement is a translatable resource. */
+@Composable
 internal fun signed(value: Double): String {
     val magnitude = "%.1f".format(abs(value))
     return when {
-        value > 0 -> "+$magnitude"
-        value < 0 -> "-$magnitude"
+        value > 0 -> stringResource(R.string.number_positive, magnitude)
+        value < 0 -> stringResource(R.string.number_negative, magnitude)
         else -> magnitude
     }
 }

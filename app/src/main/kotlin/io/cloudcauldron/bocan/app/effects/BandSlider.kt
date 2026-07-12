@@ -68,13 +68,13 @@ fun BandSlider(centerHz: Double, gainDb: Double, onGain: (Double) -> Unit, modif
     }
 }
 
-/** A signed one-decimal dB label, e.g. "+3.0" or "-2.5" (plain ASCII hyphen, never a dash). */
+/** A signed one-decimal dB label, e.g. "+3.0 dB"; the sign placement is a translatable resource. */
 @Composable
 private fun gainLabel(db: Double): String {
     val magnitude = "%.1f".format(abs(db))
     val signed = when {
-        db > 0 -> "+$magnitude"
-        db < 0 -> "-$magnitude"
+        db > 0 -> stringResource(R.string.number_positive, magnitude)
+        db < 0 -> stringResource(R.string.number_negative, magnitude)
         else -> magnitude
     }
     return stringResource(R.string.eq_decibels, signed)
