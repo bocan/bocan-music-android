@@ -31,7 +31,6 @@
   <string name="pairing_error_network">Could not reach the Mac. Check that both devices are on the same Wi-Fi network.</string>
   <string name="pairing_error_pin">The Mac\'s identity could not be verified. Do not continue; try pairing again.</string>
   <string name="pairing_error_unsupported">This Mac is running a newer version of Bòcan. Update Bòcan on your phone.</string>
-  <string name="pairing_error_generic">Pairing failed. Please try again.</string>
 
   <string name="pairing_retry_code">Re-enter code</string>
   <string name="pairing_start_over">Start over</string>
@@ -60,7 +59,22 @@
   <string name="sync_state_failed_not_paired">This phone is no longer paired with the Mac.</string>
 
   <string name="sync_failures_title">Some items could not be downloaded</string>
-  <string name="sync_failure_row">%1$s (%2$s)</string>
+  <string name="sync_failure_row">%1$s could not be downloaded. It will be retried next sync.</string>
+  <string name="sync_failure_artwork">A cover image could not be downloaded. It will be retried next sync.</string>
+
+  <string name="sync_error_not_found">Something your Mac listed could not be found. It may have just changed; syncing again usually fixes it.</string>
+  <string name="sync_error_internal">Your Mac hit an internal error. Try again in a moment.</string>
+  <string name="sync_error_server">Your Mac reported an error. Try again in a moment.</string>
+  <string name="sync_error_malformed">The Mac sent something this phone could not read. Update Bòcan on both devices and try again.</string>
+  <string name="sync_error_stale">Your Mac\'s library changed mid-sync. Syncing again picks up the latest.</string>
+  <string name="sync_error_unsafe_path">Your Mac sent an invalid file path, so the sync stopped to protect this phone.</string>
+  <string name="sync_error_media_unavailable">This phone\'s storage is not available right now. Check that it is not full or shared, then try again.</string>
+
+  <string name="playback_error_init">The player could not start. Restart the app and try again.</string>
+  <string name="playback_error_unknown_id">That item could not be identified. Try picking it again from the library.</string>
+  <string name="playback_error_unplayable">This item cannot be played. It may not have finished syncing yet.</string>
+  <string name="playback_error_media_unavailable">Your synced music is not reachable right now. Check this phone\'s storage and try again.</string>
+  <string name="playback_error_queue">Your queue could not be saved or restored, so it may start fresh next time.</string>
 
   <string name="sync_on_discovery_label">Sync when your Mac appears</string>
   <string name="sync_on_discovery_summary">Start syncing as soon as your paired Mac shows up on the network.</string>

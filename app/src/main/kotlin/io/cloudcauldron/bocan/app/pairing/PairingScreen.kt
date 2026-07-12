@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.userMessageRes
 import io.cloudcauldron.bocan.sync.SyncError
 import io.cloudcauldron.bocan.sync.discovery.DiscoveredMac
 import io.cloudcauldron.bocan.sync.pairing.PairingState
@@ -140,7 +141,7 @@ private fun FailedContent(error: SyncError, onSubmitCode: (String) -> Unit, onSt
         return
     }
     Text(
-        text = pairingErrorMessage(error),
+        text = stringResource(error.userMessageRes()),
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.error
     )
@@ -148,18 +149,4 @@ private fun FailedContent(error: SyncError, onSubmitCode: (String) -> Unit, onSt
     Button(onClick = onStartOver) {
         Text(stringResource(R.string.pairing_start_over))
     }
-}
-
-@Composable
-private fun pairingErrorMessage(error: SyncError): String = when (error) {
-    SyncError.CodeMismatch -> stringResource(R.string.pairing_code_mismatch)
-    SyncError.TooManyAttempts -> stringResource(R.string.pairing_too_many_attempts)
-    SyncError.PairingExpired -> stringResource(R.string.pairing_error_expired)
-    SyncError.BadProof -> stringResource(R.string.pairing_error_bad_proof)
-    is SyncError.ServerBusy -> stringResource(R.string.pairing_error_busy)
-    is SyncError.RateLimited -> stringResource(R.string.pairing_error_rate_limited)
-    is SyncError.CertificatePinMismatch -> stringResource(R.string.pairing_error_pin)
-    is SyncError.UnsupportedProtocol -> stringResource(R.string.pairing_error_unsupported)
-    is SyncError.Network -> stringResource(R.string.pairing_error_network)
-    else -> stringResource(R.string.pairing_error_generic)
 }

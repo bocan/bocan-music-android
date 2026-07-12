@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.sync.SyncStatusUiState
-import io.cloudcauldron.bocan.sync.SyncError
+import io.cloudcauldron.bocan.app.userMessageRes
 import io.cloudcauldron.bocan.sync.engine.ItemFailure
 import io.cloudcauldron.bocan.sync.engine.SyncState
 
@@ -31,13 +31,21 @@ internal fun Failures(state: SyncState) {
     if (failures.isEmpty()) return
     Text(stringResource(R.string.sync_failures_title), style = MaterialTheme.typography.titleSmall)
     failures.forEach { failure ->
+        // The diagnostic reason stays in the logs; users get the item name only.
+        val text = if (failure.kind == KIND_ARTWORK) {
+            stringResource(R.string.sync_failure_artwork)
+        } else {
+            stringResource(R.string.sync_failure_row, failure.label)
+        }
         Text(
-            stringResource(R.string.sync_failure_row, failure.id, failure.reason),
+            text = text,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error
         )
     }
 }
+
+private const val KIND_ARTWORK = "artwork"
 
 @Composable
 internal fun SyncActionButton(state: SyncState, onSyncNow: () -> Unit, onCancel: () -> Unit) {
@@ -57,11 +65,7 @@ internal fun statusLine(state: SyncState): String = when (state) {
     is SyncState.Applying -> stringResource(R.string.sync_state_applying)
     is SyncState.Done -> stringResource(R.string.sync_state_done)
     is SyncState.ServerUnreachable -> stringResource(R.string.sync_state_unreachable)
-    is SyncState.Failed -> when (state.error) {
-        is SyncError.InsufficientStorage -> stringResource(R.string.sync_state_failed_space)
-        is SyncError.NotPaired -> stringResource(R.string.sync_state_failed_not_paired)
-        else -> stringResource(R.string.sync_state_failed)
-    }
+    is SyncState.Failed -> stringResource(state.error.userMessageRes())
 }
 
 /** The phase-only text a screen reader announces: stable within a phase, no per-file ticks. */

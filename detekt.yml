@@ -5,6 +5,11 @@ complexity:
   # Room DAOs are declarative SQL surfaces; the design spec fixes their shape.
   TooManyFunctions:
     ignoreAnnotated: ['Dao']
+  # Exhaustive when-mapping tables (error case to string resource) are flat
+  # lookup tables, not branching logic; entries that are a single expression
+  # do not count toward complexity. Real logic inside entries still counts.
+  CyclomaticComplexMethod:
+    ignoreSimpleWhenEntries: true
   # Test fixture builders mirror wide contract objects via named defaults, and
   # stateless Composables take their state plus one lambda per event (the same
   # Compose accommodation already applied to FunctionNaming and MagicNumber).

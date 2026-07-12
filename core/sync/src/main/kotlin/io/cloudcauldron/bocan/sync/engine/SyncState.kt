@@ -32,5 +32,9 @@ sealed interface SyncState {
     data object ServerUnreachable : SyncState
 }
 
-/** One track, episode, or artwork item that could not be downloaded this run. */
-data class ItemFailure(val id: String, val kind: String, val reason: String)
+/**
+ * One track, episode, or artwork item that could not be downloaded this run.
+ * [label] is the human title (or the artwork kind); [reason] is diagnostic text
+ * for logs, never shown to users.
+ */
+data class ItemFailure(val label: String, val kind: String, val reason: String)

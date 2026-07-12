@@ -100,7 +100,7 @@ class FileTransferrer(
 
     private fun record(result: Downloader.Result, item: Item, counters: Counters) {
         when (result) {
-            is Downloader.Result.Failed -> counters.failures.add(ItemFailure(item.displayId, item.kind, result.reason))
+            is Downloader.Result.Failed -> counters.failures.add(ItemFailure(item.label, item.kind, result.reason))
             is Downloader.Result.Downloaded -> {
                 counters.downloadedCount.incrementAndGet()
                 item.trackId?.let(counters.trackIds::add)
