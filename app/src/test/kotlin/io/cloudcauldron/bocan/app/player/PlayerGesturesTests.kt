@@ -7,8 +7,9 @@ import org.junit.Test
 /** The pure anchor-resolution logic behind the Now Playing gestures. */
 class PlayerGesturesTests {
     private val width = 1000f
-    private val height = 2000f
     private val slowFling = 0f
+
+    private val commitDistance = 300f
 
     @Test
     fun `a short slow horizontal drag settles back`() {
@@ -17,53 +18,62 @@ class PlayerGesturesTests {
     }
 
     @Test
-    fun `dragging right past the threshold advances to next`() {
-        val target = resolveHorizontalTarget(offsetPx = 450f, widthPx = width, velocityPx = slowFling, hasPrevious = true, hasNext = true)
+    fun `dragging left (right to left) past the threshold advances to next`() {
+        val target = resolveHorizontalTarget(offsetPx = -450f, widthPx = width, velocityPx = slowFling, hasPrevious = true, hasNext = true)
         assertEquals(HorizontalAnchor.Next, target)
     }
 
     @Test
-    fun `dragging left past the threshold goes to previous`() {
-        val target = resolveHorizontalTarget(offsetPx = -450f, widthPx = width, velocityPx = slowFling, hasPrevious = true, hasNext = true)
+    fun `dragging right past the threshold goes to previous`() {
+        val target = resolveHorizontalTarget(offsetPx = 450f, widthPx = width, velocityPx = slowFling, hasPrevious = true, hasNext = true)
         assertEquals(HorizontalAnchor.Previous, target)
     }
 
     @Test
-    fun `a fast fling commits even with a short drag`() {
-        val target = resolveHorizontalTarget(offsetPx = 60f, widthPx = width, velocityPx = 2_000f, hasPrevious = true, hasNext = true)
+    fun `a fast leftward fling advances even with a short drag`() {
+        val target = resolveHorizontalTarget(offsetPx = -60f, widthPx = width, velocityPx = -2_000f, hasPrevious = true, hasNext = true)
         assertEquals(HorizontalAnchor.Next, target)
     }
 
     @Test
-    fun `at the end of the queue a right drag clamps to settled`() {
-        val target = resolveHorizontalTarget(offsetPx = 700f, widthPx = width, velocityPx = 3_000f, hasPrevious = true, hasNext = false)
+    fun `at the end of the queue a leftward drag clamps to settled`() {
+        val target = resolveHorizontalTarget(offsetPx = -700f, widthPx = width, velocityPx = -3_000f, hasPrevious = true, hasNext = false)
         assertEquals(HorizontalAnchor.Settled, target)
     }
 
     @Test
-    fun `at the start of the queue a left drag clamps to settled`() {
-        val target = resolveHorizontalTarget(offsetPx = -700f, widthPx = width, velocityPx = slowFling, hasPrevious = false, hasNext = true)
+    fun `at the start of the queue a rightward drag clamps to settled`() {
+        val target = resolveHorizontalTarget(offsetPx = 700f, widthPx = width, velocityPx = slowFling, hasPrevious = false, hasNext = true)
         assertEquals(HorizontalAnchor.Settled, target)
     }
 
     @Test
     fun `dragging down past the threshold dismisses`() {
-        assertEquals(VerticalAnchor.Dismiss, resolveVerticalTarget(offsetPx = 900f, heightPx = height, velocityPx = slowFling))
+        assertEquals(
+            VerticalAnchor.Dismiss,
+            resolveVerticalTarget(offsetPx = 400f, commitDistancePx = commitDistance, velocityPx = slowFling)
+        )
     }
 
     @Test
     fun `dragging up past the threshold opens details`() {
-        assertEquals(VerticalAnchor.Details, resolveVerticalTarget(offsetPx = -900f, heightPx = height, velocityPx = slowFling))
+        assertEquals(
+            VerticalAnchor.Details,
+            resolveVerticalTarget(offsetPx = -400f, commitDistancePx = commitDistance, velocityPx = slowFling)
+        )
     }
 
     @Test
     fun `a short vertical drag settles back`() {
-        assertEquals(VerticalAnchor.Settled, resolveVerticalTarget(offsetPx = 200f, heightPx = height, velocityPx = slowFling))
+        assertEquals(
+            VerticalAnchor.Settled,
+            resolveVerticalTarget(offsetPx = 120f, commitDistancePx = commitDistance, velocityPx = slowFling)
+        )
     }
 
     @Test
     fun `a fast downward fling dismisses`() {
-        assertEquals(VerticalAnchor.Dismiss, resolveVerticalTarget(offsetPx = 50f, heightPx = height, velocityPx = 2_500f))
+        assertEquals(VerticalAnchor.Dismiss, resolveVerticalTarget(offsetPx = 50f, commitDistancePx = commitDistance, velocityPx = 2_500f))
     }
 
     @Test

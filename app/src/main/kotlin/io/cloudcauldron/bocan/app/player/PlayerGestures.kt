@@ -25,14 +25,15 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 
 /**
- * The gesture surface for Now Playing. Horizontal swipes change tracks (right = next,
- * the flick-the-card-away metaphor, the reverse of a pager), an upward swipe opens the
- * song details sheet, and a downward swipe dismisses the player. One axis is locked on
- * the initial drag so diagonal drags never fire both machines.
+ * The gesture surface for Now Playing. Horizontal swipes change tracks with the pager
+ * convention (a leftward swipe advances to the next track, rightward goes back), an upward
+ * swipe opens the song details sheet, and a downward swipe dismisses the player. One axis
+ * is locked on the initial drag so diagonal drags never fire both machines.
  *
  * The anchor decisions (offset plus velocity to a target, end-of-queue clamping, and the
  * rubber-band beyond a missing neighbor) are pure functions below, unit tested off any
@@ -51,8 +52,15 @@ enum class GestureAxis { Horizontal, Vertical }
 
 /** Commit thresholds and resistances shared by the pure logic and the modifier. */
 object PlayerGestureThresholds {
-    /** Fraction of the travel distance past which a release commits. */
+    /** Fraction of the card width past which a horizontal release commits to a track change. */
     const val COMMIT_FRACTION = 0.4f
+
+    /**
+     * Absolute distance (dp) past which a vertical release commits. Fixed rather than a
+     * fraction of the surface: the gesture surface is the tall artwork block, so a fraction
+     * of its height would be an unreachable swipe.
+     */
+    const val VERTICAL_COMMIT_DP = 96f
 
     /** Velocity (pixels per second) past which a fling commits regardless of distance. */
     const val FLING_VELOCITY = 1_000f
@@ -68,14 +76,15 @@ object PlayerGestureThresholds {
 fun dominantAxis(dx: Float, dy: Float): GestureAxis = if (abs(dx) >= abs(dy)) GestureAxis.Horizontal else GestureAxis.Vertical
 
 /**
- * The horizontal target for a release. A positive offset or fling (finger moved right)
- * means next; negative means previous. A release short of the distance threshold and
- * below the fling velocity settles back. When the intended neighbor is null (an end of
- * the queue) the target clamps to settled, which is the caller's cue to rubber-band.
+ * The horizontal target for a release, using the pager convention: a leftward drag or fling
+ * (finger moving right to left, a negative offset) advances to the next track; a rightward
+ * drag goes to the previous. A release short of the distance threshold and below the fling
+ * velocity settles back. When the intended neighbor is null (an end of the queue) the target
+ * clamps to settled, which is the caller's cue to rubber-band.
  */
 fun resolveHorizontalTarget(offsetPx: Float, widthPx: Float, velocityPx: Float, hasPrevious: Boolean, hasNext: Boolean): HorizontalAnchor {
-    if (!isCommitted(offsetPx, widthPx, velocityPx)) return HorizontalAnchor.Settled
-    return if (commitDirection(offsetPx, velocityPx) > 0f) {
+    if (!isCommitted(offsetPx, widthPx * PlayerGestureThresholds.COMMIT_FRACTION, velocityPx)) return HorizontalAnchor.Settled
+    return if (commitDirection(offsetPx, velocityPx) < 0f) {
         if (hasNext) HorizontalAnchor.Next else HorizontalAnchor.Settled
     } else {
         if (hasPrevious) HorizontalAnchor.Previous else HorizontalAnchor.Settled
@@ -83,12 +92,12 @@ fun resolveHorizontalTarget(offsetPx: Float, widthPx: Float, velocityPx: Float, 
 }
 
 /**
- * The vertical target for a release. A positive offset or fling (finger moved down) means
- * dismiss; negative (up) means open details. Both are always reachable, so there is no
- * clamp. A release short of the threshold settles back.
+ * The vertical target for a release. A downward drag or fling (positive offset) dismisses;
+ * upward (negative) opens details. [commitDistancePx] is an absolute distance, not a fraction
+ * of the tall surface. A release short of it and below the fling velocity settles back.
  */
-fun resolveVerticalTarget(offsetPx: Float, heightPx: Float, velocityPx: Float): VerticalAnchor {
-    if (!isCommitted(offsetPx, heightPx, velocityPx)) return VerticalAnchor.Settled
+fun resolveVerticalTarget(offsetPx: Float, commitDistancePx: Float, velocityPx: Float): VerticalAnchor {
+    if (!isCommitted(offsetPx, commitDistancePx, velocityPx)) return VerticalAnchor.Settled
     return if (commitDirection(offsetPx, velocityPx) > 0f) VerticalAnchor.Dismiss else VerticalAnchor.Details
 }
 
@@ -113,8 +122,8 @@ fun clampWithRubberBand(
 private fun rubberBand(magnitude: Float, extentPx: Float, resistance: Float): Float =
     extentPx * resistance * (magnitude / (magnitude + extentPx))
 
-private fun isCommitted(offsetPx: Float, extentPx: Float, velocityPx: Float): Boolean =
-    abs(offsetPx) >= extentPx * PlayerGestureThresholds.COMMIT_FRACTION || abs(velocityPx) >= PlayerGestureThresholds.FLING_VELOCITY
+private fun isCommitted(offsetPx: Float, commitDistancePx: Float, velocityPx: Float): Boolean =
+    abs(offsetPx) >= commitDistancePx || abs(velocityPx) >= PlayerGestureThresholds.FLING_VELOCITY
 
 private fun commitDirection(offsetPx: Float, velocityPx: Float): Float =
     if (abs(velocityPx) >= PlayerGestureThresholds.FLING_VELOCITY) velocityPx else offsetPx
@@ -144,12 +153,14 @@ class PlayerGestureState {
 
     fun applyHorizontalDelta(dx: Float) {
         rawHorizontal += dx
-        horizontalOffset = clampWithRubberBand(rawHorizontal, widthPx, allowPositive = hasNext, allowNegative = hasPrevious)
+        // Rightward (positive) reveals the previous card, leftward (negative) the next.
+        horizontalOffset = clampWithRubberBand(rawHorizontal, widthPx, allowPositive = hasPrevious, allowNegative = hasNext)
     }
 
     fun applyVerticalDelta(dy: Float) {
         rawVertical += dy
-        verticalOffset = clampWithRubberBand(rawVertical, heightPx, allowPositive = true, allowNegative = true)
+        // Only a downward drag translates the screen (the dismiss); an upward reveal does not move it.
+        verticalOffset = rawVertical.coerceAtLeast(0f)
     }
 
     /** The raw (unclamped) horizontal travel, for the anchor decision. */
@@ -251,10 +262,11 @@ fun Modifier.playerGestures(
                     change.consume()
                 }
                 val computed = velocity.calculateVelocity()
+                val verticalCommitPx = PlayerGestureThresholds.VERTICAL_COMMIT_DP.dp.toPx()
                 scope.launch {
                     when (locked) {
                         GestureAxis.Horizontal -> settleHorizontal(state, computed.x, reducedMotion, latestActions)
-                        GestureAxis.Vertical -> settleVertical(state, computed.y, reducedMotion, latestActions)
+                        GestureAxis.Vertical -> settleVertical(state, computed.y, verticalCommitPx, reducedMotion, latestActions)
                     }
                 }
             }
@@ -271,9 +283,10 @@ private fun applyDelta(state: PlayerGestureState, axis: GestureAxis?, dx: Float,
 
 private suspend fun settleHorizontal(state: PlayerGestureState, velocityX: Float, reducedMotion: Boolean, actions: PlayerGestureActions) {
     val target = resolveHorizontalTarget(state.rawHorizontalOffset, state.widthPx, velocityX, state.hasPrevious, state.hasNext)
+    // Next commits leftward (negative), previous rightward (positive).
     val targetOffset = when (target) {
-        HorizontalAnchor.Next -> state.widthPx
-        HorizontalAnchor.Previous -> -state.widthPx
+        HorizontalAnchor.Next -> -state.widthPx
+        HorizontalAnchor.Previous -> state.widthPx
         HorizontalAnchor.Settled -> 0f
     }
     if (!reducedMotion) {
@@ -287,8 +300,14 @@ private suspend fun settleHorizontal(state: PlayerGestureState, velocityX: Float
     state.resetHorizontal()
 }
 
-private suspend fun settleVertical(state: PlayerGestureState, velocityY: Float, reducedMotion: Boolean, actions: PlayerGestureActions) {
-    when (resolveVerticalTarget(state.rawVerticalOffset, state.heightPx, velocityY)) {
+private suspend fun settleVertical(
+    state: PlayerGestureState,
+    velocityY: Float,
+    commitDistancePx: Float,
+    reducedMotion: Boolean,
+    actions: PlayerGestureActions
+) {
+    when (resolveVerticalTarget(state.rawVerticalOffset, commitDistancePx, velocityY)) {
         VerticalAnchor.Dismiss -> {
             if (!reducedMotion) animateTo(state.verticalOffset, state.heightPx) { state.displayVertical(it) }
             actions.onDismiss()
