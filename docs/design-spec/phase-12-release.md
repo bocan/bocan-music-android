@@ -1,6 +1,6 @@
 # Phase 12: Release Engineering
 
-> Depends on: everything before it
+> Depends on: everything before it, plus phase 13 (gestures land before release)
 > Read docs/design-spec/_standards.md first. The Mac reference for pipeline philosophy is `bocan-music/docs/design-spec/phase-16-distribution.md` and the repo's release-please setup.
 > Provides: reproducible signed builds, CI/CD, versioning, store readiness.
 

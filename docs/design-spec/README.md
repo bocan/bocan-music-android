@@ -32,6 +32,7 @@ Goal, Non-goals, Outcome shape, Implementation plan, Definitions and contracts, 
 | `phase-09-scrobbling.md` | Last.fm, ListenBrainz, and Rocksky scrobbling with an offline-resilient queue, mirroring the Mac's rules. |
 | `phase-10-system-integration.md` | Android Auto, Glance home-screen widget, Bluetooth/AVRCP metadata, media notification polish, app shortcuts. |
 | `phase-11-polish.md` | Material You theming audit, TalkBack accessibility pass, localization scaffolding, settings surface, onboarding flow. |
+| `phase-13-gestures.md` | Now Playing touch gestures: swipe to change track, swipe up for the song details sheet, swipe down to dismiss. Numbered 13, built before 12. |
 | `phase-12-release.md` | CI/CD on GitHub Actions, signing, versioning, Play Store and F-Droid readiness, privacy declarations. |
 | `phase-mac-1-sync-server.md` | The Mac side: a new `SyncServer` module in the `bocan-music` repo. Bonjour advertising, pairing UI in Settings, manifest generation from GRDB, file serving. Implemented over there, specified here so the contract stays in one place. |
 
