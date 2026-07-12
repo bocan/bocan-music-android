@@ -37,11 +37,19 @@ jobs:
       - name: Lint, test, and build
         run: ./gradlew check test assembleDebug -x koverVerify -x koverCachedVerify
 
+      # The versionCode derivation lives in buildSrc and never decreases across a Play
+      # upload, so its formula is unit tested and enforced on every push.
+      - name: Verify versionCode derivation
+        run: ./gradlew -p buildSrc test
+
+      # R8 breaks are runtime breaks, not compile errors. Assembling the minified release
+      # on every PR catches a missing keep rule the day the offending change lands rather
+      # than on release day. The build is left unsigned (no keystore secret is read here).
+      - name: Assemble release (unsigned, catches R8 breaks)
+        run: ./gradlew :app:assembleRelease
+
+      - name: Verify 16 KB native library alignment (release APK)
+        run: scripts/check-so-alignment.sh "$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
+
       - name: Verify coverage floors
         run: ./gradlew koverVerify --no-parallel --rerun-tasks
-
-      # The FFmpeg audio decoder is the only native code in the app. Google Play
-      # requires 16 KB aligned .so files for apps targeting Android 15+, so fail the
-      # build if a dependency bump ever regresses alignment.
-      - name: Verify 16 KB native library alignment
-        run: scripts/check-so-alignment.sh

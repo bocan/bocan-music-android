@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  # release-please creates the GitHub release and tag when the release PR merges; that
+  # publish event drives the signed build. The tag and manual triggers are fallbacks for
+  # re-running a release build without a fresh merge.
+  release:
+    types: [published]
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g. v0.1.0). The release for this tag must already exist."
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  check-signing:
+    name: Check signing secrets
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Verify BOCAN_KEYSTORE_BASE64 is configured
+        id: check
+        env:
+          BOCAN_KEYSTORE_BASE64: ${{ secrets.BOCAN_KEYSTORE_BASE64 }}
+        run: |
+          if [[ -z "${BOCAN_KEYSTORE_BASE64}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Signing keystore not configured, skipping the signed release build. Add BOCAN_KEYSTORE_BASE64, BOCAN_KEYSTORE_PASSWORD, BOCAN_KEY_ALIAS, and BOCAN_KEY_PASSWORD in repo Settings, Secrets and variables, Actions when the upload keystore exists."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    name: Build, sign, and attach artifacts
+    needs: check-signing
+    if: needs.check-signing.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - name: Checkout (full history for changelog)
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode upload keystore
+        env:
+          BOCAN_KEYSTORE_BASE64: ${{ secrets.BOCAN_KEYSTORE_BASE64 }}
+        run: |
+          echo "$BOCAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          echo "BOCAN_KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Build signed APK and AAB
+        env:
+          BOCAN_KEYSTORE_PASSWORD: ${{ secrets.BOCAN_KEYSTORE_PASSWORD }}
+          BOCAN_KEY_ALIAS: ${{ secrets.BOCAN_KEY_ALIAS }}
+          BOCAN_KEY_PASSWORD: ${{ secrets.BOCAN_KEY_PASSWORD }}
+          BOCAN_LASTFM_API_KEY: ${{ secrets.BOCAN_LASTFM_API_KEY }}
+          BOCAN_LASTFM_SHARED_SECRET: ${{ secrets.BOCAN_LASTFM_SHARED_SECRET }}
+        run: ./gradlew :app:assembleRelease :app:bundleRelease
+
+      - name: Verify 16 KB native library alignment (release APK)
+        run: scripts/check-so-alignment.sh "$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
+
+      - name: Stage artifacts and compute checksums
+        id: artifacts
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          APK="$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
+          AAB="$(find app/build/outputs/bundle/release -name '*.aab' | head -1)"
+          mkdir -p dist
+          cp "$APK" "dist/bocan-music-${VERSION}.apk"
+          cp "$AAB" "dist/bocan-music-${VERSION}.aab"
+          (cd dist && sha256sum ./*.apk ./*.aab | tee checksums.txt)
+
+      - name: Attach artifacts to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # release-please already created the release with changelog notes. On the manual
+          # or tag path the release may not exist yet, so create it with generated notes.
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" \
+            dist/bocan-music-*.apk \
+            dist/bocan-music-*.aab \
+            dist/checksums.txt \
+            --clobber
+
+      - name: Check Play publishing secrets
+        id: check-play
+        env:
+          ANDROID_PUBLISHER_CREDENTIALS: ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}
+        run: |
+          if [[ -z "${ANDROID_PUBLISHER_CREDENTIALS}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Play service account not configured, skipping the internal-track upload. This is expected until the Play Console corporate account is approved. See docs/release-checklist.md."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Prepared but dormant. It runs only once ANDROID_PUBLISHER_CREDENTIALS exists, and
+      # applies the Gradle Play Publisher plugin through an init script so the everyday
+      # build never carries the dependency (which also keeps the build reproducible for
+      # F-Droid). Validate this against a real Play track when the account is live.
+      - name: Publish AAB to Play internal track
+        if: steps.check-play.outputs.enabled == 'true'
+        env:
+          ANDROID_PUBLISHER_CREDENTIALS: ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}
+          BOCAN_KEYSTORE_PASSWORD: ${{ secrets.BOCAN_KEYSTORE_PASSWORD }}
+          BOCAN_KEY_ALIAS: ${{ secrets.BOCAN_KEY_ALIAS }}
+          BOCAN_KEY_PASSWORD: ${{ secrets.BOCAN_KEY_PASSWORD }}
+          BOCAN_LASTFM_API_KEY: ${{ secrets.BOCAN_LASTFM_API_KEY }}
+          BOCAN_LASTFM_SHARED_SECRET: ${{ secrets.BOCAN_LASTFM_SHARED_SECRET }}
+        run: ./gradlew --init-script scripts/play-publish.init.gradle.kts :app:publishReleaseBundle
