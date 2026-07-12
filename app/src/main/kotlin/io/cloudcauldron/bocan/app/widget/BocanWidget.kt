@@ -2,9 +2,9 @@ package io.cloudcauldron.bocan.app.widget
 
 import android.content.Context
 import android.content.Intent
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -27,7 +27,6 @@ import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import androidx.media3.common.util.UnstableApi
 import io.cloudcauldron.bocan.app.MainActivity
 import io.cloudcauldron.bocan.app.R
@@ -64,7 +63,7 @@ class BocanWidget : GlanceAppWidget() {
                 maxLines = 1
             )
             if (state.hasContent && state.subtitle.isNotEmpty()) {
-                Text(text = state.subtitle, style = TextStyle(color = ColorProvider(SUBTITLE_COLOR)), maxLines = 1)
+                Text(text = state.subtitle, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant), maxLines = 1)
             }
             if (state.hasContent) {
                 Row(modifier = GlanceModifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -88,6 +87,9 @@ class BocanWidget : GlanceAppWidget() {
         Image(
             provider = ImageProvider(icon),
             contentDescription = description,
+            // Platform media drawables are a fixed light gray; tint them so they
+            // follow the widget theme in both day and night.
+            colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurface),
             modifier = GlanceModifier.size(48.dp).padding(8.dp).clickable(
                 actionRunCallback<WidgetControlCallback>(
                     actionParametersOf(WidgetControlCallback.ACTION_KEY to action)
@@ -98,6 +100,5 @@ class BocanWidget : GlanceAppWidget() {
 
     private companion object {
         const val DEEP_LINK = "bocan://nowplaying"
-        val SUBTITLE_COLOR = Color(0xFFB0B0B0)
     }
 }
