@@ -11,6 +11,7 @@ import androidx.media3.session.CommandButton
 import io.cloudcauldron.bocan.app.data.AppearancePreferences
 import io.cloudcauldron.bocan.app.data.EqPreferences
 import io.cloudcauldron.bocan.app.data.LibraryPreferences
+import io.cloudcauldron.bocan.app.data.OnboardingPreferences
 import io.cloudcauldron.bocan.app.data.PlaybackPreferences
 import io.cloudcauldron.bocan.app.data.PodcastPreferences
 import io.cloudcauldron.bocan.app.data.ScrobbleSettings
@@ -21,6 +22,8 @@ import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
 import io.cloudcauldron.bocan.app.library.GenreDetailViewModel
 import io.cloudcauldron.bocan.app.library.LibraryViewModel
 import io.cloudcauldron.bocan.app.library.PlaylistDetailViewModel
+import io.cloudcauldron.bocan.app.onboarding.AppEntry
+import io.cloudcauldron.bocan.app.onboarding.resolveEntry
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
 import io.cloudcauldron.bocan.app.playback.AndroidMediaFileResolver
 import io.cloudcauldron.bocan.app.playback.HeadphoneReconnectMonitor
@@ -87,6 +90,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
@@ -347,6 +351,23 @@ class AppGraph(val application: Application) {
 
     /** Theme mode, dynamic color, and pure-black dark; the activity's theme observes these. */
     val appearancePreferences: AppearancePreferences by lazy { AppearancePreferences(application) }
+
+    /** The first-run flag; the activity's root gate observes it. */
+    val onboardingPreferences: OnboardingPreferences by lazy { OnboardingPreferences(application) }
+
+    /**
+     * Where a launch lands: onboarding for a fresh unpaired install, the library
+     * for everyone else. Emits once persisted state has loaded; the activity
+     * latches the first decision so pairing mid-flow cannot yank the flow away.
+     */
+    fun appEntry(): Flow<AppEntry> = combine(
+        onboardingPreferences.completed,
+        database.syncDao().observeServer().map { it != null }
+    ) { completed, paired -> resolveEntry(completed, paired) }
+
+    fun completeOnboarding() {
+        playbackScope.launch { onboardingPreferences.setCompleted() }
+    }
 
     fun setThemeMode(mode: ThemeMode) {
         playbackScope.launch { appearancePreferences.setThemeMode(mode) }

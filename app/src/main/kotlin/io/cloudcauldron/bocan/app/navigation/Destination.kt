@@ -55,7 +55,16 @@ sealed interface Destination {
     data object AppearanceSettings : Destination
 
     @Serializable
+    data object PlaybackSettings : Destination
+
+    @Serializable
+    data object PodcastSettings : Destination
+
+    @Serializable
     data object About : Destination
+
+    @Serializable
+    data object Onboarding : Destination
 
     companion object {
         const val DEEP_LINK_ALBUM = "bocan://album"

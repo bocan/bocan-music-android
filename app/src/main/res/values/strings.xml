@@ -291,6 +291,36 @@
   <string name="settings_resume_on_reconnect">Resume on reconnect</string>
   <string name="settings_resume_on_reconnect_summary">Resume playback when headphones reconnect after being unplugged.</string>
 
+  <!-- Onboarding -->
+  <string name="onboarding_welcome_title">Welcome to Bòcan</string>
+  <string name="onboarding_welcome_body">Your Mac\'s music library, in your pocket, on your terms. Pair once with the Mac running Bòcan, and your music, playlists, and podcasts follow you over your own Wi-Fi. No cloud, no account, nothing to configure twice.</string>
+  <string name="onboarding_get_started">Get started</string>
+  <string name="onboarding_skip">Skip for now</string>
+  <string name="onboarding_sync_title">First sync</string>
+  <string name="onboarding_sync_body">Your library is on its way. You can start listening as soon as the first songs land, and syncing keeps going in the background.</string>
+  <string name="onboarding_done">Start listening</string>
+  <string name="onboarding_sync_later">Cancel and sync later</string>
+
+  <!-- Settings hub -->
+  <string name="settings_section_sync_summary">Paired Mac, auto-sync, storage</string>
+  <string name="settings_section_playback_summary">Resume, equalizer, volume levelling</string>
+  <string name="settings_section_podcasts_summary">Default speed and skip intervals</string>
+  <string name="settings_section_scrobble_summary">Last.fm, ListenBrainz, Rocksky</string>
+  <string name="settings_section_appearance_summary">Theme, colors, pure black</string>
+  <string name="settings_section_about_summary">Version, privacy, licenses</string>
+  <string name="playback_settings_title">Playback</string>
+  <string name="playback_eq_summary">Equalizer, volume levelling, preamp, fades, skip silence</string>
+
+  <!-- About -->
+  <string name="about_title">About</string>
+  <string name="about_version">Version %1$s</string>
+  <string name="about_site_label">Bòcan on the web</string>
+  <string name="about_tour_label">Show the welcome tour</string>
+  <string name="about_tour_summary">Pairing and first sync, step by step</string>
+  <string name="about_privacy_title">Your music stays yours</string>
+  <string name="about_privacy_body">Bòcan syncs one way, from your Mac to this phone, over your own Wi-Fi, with both devices verifying each other\'s certificates. There is no cloud, no account, no analytics, and no telemetry. The only things that ever leave this phone are requests to your paired Mac and, only if you turn scrobbling on, the plays you send to a service you choose.</string>
+  <string name="about_licenses_title">Open source licenses</string>
+
   <!-- Appearance -->
   <string name="appearance_title">Appearance</string>
   <string name="appearance_theme_label">Theme</string>

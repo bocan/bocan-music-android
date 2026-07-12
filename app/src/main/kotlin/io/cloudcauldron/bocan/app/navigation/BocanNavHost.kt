@@ -22,6 +22,7 @@ import io.cloudcauldron.bocan.app.library.LibraryCallbacks
 import io.cloudcauldron.bocan.app.library.LibraryEmptyActions
 import io.cloudcauldron.bocan.app.library.LibraryScreen
 import io.cloudcauldron.bocan.app.library.PlaylistDetailScreen
+import io.cloudcauldron.bocan.app.onboarding.OnboardingFlow
 import io.cloudcauldron.bocan.app.pairing.PairingScreen
 import io.cloudcauldron.bocan.app.player.NowPlayingScreen
 import io.cloudcauldron.bocan.app.podcasts.PodcastsHomeScreen
@@ -29,8 +30,11 @@ import io.cloudcauldron.bocan.app.podcasts.ShowDetailScreen
 import io.cloudcauldron.bocan.app.search.SearchScreen
 import io.cloudcauldron.bocan.app.settings.ScrobbleSettingsScreen
 import io.cloudcauldron.bocan.app.settings.SettingsScreen
+import io.cloudcauldron.bocan.app.settings.sections.AboutScreen
 import io.cloudcauldron.bocan.app.settings.sections.AppearanceCallbacks
 import io.cloudcauldron.bocan.app.settings.sections.AppearanceSettingsScreen
+import io.cloudcauldron.bocan.app.settings.sections.PlaybackSettingsScreen
+import io.cloudcauldron.bocan.app.settings.sections.PodcastSettingsScreen
 import io.cloudcauldron.bocan.app.settings.sections.SyncSettingsScreen
 import io.cloudcauldron.bocan.sync.pairing.PairingState
 
@@ -76,16 +80,44 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
             SearchScreen(viewModel = vm, callbacks = callbacks)
         }
         composable<Destination.Settings> {
-            val vm = remember { appGraph.podcastSettingsViewModel() }
-            DisposableEffect(Unit) { onDispose { vm.dispose() } }
             SettingsScreen(
-                onOpenPairing = { navController.navigate(Destination.Pairing) },
                 onOpenSync = { navController.navigate(Destination.SyncStatus) },
-                onOpenEqualizer = { navController.navigate(Destination.Equalizer) },
+                onOpenPlayback = { navController.navigate(Destination.PlaybackSettings) },
+                onOpenPodcasts = { navController.navigate(Destination.PodcastSettings) },
                 onOpenScrobbling = { navController.navigate(Destination.ScrobbleSettings) },
+                onOpenAppearance = { navController.navigate(Destination.AppearanceSettings) },
+                onOpenAbout = { navController.navigate(Destination.About) }
+            )
+        }
+        composable<Destination.PlaybackSettings> {
+            PlaybackSettingsScreen(
                 resumeOnReconnect = appGraph.playbackPreferences.resumeOnReconnect,
                 onSetResumeOnReconnect = appGraph::setResumeOnReconnect,
-                podcastSettings = vm
+                onOpenEqualizer = { navController.navigate(Destination.Equalizer) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<Destination.PodcastSettings> {
+            val vm = remember { appGraph.podcastSettingsViewModel() }
+            DisposableEffect(Unit) { onDispose { vm.dispose() } }
+            PodcastSettingsScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+        composable<Destination.About> {
+            AboutScreen(
+                onShowTour = { navController.navigate(Destination.Onboarding) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<Destination.Onboarding> {
+            OnboardingFlow(
+                pairingViewModelFactory = appGraph::pairingViewModel,
+                syncState = appGraph.syncCoordinator.syncState,
+                onStartSync = appGraph::syncNow,
+                onCancelSync = appGraph.syncCoordinator::cancelSync,
+                onFinished = {
+                    appGraph.completeOnboarding()
+                    navController.popBackStack()
+                }
             )
         }
         composable<Destination.AlbumDetail>(
