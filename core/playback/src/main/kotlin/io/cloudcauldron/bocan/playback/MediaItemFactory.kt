@@ -37,11 +37,16 @@ class MediaItemFactory(private val resolver: MediaFileResolver) {
         return builder.build()
     }
 
-    fun forEpisode(episode: EpisodeEntity): MediaItem = MediaItem.Builder()
+    /**
+     * Episodes carry no artwork of their own, so [showArtworkHash] (the parent podcast's
+     * cover, from PodcastEntity) is threaded in for the lock screen, mini player, and Now
+     * Playing. Null when the show has no advertised artwork yet.
+     */
+    fun forEpisode(episode: EpisodeEntity, showArtworkHash: String?): MediaItem = MediaItem.Builder()
         .setMediaId(MediaId.of(episode).raw)
         .setUri(resolver.episodeUri(episode.relPath))
         .setTag(ReplayGainValues.NONE)
-        .setMediaMetadata(episode.metadata())
+        .setMediaMetadata(episode.metadata(showArtworkHash))
         .build()
 
     private fun TrackEntity.replayGainValues() = ReplayGainValues(
@@ -72,13 +77,16 @@ class MediaItemFactory(private val resolver: MediaFileResolver) {
         return builder.build()
     }
 
-    private fun EpisodeEntity.metadata(): MediaMetadata = MediaMetadata.Builder()
-        .setTitle(title)
-        .setDurationMs(durationMs)
-        .setIsBrowsable(false)
-        .setIsPlayable(true)
-        .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE)
-        .build()
+    private fun EpisodeEntity.metadata(showArtworkHash: String?): MediaMetadata {
+        val builder = MediaMetadata.Builder()
+            .setTitle(title)
+            .setDurationMs(durationMs)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE)
+        showArtworkHash?.let { resolver.artworkUri(it)?.let(builder::setArtworkUri) }
+        return builder.build()
+    }
 
     companion object {
         /** Read the display fields back off a built MediaItem for the UI state. */

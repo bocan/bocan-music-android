@@ -59,10 +59,22 @@ class MediaItemFactoryTests {
 
     @Test
     fun `an episode maps to an episode id with no replaygain`() {
-        val item = factory.forEpisode(episode(id = "ep7", title = "Talk"))
+        val item = factory.forEpisode(episode(id = "ep7", title = "Talk"), showArtworkHash = null)
         assertEquals("episode:ep7", item.mediaId)
         assertEquals("Talk", item.mediaMetadata.title)
         assertEquals(ReplayGainValues.NONE, item.localConfiguration?.tag)
+    }
+
+    @Test
+    fun `an episode carries its show's artwork uri`() {
+        val item = factory.forEpisode(episode(id = "ep7"), showArtworkHash = "showcover")
+        assertEquals("file:///media/artwork/showcover", item.mediaMetadata.artworkUri?.toString())
+    }
+
+    @Test
+    fun `an episode with no show artwork has no artwork uri`() {
+        val item = factory.forEpisode(episode(id = "ep7"), showArtworkHash = null)
+        assertNull(item.mediaMetadata.artworkUri)
     }
 
     @Test

@@ -66,6 +66,9 @@ interface PodcastDao {
     @Query("SELECT * FROM episodes WHERE id IN (:ids)")
     suspend fun episodesByIds(ids: List<String>): List<EpisodeEntity>
 
+    @Query("SELECT * FROM podcasts WHERE id IN (:ids)")
+    suspend fun podcastsByIds(ids: List<Long>): List<PodcastEntity>
+
     @Query("SELECT * FROM episodes WHERE id = :episodeId")
     suspend fun episode(episodeId: String): EpisodeEntity?
 }

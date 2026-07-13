@@ -12,8 +12,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 
-/** Minimal PodcastDao fake for playback tests; answers only episode lookups by id. */
-class FakePodcastDao(private val episodes: List<EpisodeEntity> = emptyList()) : PodcastDao {
+/** Minimal PodcastDao fake for playback tests; answers episode and show lookups by id. */
+class FakePodcastDao(private val episodes: List<EpisodeEntity> = emptyList(), private val podcasts: List<PodcastEntity> = emptyList()) :
+    PodcastDao {
     override fun observeShows(): Flow<List<PodcastEntity>> = emptyFlow()
     override fun observeEpisodesNewestFirst(podcastId: Long): Flow<List<EpisodeEntity>> = emptyFlow()
     override fun observeEpisodesOldestFirst(podcastId: Long): Flow<List<EpisodeEntity>> = emptyFlow()
@@ -22,6 +23,7 @@ class FakePodcastDao(private val episodes: List<EpisodeEntity> = emptyList()) : 
     override fun observeShow(podcastId: Long): Flow<PodcastEntity?> = flowOf(null)
     override fun observeEpisodesWithState(podcastId: Long): Flow<List<EpisodeProgressRow>> = flowOf(emptyList())
     override suspend fun episodesByIds(ids: List<String>): List<EpisodeEntity> = episodes.filter { it.id in ids }
+    override suspend fun podcastsByIds(ids: List<Long>): List<PodcastEntity> = podcasts.filter { it.id in ids }
     override suspend fun episode(episodeId: String): EpisodeEntity? = episodes.firstOrNull { it.id == episodeId }
 }
 

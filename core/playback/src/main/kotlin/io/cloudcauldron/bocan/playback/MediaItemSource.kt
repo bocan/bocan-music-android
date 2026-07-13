@@ -39,11 +39,20 @@ class DatabaseMediaItemSource(
         val episodeIds = ids.filterIsInstance<MediaId.Episode>().map { it.episodeId }
         val tracksById = libraryDao.tracksByIds(trackIds).associateBy { it.id }
         val episodesById = if (episodeIds.isEmpty()) emptyMap() else podcastDao.episodesByIds(episodeIds).associateBy { it.id }
+        // Episodes show their parent podcast's cover, so fetch the shows for the episodes in play.
+        val showArtworkByPodcastId = if (episodesById.isEmpty()) {
+            emptyMap()
+        } else {
+            val podcastIds = episodesById.values.map { it.podcastId }.distinct()
+            podcastDao.podcastsByIds(podcastIds).associate { it.id to it.artworkHash }
+        }
         // Preserve the requested order, dropping ids that no longer exist on disk.
         val resolved = ids.mapNotNull { id ->
             when (id) {
                 is MediaId.Track -> tracksById[id.trackId]?.let(factory::forTrack)
-                is MediaId.Episode -> episodesById[id.episodeId]?.let(factory::forEpisode)
+                is MediaId.Episode -> episodesById[id.episodeId]?.let { episode ->
+                    factory.forEpisode(episode, showArtworkByPodcastId[episode.podcastId])
+                }
             }
         }
         if (resolved.size < ids.size) {

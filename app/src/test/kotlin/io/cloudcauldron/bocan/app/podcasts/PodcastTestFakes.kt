@@ -65,6 +65,7 @@ class FakePodcastDao : PodcastDao {
     override fun observeShow(podcastId: Long): Flow<PodcastEntity?> = MutableStateFlow(shows.value.firstOrNull { it.id == podcastId })
     override fun observeEpisodesWithState(podcastId: Long): Flow<List<EpisodeProgressRow>> = episodesWithState
     override suspend fun episodesByIds(ids: List<String>): List<EpisodeEntity> = ids.mapNotNull { episodes[it] }
+    override suspend fun podcastsByIds(ids: List<Long>): List<PodcastEntity> = shows.value.filter { it.id in ids }
     override suspend fun episode(episodeId: String): EpisodeEntity? = episodes[episodeId]
 }
 

@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.cloudcauldron.bocan.persistence.daos.LibraryDao
 import io.cloudcauldron.bocan.persistence.entities.AlbumEntity
 import io.cloudcauldron.bocan.persistence.entities.ArtistEntity
+import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.DownloadCounts
 import kotlin.test.assertEquals
@@ -70,5 +71,32 @@ class DatabaseMediaItemSourceTests {
         val source = source(listOf(track(id = 1)))
         val items = source.resolve(listOf(MediaId.Track(1), MediaId.Episode("ep1")))
         assertEquals(listOf("track:1"), items.map { it.mediaId })
+    }
+
+    @Test
+    fun `an episode resolves with its parent show's artwork`() = runTest {
+        val dispatcher = UnconfinedTestDispatcher()
+        val src = DatabaseMediaItemSource(
+            libraryDao = FakeLibraryDao(emptyList()),
+            // episode(id = "ep1") has podcastId = 1, so it draws show 1's cover.
+            podcastDao = FakePodcastDao(
+                episodes = listOf(episode(id = "ep1")),
+                podcasts = listOf(
+                    PodcastEntity(
+                        id = 1,
+                        title = "Show",
+                        author = null,
+                        descriptionHtml = null,
+                        artworkHash = "showcover",
+                        defaultSpeed = null
+                    )
+                )
+            ),
+            factory = MediaItemFactory(FakeMediaFileResolver()),
+            dispatchers = CoroutineDispatchers(io = dispatcher, default = dispatcher, main = dispatcher),
+            log = NoopLog
+        )
+        val items = src.resolveEpisodes(listOf("ep1"))
+        assertEquals("file:///media/artwork/showcover", items.single().mediaMetadata.artworkUri?.toString())
     }
 }
