@@ -60,7 +60,7 @@ class SearchViewModel(
                 query = q,
                 tracks = r.tracks.map { it.toUi() },
                 albums = r.albums.map { it.toUi() },
-                artists = r.artists.map { ArtistUi(it.id, it.name, 0) },
+                artists = r.artists.map { ArtistUi(it.id, it.name, albumCount = 0, songCount = 0) },
                 recent = recent
             )
         }.stateIn(scope, SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), SearchUiState())

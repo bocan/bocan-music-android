@@ -71,7 +71,7 @@ class ComponentUiTests {
         compose.setContent {
             BocanTheme { AlbumCell(album = album, onClick = { tappedId = album.id }) }
         }
-        compose.onNodeWithContentDescription("Moving Pictures, Rush, 1981").performClick()
+        compose.onNodeWithContentDescription("Moving Pictures, Rush, 1981, 7 songs").performClick()
         assertEquals(42L, tappedId)
     }
 }

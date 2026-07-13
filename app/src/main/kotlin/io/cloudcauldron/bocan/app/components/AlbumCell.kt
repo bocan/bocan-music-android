@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -23,7 +24,8 @@ import io.cloudcauldron.bocan.app.library.AlbumUi
 @Composable
 fun AlbumCell(album: AlbumUi, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val subtitle = album.year?.let { stringResource(R.string.album_cell_artist_year, album.artist, it) } ?: album.artist
-    val description = stringResource(R.string.album_cell_a11y, album.name, subtitle)
+    val songs = pluralStringResource(R.plurals.song_count, album.trackCount, album.trackCount)
+    val description = stringResource(R.string.album_cell_a11y, album.name, subtitle, songs)
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
@@ -46,6 +48,13 @@ fun AlbumCell(album: AlbumUi, onClick: () -> Unit, modifier: Modifier = Modifier
         )
         Text(
             text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = songs,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

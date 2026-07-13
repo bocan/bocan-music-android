@@ -7,6 +7,7 @@ import io.cloudcauldron.bocan.app.FakePlaylistDao
 import io.cloudcauldron.bocan.app.albumEntity
 import io.cloudcauldron.bocan.app.artistEntity
 import io.cloudcauldron.bocan.app.syncServerEntity
+import io.cloudcauldron.bocan.app.trackEntity
 import io.cloudcauldron.bocan.persistence.entities.SyncServerEntity
 import io.cloudcauldron.bocan.persistence.model.DownloadCounts
 import io.cloudcauldron.bocan.sync.CoroutineDispatchers
@@ -72,17 +73,27 @@ class LibraryViewModelTests {
     }
 
     @Test
-    fun `artists carry a derived album count`() = runTest {
+    fun `artists carry derived album and song counts`() = runTest {
         libraryDao.artistsFlow.value = listOf(artistEntity(1, "ABBA"), artistEntity(2, "Rush"))
         libraryDao.albumsFlow.value = listOf(
             albumEntity(10, artist = "ABBA"),
             albumEntity(11, artist = "ABBA"),
             albumEntity(12, artist = "Rush")
         )
+        libraryDao.tracksFlow.value = listOf(
+            trackEntity(100, albumArtistId = 1),
+            trackEntity(101, albumArtistId = 1),
+            trackEntity(102, albumArtistId = 1),
+            trackEntity(103, albumArtistId = 2)
+        )
         viewModel().artists.test {
             val artists = awaitItem()
-            assertEquals(2, artists.first { it.name == "ABBA" }.albumCount)
-            assertEquals(1, artists.first { it.name == "Rush" }.albumCount)
+            val abba = artists.first { it.name == "ABBA" }
+            val rush = artists.first { it.name == "Rush" }
+            assertEquals(2, abba.albumCount)
+            assertEquals(3, abba.songCount)
+            assertEquals(1, rush.albumCount)
+            assertEquals(1, rush.songCount)
         }
     }
 

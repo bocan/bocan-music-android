@@ -24,8 +24,8 @@ data class TrackUi(
 /** An album as the grid cells render it. */
 data class AlbumUi(val id: Long, val name: String, val artist: String, val year: Int?, val artworkHash: String?, val trackCount: Int)
 
-/** An artist as the list rows render it, with a derived album count. */
-data class ArtistUi(val id: Long, val name: String, val albumCount: Int)
+/** An artist as the list rows render it, with derived album and song counts. */
+data class ArtistUi(val id: Long, val name: String, val albumCount: Int, val songCount: Int)
 
 /** Format a millisecond duration as m:ss or h:mm:ss, never by string concatenation. */
 fun formatDuration(durationMs: Long): String = DateUtils.formatElapsedTime(durationMs / MILLIS_PER_SECOND)
