@@ -3,7 +3,7 @@
 ## [0.2.0](https://github.com/bocan/bocan-music-android/compare/v0.1.0...v0.2.0) (2026-07-13)
 
 
-### ### Added
+### Added
 
 * **app:** About shows the license line and both project repos ([f83c3dc](https://github.com/bocan/bocan-music-android/commit/f83c3dcadca4f50d2557224b4be88bed5144470c))
 * **app:** accessibility audit fixes across every screen ([cbdee72](https://github.com/bocan/bocan-music-android/commit/cbdee72c5175e4f0cdb247e2c58baff78a9f4960))
@@ -56,7 +56,7 @@
 * **sync:** implement the one-way sync engine ([48970d8](https://github.com/bocan/bocan-music-android/commit/48970d87fb385623a88e1f0265dc14beb5659d1b))
 
 
-### ### Fixed
+### Fixed
 
 * **app:** apply system bar insets to the onboarding flow ([dde95cc](https://github.com/bocan/bocan-music-android/commit/dde95cc660a742cef543da8600c18b875fd6005c))
 * **app:** calm the oscilloscope, drive halfway back toward the flat trace ([9fe961a](https://github.com/bocan/bocan-music-android/commit/9fe961a7479b6285293e1f26eb8e2a7caa69e5dc))
