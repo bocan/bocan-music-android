@@ -55,6 +55,21 @@
         android:resource="@xml/bocan_widget_info" />
     </receiver>
 
+    <!-- Serves content-addressed artwork as content:// so a separate process (Android Auto,
+         the system media UI) can read it: a file:// path into app-private storage cannot
+         cross the process boundary, which is why art showed in the notification (loaded in
+         app) but not in Android Auto. Media3 grants the connected controller read on the
+         content URI. Only the artwork subtree is shared, never the media files. -->
+    <provider
+      android:name="androidx.core.content.FileProvider"
+      android:authorities="${applicationId}.fileprovider"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+    </provider>
+
     <!-- WorkManager uses on-demand initialization (Application is a
          Configuration.Provider), so remove the default startup initializer. -->
     <provider

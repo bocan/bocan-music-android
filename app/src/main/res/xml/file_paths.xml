@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Content-addressed artwork lives at getExternalFilesDir(null)/media/artwork/<hash>.
+         Exposed as content:// so a separate process (Android Auto, the system media UI) can
+         read it; only this subtree is shared, never tracks or episodes. -->
+    <external-files-path name="artwork" path="media/artwork/" />
+</paths>

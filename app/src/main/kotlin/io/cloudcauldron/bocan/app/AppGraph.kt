@@ -153,7 +153,7 @@ class AppGraph(val application: Application) {
 
     private val artworkStore = ArtworkStore(mediaLayout)
 
-    private val mediaFileResolver = AndroidMediaFileResolver(mediaLayout, artworkStore)
+    private val mediaFileResolver = AndroidMediaFileResolver(application, mediaLayout, artworkStore)
 
     /** The audio effects chain (EQ, bass boost, ReplayGain gain, limiter, waveform tap) shared by the player and settings. */
     val effectsChain = EffectsChain(playbackDispatchers)
