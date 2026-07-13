@@ -9,9 +9,20 @@
 #    of core/ and app/ finds none, and no code does reflective serializer lookup, so the
 #    bundled rules are sufficient. If a named companion is ever added, add the
 #    -if @kotlinx.serialization.Serializable block from the library README here.
-#  - Room (androidx.room3) ships consumer rules that keep generated DAO and database
-#    implementations. Entities are referenced directly, so nothing extra is required.
 #  - Media3 ships consumer rules for the classes DefaultRenderersFactory loads.
+#
+# Room needs an explicit rule here, learned from a real crash. Room instantiates its
+# generated *_Impl database classes reflectively (Room.getGeneratedImplementation calls
+# Class.forName(name + "_Impl").getDeclaredConstructor()). The first minified on-device
+# launch crashed with NoSuchMethodException on androidx.work.impl.WorkDatabase_Impl.<init>:
+# R8 kept the class name but stripped its no-arg constructor. The app carries two Room
+# lineages, androidx.room3 (its own database) and androidx.room 2.x (pulled in by
+# WorkManager, which is what crashed), so keep the no-arg constructor on every RoomDatabase
+# subclass in both. The generated _Impl classes extend the abstract database, which extends
+# RoomDatabase, so a subclass rule matches them.
+
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class * extends androidx.room3.RoomDatabase { <init>(); }
 #
 # The one genuine hazard is the FFmpeg audio decoder. DefaultRenderersFactory is set to
 # EXTENSION_RENDERER_MODE_PREFER (PlayerFactory.kt), which resolves the extension renderer
