@@ -11,6 +11,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +31,19 @@ fun DetailArtwork(artworkHash: String?, modifier: Modifier = Modifier) {
             .size(200.dp)
             .clip(RoundedCornerShape(12.dp))
     )
+}
+
+/**
+ * A top-bar action that shuffles all of [trackIds] and starts playing. Rendered as an
+ * icon-only button, so it carries its own content description; it hides itself when there
+ * is nothing to play.
+ */
+@Composable
+fun ShuffleAllAction(trackIds: List<Long>, onShuffle: (List<Long>) -> Unit) {
+    if (trackIds.isEmpty()) return
+    IconButton(onClick = { onShuffle(trackIds) }) {
+        Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.action_shuffle_all))
+    }
 }
 
 /** The Play and Shuffle buttons shown under a detail header. */

@@ -150,6 +150,7 @@
   <!-- Actions and sections -->
   <string name="action_play">Play</string>
   <string name="action_shuffle">Shuffle</string>
+  <string name="action_shuffle_all">Shuffle all</string>
   <string name="action_pause">Pause</string>
   <string name="action_play_next">Play next</string>
   <string name="action_add_to_queue">Add to queue</string>

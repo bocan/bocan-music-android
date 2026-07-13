@@ -14,10 +14,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.EmptyState
+import io.cloudcauldron.bocan.app.components.ShuffleAllAction
 import io.cloudcauldron.bocan.app.components.SortMenu
 import io.cloudcauldron.bocan.app.components.SortOption
 import io.cloudcauldron.bocan.persistence.model.AlbumSort
@@ -38,13 +40,19 @@ fun LibraryScreen(
 ) {
     val status by viewModel.status.collectAsState()
     val tab by viewModel.selectedTab.collectAsState()
+    // Collected once here so the Shuffle All action (any tab) and the Songs tab share it.
+    val songs by viewModel.songs.collectAsState()
+    val shuffleIds = remember(songs) { songs.map { it.id } }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.tab_library)) },
-                actions = { SortAction(tab, viewModel) }
+                actions = {
+                    ShuffleAllAction(shuffleIds, callbacks.shuffle)
+                    SortAction(tab, viewModel)
+                }
             )
         }
     ) { padding ->
@@ -72,7 +80,7 @@ fun LibraryScreen(
                 LibraryStatus.Loading -> Unit
                 LibraryStatus.Content -> {
                     LibraryTabRow(selected = tab, onSelect = viewModel::selectTab)
-                    LibraryTabContent(tab, viewModel, callbacks)
+                    LibraryTabContent(tab, viewModel, callbacks, songs)
                 }
             }
         }
@@ -111,7 +119,7 @@ private fun SortAction(tab: LibraryTab, viewModel: LibraryViewModel) {
 }
 
 @Composable
-private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, callbacks: LibraryCallbacks) {
+private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, callbacks: LibraryCallbacks, songs: List<TrackUi>) {
     when (tab) {
         LibraryTab.Artists -> {
             val artists by viewModel.artists.collectAsState()
@@ -122,7 +130,6 @@ private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, call
             AlbumsGrid(albums, callbacks.openAlbum, Modifier.fillMaxSize())
         }
         LibraryTab.Songs -> {
-            val songs by viewModel.songs.collectAsState()
             SongsList(songs, callbacks, Modifier.fillMaxSize())
         }
         LibraryTab.Genres -> {

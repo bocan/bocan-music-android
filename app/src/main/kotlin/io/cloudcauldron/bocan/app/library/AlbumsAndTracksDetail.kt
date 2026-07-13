@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.AlbumCell
+import io.cloudcauldron.bocan.app.components.ShuffleAllAction
 import io.cloudcauldron.bocan.app.components.TrackList
 
 /**
@@ -39,7 +40,8 @@ fun AlbumsAndTracksDetail(
         topBar = {
             TopAppBar(
                 title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { BackButton(onBack) }
+                navigationIcon = { BackButton(onBack) },
+                actions = { ShuffleAllAction(tracks.map { it.id }, callbacks.shuffle) }
             )
         }
     ) { padding ->
