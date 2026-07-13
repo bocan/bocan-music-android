@@ -181,7 +181,12 @@ private class OscilloscopeRenderer(private val source: WaveformSource) : GLSurfa
         const val LINE_THICKNESS_PX = 2.5f
         const val DEFAULT_HALF_THICKNESS = 0.02f
         const val Y_SCALE = 0.92f
-        const val DRIVE = 3.2f
+
+        // Amplitude drive into tanh. 3.2 slammed even quiet passages up to the edges so the
+        // trace read constantly full and busy; 2.0 is roughly halfway back toward the linear
+        // (flat) original, so quiet passages sit calmer in the middle and only loud transients
+        // reach the top and bottom. Raise toward 3 for bolder, lower toward 1 for flatter.
+        const val DRIVE = 2.0f
 
         val VERTEX_SHADER = """
             attribute vec2 aPos;
