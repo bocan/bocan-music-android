@@ -30,17 +30,68 @@ matches the tag.
 ### Signing keystore (required before the first signed release)
 
 The upload keystore is **unrecoverable if lost**: lose it and you can never update the same
-Play listing again. Generate it once, back it up outside git, and record the backup here.
+Play listing again. Generate it once, outside the repo, back it up twice, and record the
+backup here.
 
-- Generate: `keytool -genkeypair -v -keystore bocan-upload.jks -keyalg RSA -keysize 4096 -validity 10000 -alias bocan`
+**Generate it outside the repo.** Even though `.gitignore` ignores `*.jks`, keep the file
+physically out of any working tree so it can never be committed by accident:
+
+```bash
+mkdir -p ~/.android-keystores/bocan
+cd ~/.android-keystores/bocan
+keytool -genkeypair -v \
+  -keystore bocan-upload.jks \
+  -alias bocan \
+  -keyalg RSA -keysize 4096 -validity 10000 \
+  -dname "CN=Bocan Music, O=Cloud Cauldron, C=US"
+```
+
+- The `-dname` fields are cosmetic for a Play upload key (Google's App Signing holds the
+  real key; this one only authenticates uploads), so passing them inline just skips the
+  interactive identity questions. Set `C` to your two-letter country code.
+- It then prompts for the keystore password (twice); press Return at the key-password
+  prompt to reuse it. Use a long random password from your password manager.
+- `-alias bocan` must match `BOCAN_KEY_ALIAS`; `-validity 10000` clears Play's date
+  requirement; `-keysize 4096` clears its minimum.
+
+**Back it up in two places, neither in git:** the `~/.android-keystores/bocan` copy plus a
+password-manager attachment or encrypted volume, in the same entry as the password.
+
 - **Backup location (fill in and keep private):** `__________________________`
-  (password manager entry or offline encrypted volume; never in the repo, never in a chat).
-- Local release builds read `keystore.properties` at the repo root (git-ignored). Fields:
-  `BOCAN_KEYSTORE_FILE`, `BOCAN_KEYSTORE_PASSWORD`, `BOCAN_KEY_ALIAS`, `BOCAN_KEY_PASSWORD`.
-- CI reads the same field names from GitHub Actions secrets. Set:
-  - `BOCAN_KEYSTORE_BASE64` = `base64 -i bocan-upload.jks` (the release workflow is gated on
-    this secret; without it, the signed build is skipped and CI stays green).
-  - `BOCAN_KEYSTORE_PASSWORD`, `BOCAN_KEY_ALIAS`, `BOCAN_KEY_PASSWORD`.
+
+**Wire the local build.** Create `keystore.properties` at the repo root (git-ignored). The
+file path is absolute and points out of the repo:
+
+```properties
+BOCAN_KEYSTORE_FILE=/Users/chris/.android-keystores/bocan/bocan-upload.jks
+BOCAN_KEYSTORE_PASSWORD=the-store-password-you-set
+BOCAN_KEY_ALIAS=bocan
+BOCAN_KEY_PASSWORD=the-same-password
+```
+
+That is all `./gradlew :app:assembleRelease` needs to sign locally.
+
+**Wire CI.** The release workflow cannot read a local path, so it ships the keystore as
+base64 and reconstructs the file at build time. `release.yml` decodes `BOCAN_KEYSTORE_BASE64`
+to a temp file and exports `BOCAN_KEYSTORE_FILE` pointing at it, so Gradle reads the same
+field names either way. Set these GitHub Actions secrets:
+
+- `BOCAN_KEYSTORE_BASE64` = `base64 -i ~/.android-keystores/bocan/bocan-upload.jks` (the
+  release workflow is gated on this secret; without it the signed build is skipped and CI
+  stays green).
+- `BOCAN_KEYSTORE_PASSWORD`, `BOCAN_KEY_ALIAS`, `BOCAN_KEY_PASSWORD`.
+
+**Where each value lives.** `BOCAN_KEYSTORE_FILE` is a path, so it is never a GitHub secret:
+locally you have the file and give its path; on CI you ship the file as base64 and the
+workflow computes the path. The two are the same keystore in two representations.
+
+| Value | Local (`keystore.properties`) | GitHub secret |
+|-------|:---:|:---:|
+| `BOCAN_KEYSTORE_BASE64` | no | yes |
+| `BOCAN_KEYSTORE_FILE` | yes (real path) | no (workflow derives it) |
+| `BOCAN_KEYSTORE_PASSWORD` | yes | yes |
+| `BOCAN_KEY_ALIAS` | yes | yes |
+| `BOCAN_KEY_PASSWORD` | yes | yes |
 
 ### Last.fm keys (optional, hides the Last.fm provider if absent)
 
