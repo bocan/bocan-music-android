@@ -7,7 +7,7 @@
   <!-- Pairing -->
   <string name="pairing_title">Pair with a Mac</string>
   <string name="pairing_searching">Searching for Macs on your network…</string>
-  <string name="pairing_no_macs">No Macs found yet. On your Mac, open Bòcan settings and click Pair a phone.</string>
+  <string name="pairing_no_macs">Looking for your Mac. On your Mac, open Bòcan Settings, go to Library, then Phone Sync, scroll down to Paired Phones, and click Pair a Phone. Leave this screen open: it updates on its own the moment your Mac is ready to pair.</string>
   <string name="pairing_ready">Ready to pair</string>
   <string name="pairing_pair_action">Pair</string>
   <string name="pairing_mac_row">Pair with %1$s, ready to pair</string>
@@ -24,7 +24,7 @@
   <!-- Failure copy. The mismatch warning is verbatim from the sync protocol. -->
   <string name="pairing_code_mismatch">This code does not match. Someone may be interfering with your network, or you tapped the wrong Mac.</string>
   <string name="pairing_too_many_attempts">Too many incorrect codes. Start the pairing again.</string>
-  <string name="pairing_error_expired">Pairing timed out. On your Mac, click Pair a phone again.</string>
+  <string name="pairing_error_expired">Pairing timed out. On your Mac, open Settings, Library, then Phone Sync, and under Paired Phones click Pair a Phone again.</string>
   <string name="pairing_error_bad_proof">The Mac rejected the pairing. Please try again.</string>
   <string name="pairing_error_busy">The Mac is busy updating its library. Try again in a moment.</string>
   <string name="pairing_error_rate_limited">Too many attempts. Wait a moment and try again.</string>
