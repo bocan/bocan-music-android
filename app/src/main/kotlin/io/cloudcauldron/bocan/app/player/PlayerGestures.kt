@@ -125,8 +125,15 @@ private fun rubberBand(magnitude: Float, extentPx: Float, resistance: Float): Fl
 private fun isCommitted(offsetPx: Float, commitDistancePx: Float, velocityPx: Float): Boolean =
     abs(offsetPx) >= commitDistancePx || abs(velocityPx) >= PlayerGestureThresholds.FLING_VELOCITY
 
-private fun commitDirection(offsetPx: Float, velocityPx: Float): Float =
-    if (abs(velocityPx) >= PlayerGestureThresholds.FLING_VELOCITY) velocityPx else offsetPx
+/**
+ * The committed direction is the finger's net travel, never the velocity sign. VelocityTracker
+ * reports the wrong sign often enough on a fast, short flick (the finger decelerating or
+ * jittering as it lifts) that trusting it let a quick downward dismiss resolve to an upward
+ * details reveal: the screen bounced back and the info sheet opened. Velocity only lowers the
+ * commit threshold (in [isCommitted]); the offset decides which way. Falls back to velocity
+ * only when there is no net travel at all.
+ */
+private fun commitDirection(offsetPx: Float, velocityPx: Float): Float = if (offsetPx != 0f) offsetPx else velocityPx
 
 /**
  * The finger-tracked offsets and neighbor availability, hoisted so [NowPlayingScreen] can

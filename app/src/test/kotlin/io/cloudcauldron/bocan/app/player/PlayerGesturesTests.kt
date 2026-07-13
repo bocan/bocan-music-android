@@ -77,6 +77,17 @@ class PlayerGesturesTests {
     }
 
     @Test
+    fun `a fast downward flick dismisses even when the velocity sign is spuriously up`() {
+        // VelocityTracker can report the wrong sign on a fast, short flick as the finger lifts.
+        // The finger's net travel (a positive, downward offset) is the source of truth, so the
+        // player must still dismiss rather than bounce back and open details.
+        assertEquals(
+            VerticalAnchor.Dismiss,
+            resolveVerticalTarget(offsetPx = 60f, commitDistancePx = commitDistance, velocityPx = -2_500f)
+        )
+    }
+
+    @Test
     fun `axis lock prefers horizontal on a tie and picks the dominant otherwise`() {
         assertEquals(GestureAxis.Horizontal, dominantAxis(dx = 10f, dy = 10f))
         assertEquals(GestureAxis.Horizontal, dominantAxis(dx = 12f, dy = 3f))
