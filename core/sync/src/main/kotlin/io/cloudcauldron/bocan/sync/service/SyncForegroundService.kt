@@ -36,6 +36,11 @@ class SyncForegroundService : Service() {
     private lateinit var notifications: SyncNotifications
     private val host: SyncHost get() = application as SyncHost
 
+    // Held for the duration of a sync so a large transfer with the screen off is not stalled
+    // by CPU suspend or Wi-Fi power save (which surfaced as intermittent "Mac not reachable").
+    // Released in onDestroy, which every stop path (terminal state, cancel, timeout) reaches.
+    private val locks by lazy { SyncLocks(this) }
+
     override fun onCreate() {
         super.onCreate()
         notifications = SyncNotifications(this)
@@ -54,6 +59,7 @@ class SyncForegroundService : Service() {
             notifications.build(SyncState.CheckingManifest, cancelIntent()),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
         )
+        locks.acquire()
         observeState()
         host.launchSync(intent?.getBooleanExtra(EXTRA_FORCE, false) ?: false)
         return START_NOT_STICKY
@@ -89,6 +95,7 @@ class SyncForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        locks.release()
         scope.cancel()
         super.onDestroy()
     }
