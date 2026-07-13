@@ -6,8 +6,10 @@ import android.net.nsd.NsdServiceInfo
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -30,6 +32,8 @@ internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue:
 
     override fun services(): Flow<List<ResolvedService>> = callbackFlow {
         val found = LinkedHashMap<String, ResolvedService>()
+        // The raw discovered infos, kept so the periodic refresh below can re-resolve each.
+        val discovered = LinkedHashMap<String, NsdServiceInfo>()
         val guard = Mutex()
 
         suspend fun mutateAndEmit(mutate: MutableMap<String, ResolvedService>.() -> Unit) {
@@ -40,18 +44,28 @@ internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue:
             trySend(snapshot)
         }
 
+        // Resolve one service and fold the result into the snapshot. Resolution runs outside
+        // the mutex (it hits the network); only the brief map update is guarded.
+        suspend fun resolveAndStore(info: NsdServiceInfo) {
+            resolveQueue.serialize {
+                val resolved = resolve(info) ?: return@serialize
+                mutateAndEmit { put(resolved.serviceName, resolved) }
+            }
+        }
+
         val listener = object : NsdManager.DiscoveryListener {
             override fun onServiceFound(service: NsdServiceInfo) {
                 launch {
-                    resolveQueue.serialize {
-                        val resolved = resolve(service) ?: return@serialize
-                        mutateAndEmit { put(resolved.serviceName, resolved) }
-                    }
+                    guard.withLock { discovered[service.serviceName] = service }
+                    resolveAndStore(service)
                 }
             }
 
             override fun onServiceLost(service: NsdServiceInfo) {
-                launch { mutateAndEmit { remove(service.serviceName) } }
+                launch {
+                    guard.withLock { discovered.remove(service.serviceName) }
+                    mutateAndEmit { remove(service.serviceName) }
+                }
             }
 
             override fun onDiscoveryStarted(serviceType: String) {
@@ -72,7 +86,23 @@ internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue:
         }
 
         nsdManager.discoverServices(MacDiscovery.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
+
+        // The legacy discoverServices callback fires onServiceFound only once per service and
+        // never again when the service's TXT record changes. The Mac advertises continuously
+        // while Phone Sync is enabled and only flips pm=0 to pm=1 in TXT when the user arms
+        // pairing, so without this a Mac discovered before pairing was armed stays cached as
+        // pm=0 and never appears in the pairing list. Re-resolve the known services on an
+        // interval so that flip is picked up within one tick while the screen is open.
+        val refresh = launch {
+            while (isActive) {
+                delay(REFRESH_INTERVAL_MS)
+                val infos = guard.withLock { discovered.values.toList() }
+                infos.forEach { resolveAndStore(it) }
+            }
+        }
+
         awaitClose {
+            refresh.cancel()
             runCatching { nsdManager.stopServiceDiscovery(listener) }
                 .onFailure { log.warning("discovery.stopThrew", mapOf("error" to it.toString())) }
         }
@@ -101,5 +131,12 @@ internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue:
         val host = info.host ?: return null
         val txt = info.attributes.mapValues { (_, value) -> value?.toString(Charsets.US_ASCII) }
         return ResolvedService(info.serviceName, host, info.port, txt)
+    }
+
+    private companion object {
+        // Fast enough that arming pairing on the Mac shows up on the phone within a few
+        // seconds (the Mac's pairing window is 120 s), gentle enough to avoid hammering the
+        // platform resolver, which serializes calls through ResolveQueue anyway.
+        const val REFRESH_INTERVAL_MS = 3_000L
     }
 }
