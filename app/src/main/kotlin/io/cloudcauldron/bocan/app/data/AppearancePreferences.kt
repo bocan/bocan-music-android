@@ -24,8 +24,15 @@ enum class ThemeMode(val key: String) {
     }
 }
 
-/** One immutable snapshot of every appearance setting the theme needs. */
-data class AppearanceSettings(val themeMode: ThemeMode = ThemeMode.System, val dynamicColor: Boolean = true, val pureBlack: Boolean = false)
+/**
+ * One immutable snapshot of every appearance setting the theme needs. Defaults: follow the
+ * system light/dark, the Bocan palette (wallpaper colors off), no pure black.
+ */
+data class AppearanceSettings(
+    val themeMode: ThemeMode = ThemeMode.System,
+    val dynamicColor: Boolean = false,
+    val pureBlack: Boolean = false
+)
 
 /** The appearance preferences the theme and settings read; a fake stands in for tests. */
 interface AppearancePreferencesSource {
@@ -47,7 +54,7 @@ class AppearancePreferences(private val context: Context) : AppearancePreference
     override val settings: Flow<AppearanceSettings> = context.appearanceDataStore.data.map { prefs ->
         AppearanceSettings(
             themeMode = ThemeMode.fromKey(prefs[THEME_MODE]),
-            dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
+            dynamicColor = prefs[DYNAMIC_COLOR] ?: false,
             pureBlack = prefs[PURE_BLACK] ?: false
         )
     }

@@ -25,16 +25,16 @@ class AppearancePreferencesTests {
 
         val defaults = prefs.settings.first()
         assertEquals(ThemeMode.System, defaults.themeMode)
-        assertTrue(defaults.dynamicColor)
+        assertFalse(defaults.dynamicColor)
         assertFalse(defaults.pureBlack)
 
         prefs.setThemeMode(ThemeMode.Dark)
-        prefs.setDynamicColor(false)
+        prefs.setDynamicColor(true)
         prefs.setPureBlack(true)
 
         val settings = prefs.settings.first()
         assertEquals(ThemeMode.Dark, settings.themeMode)
-        assertFalse(settings.dynamicColor)
+        assertTrue(settings.dynamicColor)
         assertTrue(settings.pureBlack)
     }
 
