@@ -50,7 +50,7 @@ release-please action, Gradle Play Publisher (when Play configured).
 - [ ] Upgrade-in-place proven.
       Device-only test (install previous, add data, install over it); recorded as a gate in docs/release-checklist.md.
 - [x] Data-safety and permissions docs committed; store listing draft present. (store/data-safety.md, store/permissions.md, store/listing.md.)
-- [x] F-Droid decision recorded with a working path. (docs/fdroid.md: build the FFmpeg extension from source in CI, with the flavor-without-decoder fallback recorded.)
+- [x] F-Droid decision recorded. (docs/fdroid.md: decided against F-Droid, the FFmpeg prebuilt would need a from-source build and the GitLab submission path is not worth the maintenance for near-zero incremental reach. Distribution is GitHub Releases plus Play; the FFmpeg pin is now permanent.)
 
 ## Gotchas
 

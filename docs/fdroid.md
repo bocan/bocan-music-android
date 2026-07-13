@@ -1,88 +1,53 @@
-# F-Droid readiness
+# F-Droid: decided against
 
-Bòcan Music is a good F-Droid citizen by design: no analytics, no telemetry, no crash
-reporting, no ad or tracking libraries, no Google Play Services dependency, and no
-proprietary SDKs. The sync connection is the only network traffic, and it stays on the
-local network under the user's own pinned certificates. The one thing standing between the
-current build and a reproducible F-Droid build is a single native artifact.
+Bòcan Music is a good F-Droid citizen on paper (no analytics, telemetry, crash reporting,
+ad or tracking libraries, Google Play Services, or proprietary SDKs; the only network
+traffic is the on-LAN sync under the user's own pinned certificates). Despite that, we have
+decided **not** to distribute on F-Droid. This document records that decision so it reads as
+a deliberate choice, not an oversight.
 
-## The one blocker: the FFmpeg audio decoder
+## Why not
 
-The app plays formats beyond what the Android platform decoders cover (notably the wider
-lossless and legacy codec range) through the Media3 FFmpeg extension. We consume it as a
-prebuilt Maven artifact:
+1. **The FFmpeg prebuilt is a hard blocker.** The app plays formats beyond the Android
+   platform decoders through the Media3 FFmpeg extension, consumed as a prebuilt Maven
+   artifact (`org.jellyfin.media3:media3-ffmpeg-decoder`, see `gradle/libs.versions.toml`),
+   which ships a precompiled `libffmpegJNI.so` per ABI. F-Droid rebuilds everything from
+   source and its scanner rejects prebuilt binaries, so getting on F-Droid would require
+   either building the FFmpeg extension from source in the recipe (an NDK toolchain plus a
+   from-source `.so` validated per device, then kept pinned to the Media3 version forever) or
+   shipping a cut-down flavor without the decoder (a real regression in format support). Both
+   are ongoing maintenance for a channel a small slice of users would use.
+2. **The submission path runs through GitLab.** F-Droid inclusion means merge requests to
+   `fdroiddata` on GitLab, which is not a friendly platform for open-source contribution
+   workflows: the round-trip of forking, staging, MR, and maintainer review is heavy for a
+   personal project, and the tooling gets in the way more than it helps.
+3. **Developer verification cuts the other way.** Google's developer-verification rollout
+   targets sideloading in general, not just Play, so F-Droid would not have been a refuge
+   from it. The practical response is to be on Play, which is already the plan.
 
-```
-org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1   (gradle/libs.versions.toml)
-```
+Weighed against near-zero incremental reach, the cost is not worth it.
 
-This ships a precompiled `libffmpegJNI.so` per ABI. F-Droid's inclusion policy requires
-that every binary in the shipped app be built from source by the F-Droid build server, and
-its reproducible-builds track requires that we produce a byte-identical APK ourselves. A
-prebuilt `.so` fails both. This is the same native decoder the Mac app bundles, and it is
-what gives the two apps format parity.
+## What we distribute instead
 
-## Decision
+- **GitHub Releases.** The signed, versioned, checksummed APK produced by `release.yml` is
+  the sideload channel and already works end to end (`bocan-music-<version>.apk`).
+- **Google Play.** The main channel once the corporate account is approved; the pipeline is
+  wired and secret-gated, ready to publish the AAB.
 
-**Committed path: build the Media3 FFmpeg extension from source in CI, and ship one build
-everywhere.** Reproducibility is worth having regardless of F-Droid (it is what lets anyone
-verify the GitHub release APK matches the tag), and building the decoder ourselves removes
-the only non-free-tooling artifact from the graph, so the same build satisfies F-Droid, the
-GitHub release, and Play. We do not split into flavors.
+Between them, skipping F-Droid loses very little.
 
-The concrete recipe, to land as a follow-up build job (tracked here, not yet wired, because
-it needs the NDK toolchain provisioned and a from-source `.so` validated on a device before
-it can replace the prebuilt artifact):
+## Consequence for the FFmpeg pin
 
-1. Add an NDK build step that clones the Media3 release matching our pinned `media3`
-   version, runs its `libraries/decoder_ffmpeg` build script against a from-source FFmpeg
-   configured with exactly the decoders we enable (keep the enabled-codec list in the
-   script under version control so the build is deterministic and auditable).
-2. Package the resulting per-ABI `libffmpegJNI.so` into the app instead of the
-   `org.jellyfin.media3` artifact, gated behind a Gradle property so the prebuilt path
-   stays available for fast local iteration.
-3. Keep the FFmpeg source revision and the Media3 version pinned together in
-   `libs.versions.toml`, exactly as the prebuilt pair is pinned today (a mismatch is a
-   guaranteed runtime `LinkageError`).
-4. Re-run `scripts/check-so-alignment.sh` on the from-source `.so`: F-Droid targets recent
-   Android, so the 16 KB page-size alignment (`-Wl,-z,max-page-size=16384`) must hold, the
-   same gate the release workflow already enforces on the packaged APK.
+The prebuilt `org.jellyfin.media3:media3-ffmpeg-decoder` pin in `libs.versions.toml` is now
+**permanent**, not a temporary state pending an F-Droid from-source build. It is fine for
+Play and for direct download; only F-Droid ever required otherwise. Keep it pinned in step
+with the `media3` version (a mismatch is a guaranteed runtime `LinkageError`); that is the
+only ongoing obligation.
 
-## Fallback path (recorded, not chosen)
+## If this is ever reconsidered
 
-If the from-source build proves too costly to maintain, ship an `fdroid` product flavor
-that omits the FFmpeg extension. It would play only what the Android platform decoders
-handle (MP3, AAC, FLAC, Vorbis, Opus, WAV, and the device's other native formats) and must
-say so plainly in its F-Droid description and refuse unsupported files with a clear
-message rather than failing silently. This is a real regression in format support, which is
-why it is the fallback and not the plan.
-
-## Reproducibility posture (already true today)
-
-- JVM toolchain pinned to 21 in every module, so the build does not depend on the machine
-  `JAVA_HOME`.
-- All dependency versions pinned in `gradle/libs.versions.toml`; no dynamic or `+` versions
-  except the FFmpeg artifact's build-metadata suffix, which the from-source path removes.
-- No `Date`/time or random inputs baked into the build output.
-- Signing is reproducible-build friendly: F-Droid signs with its own key, and the GitHub
-  release is signed with our upload key; the unsigned APK bytes are what get compared.
-
-## F-Droid metadata (sketch for the eventual merge request to fdroiddata)
-
-```yaml
-Categories:
-  - Multimedia
-License: <SPDX id from LICENSE>
-SourceCode: https://github.com/<owner>/bocan-music-android
-IssueTracker: https://github.com/<owner>/bocan-music-android/issues
-AutoUpdateMode: Version v%v
-UpdateCheckMode: Tags ^v[0-9.]+$
-Builds:
-  - versionName: <from app/build.gradle.kts>
-    versionCode: <versionCodeOf(versionName)>
-    commit: v<versionName>
-    subdir: app
-    gradle:
-      - yes
-    # ndk + the from-source FFmpeg build steps go here once the recipe above is wired.
-```
+The blocker and the two ways through it have not changed: build the Media3
+`libraries/decoder_ffmpeg` extension from source in CI (also buys reproducible builds), or
+add an `fdroid` product flavor without the decoder. Reproducible-build posture is already
+most of the way there (JVM toolchain pinned to 21, all dependency versions pinned, no
+time or random inputs in the output). Revisit this file, not the code, as the starting point.
