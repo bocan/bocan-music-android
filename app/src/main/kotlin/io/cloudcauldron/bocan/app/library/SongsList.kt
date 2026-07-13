@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,14 +38,21 @@ fun SongsList(songs: List<TrackUi>, callbacks: LibraryCallbacks, modifier: Modif
         }
     }
     Box(modifier = modifier.fillMaxSize()) {
-        TrackList(tracks = songs, callbacks = callbacks, listState = listState, modifier = Modifier.fillMaxSize())
+        // Reserve the rail's width so a row's trailing duration never renders under the
+        // alphabet letters at the right edge.
+        TrackList(
+            tracks = songs,
+            callbacks = callbacks,
+            listState = listState,
+            modifier = Modifier.fillMaxSize().padding(end = RAIL_WIDTH)
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
-                .padding(end = 2.dp)
+                .width(RAIL_WIDTH)
                 .clearAndSetSemantics {}
         ) {
             ALPHABET.forEach { letter ->
@@ -53,7 +61,6 @@ fun SongsList(songs: List<TrackUi>, callbacks: LibraryCallbacks, modifier: Modif
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .padding(horizontal = 4.dp)
                         .clickable {
                             firstIndexByLetter[letter]?.let { index -> scope.launch { listState.scrollToItem(index) } }
                         }
@@ -63,4 +70,5 @@ fun SongsList(songs: List<TrackUi>, callbacks: LibraryCallbacks, modifier: Modif
     }
 }
 
+private val RAIL_WIDTH = 24.dp
 private val ALPHABET: List<Char> = ('A'..'Z').toList()
