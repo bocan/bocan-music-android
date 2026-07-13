@@ -5,9 +5,9 @@ package io.cloudcauldron.bocan.app.library
  * is stored by [name], so the order here is stable but the ordinal is not relied on.
  */
 enum class LibraryTab {
-    Artists,
-    Albums,
     Songs,
+    Albums,
+    Artists,
     Genres,
     Playlists,
     Folders
