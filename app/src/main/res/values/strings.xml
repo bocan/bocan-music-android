@@ -438,7 +438,9 @@
   <!-- About -->
   <string name="about_title">About</string>
   <string name="about_version">Version %1$s</string>
-  <string name="about_site_label">Bòcan on the web</string>
+  <string name="about_license_line">Apache License 2.0 Open Source - Free - Now and Forever</string>
+  <string name="about_site_label">Bòcan for macOS on the web</string>
+  <string name="about_site_android_label">Bòcan for Android on the web</string>
   <string name="about_tour_label">Show the welcome tour</string>
   <string name="about_tour_summary">Pairing and first sync, step by step</string>
   <string name="about_privacy_title">Your music stays yours</string>

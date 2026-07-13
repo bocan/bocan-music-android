@@ -69,6 +69,11 @@ fun AboutScreen(onShowTour: () -> Unit, onBack: () -> Unit, modifier: Modifier =
                 onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, SITE_URL.toUri())) }
             )
             SettingsNavRow(
+                label = stringResource(R.string.about_site_android_label),
+                summary = SITE_URL_ANDROID,
+                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, SITE_URL_ANDROID.toUri())) }
+            )
+            SettingsNavRow(
                 label = stringResource(R.string.about_tour_label),
                 summary = stringResource(R.string.about_tour_summary),
                 onClick = onShowTour
@@ -85,6 +90,11 @@ private fun VersionHeader() {
         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
         Text(
             stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            stringResource(R.string.about_license_line),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -117,6 +127,7 @@ private fun SectionHeading(text: String) {
 }
 
 private const val SITE_URL = "https://github.com/bocan/bocan-music"
+private const val SITE_URL_ANDROID = "https://github.com/bocan/bocan-music-android"
 
 /** One dependency in the static licenses list. Names and licenses are proper nouns, not copy. */
 private data class LicenseEntry(val library: String, val license: String)
