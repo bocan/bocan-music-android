@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -55,8 +56,15 @@ fun OnboardingFlow(
     modifier: Modifier = Modifier
 ) {
     var step by remember { mutableStateOf(OnboardingStep.Welcome) }
+    // Onboarding runs edge-to-edge with no home shell, so it must own its system-bar insets
+    // here or the welcome title slides under the status bar and the buttons under the nav bar.
+    // The Surface stays full-bleed (background draws behind the bars); only the content insets.
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        AnimatedContent(targetState = step, label = "onboarding") { current ->
+        AnimatedContent(
+            targetState = step,
+            label = "onboarding",
+            modifier = Modifier.fillMaxSize().systemBarsPadding()
+        ) { current ->
             when (current) {
                 OnboardingStep.Welcome -> WelcomePage(
                     onGetStarted = { step = OnboardingStep.Pair },
