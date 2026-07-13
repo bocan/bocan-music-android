@@ -1,7 +1,10 @@
 package io.cloudcauldron.bocan.app.home
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -11,6 +14,8 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -22,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -72,27 +78,69 @@ fun HomeScaffold(appGraph: AppGraph, modifier: Modifier = Modifier) {
     // hidden while it is up, so it reads as an expanded mini player (dismissed by the chevron
     // or a swipe down) rather than a tab-bar screen. The tab bar reappears on collapse.
     val onNowPlaying = backStackEntry?.destination?.hierarchy?.any { it.hasRoute(Destination.NowPlaying::class) } == true
+    // Landscape has little height, so the tabs move to a navigation rail on the left rather than
+    // eating a bottom row. Both the mini player and the navigation hide while Now Playing is up.
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    Scaffold(
-        modifier = modifier,
-        // Each screen owns its own top inset (a TopAppBar, or its own status-bar padding), so
-        // the shell must not also reserve the status bar, or the two stack into a doubled gap.
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            if (!onNowPlaying) {
-                Column {
-                    MiniPlayerBar(
-                        state = playerState,
-                        onPlayPause = player::togglePlayPause,
-                        onTap = { navController.navigate(Destination.NowPlaying) }
-                    )
-                    HomeBottomBar(navController)
+    val miniPlayer: @Composable () -> Unit = {
+        if (!onNowPlaying) {
+            MiniPlayerBar(
+                state = playerState,
+                onPlayPause = player::togglePlayPause,
+                onTap = { navController.navigate(Destination.NowPlaying) }
+            )
+        }
+    }
+
+    // Each screen owns its own top inset (a TopAppBar, or its own status-bar padding), so the
+    // shell must not also reserve the status bar, or the two stack into a doubled gap.
+    if (landscape) {
+        Row(modifier = modifier.fillMaxSize()) {
+            if (!onNowPlaying) HomeNavRail(navController)
+            Scaffold(
+                modifier = Modifier.weight(1f),
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                bottomBar = { miniPlayer() }
+            ) { padding -> BocanNavHost(navController, appGraph, callbacks, Modifier.padding(padding)) }
+        }
+    } else {
+        Scaffold(
+            modifier = modifier,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                if (!onNowPlaying) {
+                    Column {
+                        miniPlayer()
+                        HomeBottomBar(navController)
+                    }
                 }
             }
+        ) { padding -> BocanNavHost(navController, appGraph, callbacks, Modifier.padding(padding)) }
+    }
+}
+
+@Composable
+private fun HomeNavRail(navController: NavHostController) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = backStackEntry?.destination
+    NavigationRail {
+        bottomDestinations.forEach { destination ->
+            val selected = currentDestination?.hierarchy?.any { it.hasRoute(destination::class) } == true
+            NavigationRailItem(
+                selected = selected,
+                onClick = {
+                    navController.navigate(destination) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                icon = { Icon(bottomIcon(destination), contentDescription = null) },
+                label = { Text(stringResource(bottomLabel(destination))) }
+            )
         }
-    ) { padding ->
-        BocanNavHost(navController, appGraph, callbacks, Modifier.padding(padding))
     }
 }
 
