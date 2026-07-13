@@ -43,7 +43,7 @@ keytool -genkeypair -v \
   -keystore bocan-upload.jks \
   -alias bocan \
   -keyalg RSA -keysize 4096 -validity 10000 \
-  -dname "CN=Bocan Music, O=Cloud Cauldron, C=US"
+  -dname "CN=Bocan Music, O=Cloud Cauldron, C=GB"
 ```
 
 - The `-dname` fields are cosmetic for a Play upload key (Google's App Signing holds the
