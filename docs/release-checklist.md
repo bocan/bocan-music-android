@@ -148,6 +148,19 @@ R8 breaks are runtime breaks, so exercise every major flow on the actual signed 
 - [ ] Bluetooth: route to a device, transport controls and metadata correct.
 - [ ] Home-screen widget: renders, updates, controls work.
 
+> **Making a sideloaded build visible in Android Auto.** Android Auto only lists media
+> apps installed from the Play Store, so a sideloaded APK (debug or a downloaded release
+> APK) will not appear in a real car's app grid, and there is nothing to launch, so no
+> music plays. This is a discovery gate, not a bug: the app's Auto wiring
+> (`MediaLibraryService`, the `com.google.android.gms.car.application` meta-data, and
+> `automotive_app_desc.xml`) is complete. To test a sideloaded build, enable unknown
+> sources once on the phone: Settings, Connected devices, Android Auto (or Apps, Android
+> Auto), tap Version about ten times to unlock developer mode, then the overflow menu,
+> Developer settings, and turn on "Add new apps from unknown sources to Android Auto".
+> Launch Bocan once and sync some music first so the browse tree is not empty, then
+> reconnect. Once the app ships on any Play track (internal included) it appears with no
+> toggle, so this friction is specific to sideloading.
+
 ### Upgrade-in-place
 
 - [ ] Install the previous release, add data (pair, sync, scrobble a play, subscribe to a
