@@ -44,6 +44,7 @@ import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
 import io.cloudcauldron.bocan.app.sync.SyncStatusUiState
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
+import io.cloudcauldron.bocan.app.sync.displayedDownloadCounts
 
 /** Stateful entry point: binds a [SyncStatusViewModel] to the stateless screen. */
 @Composable
@@ -193,9 +194,12 @@ private fun StatusBlock(uiState: SyncStatusUiState) {
     )
     LastSyncedText(uiState)
     Text(stringResource(R.string.sync_generation, uiState.generation), style = MaterialTheme.typography.bodyMedium)
-    val downloaded = pluralStringResource(R.plurals.sync_count_downloaded, uiState.counts.downloaded, uiState.counts.downloaded)
-    val pendingCount = pluralStringResource(R.plurals.sync_count_pending, uiState.counts.pending, uiState.counts.pending)
-    val failed = pluralStringResource(R.plurals.sync_count_failed, uiState.counts.failed, uiState.counts.failed)
+    // While a transfer is in flight the database is not applied yet, so the stored counts
+    // read zeros; show live progress instead so this line agrees with the transfer line.
+    val counts = displayedDownloadCounts(uiState.sync, uiState.counts)
+    val downloaded = pluralStringResource(R.plurals.sync_count_downloaded, counts.downloaded, counts.downloaded)
+    val pendingCount = pluralStringResource(R.plurals.sync_count_pending, counts.pending, counts.pending)
+    val failed = pluralStringResource(R.plurals.sync_count_failed, counts.failed, counts.failed)
     Text(
         stringResource(R.string.sync_counts_joined, downloaded, pendingCount, failed),
         style = MaterialTheme.typography.bodyMedium
