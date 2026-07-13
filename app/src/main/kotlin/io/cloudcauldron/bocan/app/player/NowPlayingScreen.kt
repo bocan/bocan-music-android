@@ -1,5 +1,6 @@
 package io.cloudcauldron.bocan.app.player
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -105,6 +108,7 @@ fun NowPlayingScreen(
         details = stringResource(R.string.gesture_song_details),
         close = stringResource(R.string.gesture_close_player)
     )
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Column(
         modifier = modifier
@@ -129,65 +133,63 @@ fun NowPlayingScreen(
             onEqualizer = onOpenEqualizer,
             onSongDetails = { showDetails = true }
         )
-        if (showLyrics) {
-            val lyricsUi by lyrics.state.collectAsState()
-            LyricsPane(lyricsUi, onSeekToLine = lyrics::seekToLine, modifier = Modifier.weight(1f))
-        } else {
-            ArtworkStrip(
-                ui = ui,
-                gesture = gesture,
-                reducedMotion = reducedMotion,
-                actions = gestureActions,
-                labels = gestureLabels,
-                onOpenArtist = { ui.display.artistId?.let(onOpenArtist) },
-                onOpenAlbum = { ui.display.albumId?.let(onOpenAlbum) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        QuickActionsRow(
-            lyricsActive = showLyrics,
-            onSpeed = { showSpeed = true },
-            onEqualizer = onOpenEqualizer,
-            onToggleLyrics = { showLyrics = !showLyrics },
-            onSongDetails = { showDetails = true },
-            onQueue = { showQueue = true }
-        )
-        SeekBar(ui.positionMs, ui.durationMs, onSeek = nowPlaying::seekTo, modifier = Modifier.padding(top = 8.dp))
-        if (ui.podcast.isPodcast) {
-            PodcastTransportControls(
-                isPlaying = ui.isPlaying,
-                speed = ui.speed,
-                onPlayPause = nowPlaying::togglePlayPause,
-                onSkipBack = nowPlaying::skipBack,
-                onSkipForward = nowPlaying::skipForward,
-                onCycleSpeed = nowPlaying::cycleSpeed,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-        } else {
-            TransportControls(
-                isPlaying = ui.isPlaying,
-                repeatMode = ui.repeatMode,
-                shuffleActive = ui.shuffleActive,
-                onPlayPause = nowPlaying::togglePlayPause,
-                onPrevious = nowPlaying::previous,
-                onNext = nowPlaying::next,
-                onShuffle = nowPlaying::toggleShuffle,
-                onShuffleLongPress = nowPlaying::toggleShuffle,
-                onCycleRepeat = nowPlaying::cycleRepeat,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-        }
         // The oscilloscope fills the strip the mini player used to occupy on this screen.
         // It is dropped while a sheet is open so the sheet's scrim is never punched through.
         val anySheetOpen = showQueue || showSleep || showSpeed || showChapters || showDetails
-        if (!anySheetOpen) {
-            Oscilloscope(
-                source = waveform,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(bottom = 8.dp)
+        // The artwork/lyrics gesture surface and the controls are the two blocks that rearrange
+        // with orientation, so hoist them once and place them in a Column (portrait) or side by
+        // side in a Row (landscape).
+        val surface: @Composable (Modifier) -> Unit = { m ->
+            if (showLyrics) {
+                val lyricsUi by lyrics.state.collectAsState()
+                LyricsPane(lyricsUi, onSeekToLine = lyrics::seekToLine, modifier = m)
+            } else {
+                ArtworkStrip(
+                    ui = ui,
+                    gesture = gesture,
+                    reducedMotion = reducedMotion,
+                    actions = gestureActions,
+                    labels = gestureLabels,
+                    onOpenArtist = { ui.display.artistId?.let(onOpenArtist) },
+                    onOpenAlbum = { ui.display.albumId?.let(onOpenAlbum) },
+                    modifier = m
+                )
+            }
+        }
+        val controls: @Composable () -> Unit = {
+            QuickActionsRow(
+                lyricsActive = showLyrics,
+                onSpeed = { showSpeed = true },
+                onEqualizer = onOpenEqualizer,
+                onToggleLyrics = { showLyrics = !showLyrics },
+                onSongDetails = { showDetails = true },
+                onQueue = { showQueue = true }
             )
+            SeekBar(ui.positionMs, ui.durationMs, onSeek = nowPlaying::seekTo, modifier = Modifier.padding(top = 8.dp))
+            PlayerTransport(ui = ui, nowPlaying = nowPlaying)
+            if (!anySheetOpen) {
+                Oscilloscope(
+                    source = waveform,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(bottom = 8.dp)
+                )
+            }
+        }
+        if (isLandscape) {
+            // Landscape has little height, so put the square artwork on the left and stack the
+            // controls, centred, on the right rather than piling everything into one column.
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) { surface(Modifier.fillMaxSize()) }
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp),
+                    verticalArrangement = Arrangement.Center
+                ) { controls() }
+            }
+        } else {
+            surface(Modifier.weight(1f))
+            controls()
         }
     }
 
@@ -288,6 +290,35 @@ private fun TopRow(
                 onQueue()
             }
         }
+    }
+}
+
+/** The transport row, podcast (skip back/forward, speed) or music (prev/next, shuffle, repeat). */
+@Composable
+private fun PlayerTransport(ui: NowPlayingUiState, nowPlaying: NowPlayingViewModel) {
+    if (ui.podcast.isPodcast) {
+        PodcastTransportControls(
+            isPlaying = ui.isPlaying,
+            speed = ui.speed,
+            onPlayPause = nowPlaying::togglePlayPause,
+            onSkipBack = nowPlaying::skipBack,
+            onSkipForward = nowPlaying::skipForward,
+            onCycleSpeed = nowPlaying::cycleSpeed,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
+    } else {
+        TransportControls(
+            isPlaying = ui.isPlaying,
+            repeatMode = ui.repeatMode,
+            shuffleActive = ui.shuffleActive,
+            onPlayPause = nowPlaying::togglePlayPause,
+            onPrevious = nowPlaying::previous,
+            onNext = nowPlaying::next,
+            onShuffle = nowPlaying::toggleShuffle,
+            onShuffleLongPress = nowPlaying::toggleShuffle,
+            onCycleRepeat = nowPlaying::cycleRepeat,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
     }
 }
 
