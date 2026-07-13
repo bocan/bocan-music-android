@@ -31,6 +31,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -143,6 +144,14 @@ fun NowPlayingScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+        QuickActionsRow(
+            lyricsActive = showLyrics,
+            onSpeed = { showSpeed = true },
+            onEqualizer = onOpenEqualizer,
+            onToggleLyrics = { showLyrics = !showLyrics },
+            onSongDetails = { showDetails = true },
+            onQueue = { showQueue = true }
+        )
         SeekBar(ui.positionMs, ui.durationMs, onSeek = nowPlaying::seekTo, modifier = Modifier.padding(top = 8.dp))
         if (ui.podcast.isPodcast) {
             PodcastTransportControls(
@@ -278,6 +287,46 @@ private fun TopRow(
                 menuOpen = false
                 onQueue()
             }
+        }
+    }
+}
+
+/**
+ * Quick-access shortcuts to the actions otherwise buried in the overflow menu, sitting
+ * between the track details and the seek bar. The lyrics button highlights while lyrics show.
+ */
+@Composable
+private fun QuickActionsRow(
+    lyricsActive: Boolean,
+    onSpeed: () -> Unit,
+    onEqualizer: () -> Unit,
+    onToggleLyrics: () -> Unit,
+    onSongDetails: () -> Unit,
+    onQueue: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onSpeed) {
+            Icon(Icons.Rounded.Speed, contentDescription = stringResource(R.string.speed_title))
+        }
+        IconButton(onClick = onEqualizer) {
+            Icon(Icons.Rounded.Equalizer, contentDescription = stringResource(R.string.eq_title))
+        }
+        IconButton(onClick = onToggleLyrics) {
+            Icon(
+                Icons.Rounded.Lyrics,
+                contentDescription = stringResource(R.string.lyrics_toggle),
+                tint = if (lyricsActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+            )
+        }
+        IconButton(onClick = onSongDetails) {
+            Icon(Icons.Rounded.Info, contentDescription = stringResource(R.string.song_details_title))
+        }
+        IconButton(onClick = onQueue) {
+            Icon(Icons.AutoMirrored.Rounded.QueueMusic, contentDescription = stringResource(R.string.queue_title))
         }
     }
 }
