@@ -259,3 +259,9 @@ Interrupted syncs are safe by construction: files land atomically, the DB flips 
 ## 10. Versioning
 
 `protocolVersion` is an integer. A client or server seeing a higher major version than it knows refuses with a clear message ("Update Bòcan on your Mac"). Additive JSON fields are allowed without a version bump; both sides must ignore unknown fields.
+
+## 11. Deferred (non-normative)
+
+Candidate additions, not yet part of the contract. Listed so both sides remember the intended shape. Each is expected to land as an additive field plus an on-demand endpoint (no version bump), the way chapters already work.
+
+- **Podcast transcripts.** The Mac caches episode transcripts but does not expose them yet (phase 07 scope cut). Intended shape: a `hasTranscript` boolean on the Episode object, and a `GET /v1/transcript/{episodeId}` endpoint returning a transcript document, fetched on demand only when `hasTranscript` is true (the same lazy pattern as chapters, never bundled into the manifest or synced as a file). A time-coded transcript (WebVTT or SRT) maps onto the same synced-text shape as the lyrics document in section 8, so the client can render it in the existing lyrics pane with active-line highlight and tap-to-seek, and the Now Playing lyrics control becomes the transcript control for episodes. Open question to settle before speccing: the format the Mac has cached (WebVTT, SRT, or the Podcasting 2.0 JSON transcript).
