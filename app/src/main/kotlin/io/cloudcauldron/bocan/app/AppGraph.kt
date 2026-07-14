@@ -432,10 +432,7 @@ class AppGraph(val application: Application) {
     fun handleShortcut(host: String?) {
         when (host) {
             SHORTCUT_RESUME -> playerViewModel.togglePlayPause()
-            SHORTCUT_SHUFFLE -> playbackScope.launch {
-                val ids = database.libraryDao().downloadedTrackIds()
-                if (ids.isNotEmpty()) playerViewModel.shuffle(ids)
-            }
+            SHORTCUT_SHUFFLE -> shuffleAllDownloaded()
             SHORTCUT_CONTINUE -> playbackScope.launch {
                 database.browseDao().continueListeningPage(limit = 1, offset = 0).firstOrNull()?.let {
                     playerViewModel.playEpisodes(listOf(it.id), 0)
@@ -443,6 +440,18 @@ class AppGraph(val application: Application) {
             }
             SHORTCUT_SYNC -> SyncForegroundService.start(application, force = true)
             else -> Unit
+        }
+    }
+
+    /**
+     * Shuffle the whole downloaded library. Reads only the track ids on demand (a SELECT id
+     * query), never the full track rows, so the library Shuffle All button and the launcher
+     * shortcut both scale to a large library without holding thousands of items in the UI.
+     */
+    fun shuffleAllDownloaded() {
+        playbackScope.launch {
+            val ids = database.libraryDao().downloadedTrackIds()
+            if (ids.isNotEmpty()) playerViewModel.shuffle(ids)
         }
     }
 

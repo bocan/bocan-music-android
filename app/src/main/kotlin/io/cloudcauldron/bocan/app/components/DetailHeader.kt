@@ -36,12 +36,21 @@ fun DetailArtwork(artworkHash: String?, modifier: Modifier = Modifier) {
 /**
  * A top-bar action that shuffles all of [trackIds] and starts playing. Rendered as an
  * icon-only button, so it carries its own content description; it hides itself when there
- * is nothing to play.
+ * is nothing to play. For a small, already-loaded track list (an artist or a genre); the
+ * whole-library shuffle uses [ShuffleAllButton] to avoid holding every id.
  */
 @Composable
 fun ShuffleAllAction(trackIds: List<Long>, onShuffle: (List<Long>) -> Unit) {
     if (trackIds.isEmpty()) return
     IconButton(onClick = { onShuffle(trackIds) }) {
+        Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.action_shuffle_all))
+    }
+}
+
+/** A shuffle-all top-bar action that carries no id list; the caller resolves them on demand. */
+@Composable
+fun ShuffleAllButton(onShuffle: () -> Unit) {
+    IconButton(onClick = onShuffle) {
         Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.action_shuffle_all))
     }
 }

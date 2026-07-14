@@ -67,6 +67,7 @@ fun HomeScaffold(appGraph: AppGraph, modifier: Modifier = Modifier) {
             openGenre = { navController.navigate(Destination.GenreDetail(it)) },
             playContext = { ids, index -> player.play(ids, index) },
             shuffle = { player.shuffle(it) },
+            shuffleAll = appGraph::shuffleAllDownloaded,
             playNext = { player.playNext(it) },
             addToQueue = { player.addToQueue(it) },
             explainPending = { scope.launch { snackbarHostState.showSnackbar(pendingMessage) } }

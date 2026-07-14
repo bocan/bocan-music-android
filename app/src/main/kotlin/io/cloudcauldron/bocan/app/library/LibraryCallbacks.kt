@@ -14,6 +14,8 @@ class LibraryCallbacks(
     val openGenre: (String) -> Unit = {},
     val playContext: (trackIds: List<Long>, index: Int) -> Unit = { _, _ -> },
     val shuffle: (List<Long>) -> Unit = {},
+    // Shuffle the whole downloaded library; reads ids on demand so it never holds every track.
+    val shuffleAll: () -> Unit = {},
     val playNext: (List<Long>) -> Unit = {},
     val addToQueue: (List<Long>) -> Unit = {},
     val explainPending: () -> Unit = {}
