@@ -6,6 +6,7 @@ import io.cloudcauldron.bocan.persistence.entities.AlbumEntity
 import io.cloudcauldron.bocan.persistence.entities.ArtistEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.AlbumSort
+import io.cloudcauldron.bocan.persistence.model.ArtistTrackCount
 import io.cloudcauldron.bocan.persistence.model.DownloadCounts
 import io.cloudcauldron.bocan.persistence.model.TrackSort
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,10 @@ interface LibraryDao {
 
     @Query("SELECT * FROM artists ORDER BY name COLLATE NOCASE, id")
     fun observeArtists(): Flow<List<ArtistEntity>>
+
+    /** Per-artist track counts computed in SQL, so the artists list never loads every track. */
+    @Query("SELECT albumArtistId AS artistId, COUNT(*) AS count FROM tracks GROUP BY albumArtistId")
+    fun observeArtistTrackCounts(): Flow<List<ArtistTrackCount>>
 
     @Query(
         """

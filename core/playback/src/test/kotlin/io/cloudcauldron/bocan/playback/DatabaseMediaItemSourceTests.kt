@@ -7,6 +7,7 @@ import io.cloudcauldron.bocan.persistence.entities.AlbumEntity
 import io.cloudcauldron.bocan.persistence.entities.ArtistEntity
 import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
+import io.cloudcauldron.bocan.persistence.model.ArtistTrackCount
 import io.cloudcauldron.bocan.persistence.model.DownloadCounts
 import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,6 +29,7 @@ private class FakeLibraryDao(tracks: List<TrackEntity>) : LibraryDao {
     override fun observeAlbumsByArtist(): Flow<List<AlbumEntity>> = emptyFlow()
     override fun observeAlbumsByYear(): Flow<List<AlbumEntity>> = emptyFlow()
     override fun observeArtists(): Flow<List<ArtistEntity>> = emptyFlow()
+    override fun observeArtistTrackCounts(): Flow<List<ArtistTrackCount>> = emptyFlow()
     override fun observeTracksForAlbum(albumId: Long): Flow<List<TrackEntity>> = emptyFlow()
     override fun observeAllTracksByTitle(): Flow<List<TrackEntity>> = emptyFlow()
     override fun observeAllTracksByArtist(): Flow<List<TrackEntity>> = emptyFlow()

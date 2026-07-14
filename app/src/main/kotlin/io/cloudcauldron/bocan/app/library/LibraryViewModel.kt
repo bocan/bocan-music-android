@@ -70,11 +70,11 @@ class LibraryViewModel(
         combine(
             libraryDao.observeArtists(),
             libraryDao.observeAlbums(AlbumSort.Name),
-            libraryDao.observeAllTracksByTitle()
-        ) { artists, albums, tracks ->
+            libraryDao.observeArtistTrackCounts()
+        ) { artists, albums, songCounts ->
             val albumCounts = albums.groupingBy { it.albumArtistName }.eachCount()
-            val songCounts = tracks.groupingBy { it.albumArtistId }.eachCount()
-            artists.map { ArtistUi(it.id, it.name, albumCounts[it.name] ?: 0, songCounts[it.id] ?: 0) }
+            val songByArtist = songCounts.associate { it.artistId to it.count }
+            artists.map { ArtistUi(it.id, it.name, albumCounts[it.name] ?: 0, songByArtist[it.id] ?: 0) }
         }.share(emptyList())
 
     val genres: StateFlow<List<String>> = libraryDao.observeGenres().share(emptyList())

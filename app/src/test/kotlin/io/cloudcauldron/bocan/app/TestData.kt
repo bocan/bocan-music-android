@@ -12,6 +12,7 @@ import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
 import io.cloudcauldron.bocan.persistence.entities.SyncServerEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.AlbumSort
+import io.cloudcauldron.bocan.persistence.model.ArtistTrackCount
 import io.cloudcauldron.bocan.persistence.model.DownloadCounts
 import io.cloudcauldron.bocan.persistence.model.DownloadState
 import io.cloudcauldron.bocan.persistence.model.PlaylistKind
@@ -66,6 +67,8 @@ class FakeLibraryDao : LibraryDao {
     override fun observeAlbumsByArtist(): Flow<List<AlbumEntity>> = albumsFlow
     override fun observeAlbumsByYear(): Flow<List<AlbumEntity>> = albumsFlow
     override fun observeArtists(): Flow<List<ArtistEntity>> = artistsFlow
+    override fun observeArtistTrackCounts(): Flow<List<ArtistTrackCount>> =
+        tracksFlow.map { tracks -> tracks.groupingBy { it.albumArtistId }.eachCount().map { ArtistTrackCount(it.key, it.value) } }
     override fun observeTracksForAlbum(albumId: Long): Flow<List<TrackEntity>> =
         tracksFlow.map { list -> list.filter { it.albumId == albumId } }
     override fun observeAllTracksByTitle(): Flow<List<TrackEntity>> = tracksFlow
