@@ -36,7 +36,7 @@ val releaseKeystoreFile = signing("BOCAN_KEYSTORE_FILE")
 // release-please maintains the version string on the line below (see
 // release-please-config.json); versionCode is derived from it monotonically by
 // versionCodeOf (buildSrc), so a 2.0.0 release always outranks a 1.99.x hotfix.
-val appVersionName = "0.2.0" // x-release-please-version
+val appVersionName = "0.3.0" // x-release-please-version
 
 android {
     namespace = "io.cloudcauldron.bocan.app"
