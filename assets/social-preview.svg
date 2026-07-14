@@ -23,5 +23,6 @@
     <text x="522" y="344" font-size="52" font-weight="600" fill="#3DDC84">for Android</text>
     <text x="522" y="424" font-size="31" fill="#b9a8d4">A music player for people who still own their music.</text>
     <text x="522" y="474" font-size="26" fill="#7d6c97">Syncs from your Mac. No cloud. No account. No telemetry.</text>
+    <text x="522" y="524" font-size="26" font-weight="600" fill="#E8C36A">Open-Source and Free - Forever</text>
   </g>
 </svg>
