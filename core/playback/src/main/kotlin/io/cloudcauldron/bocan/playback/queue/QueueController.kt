@@ -94,11 +94,20 @@ class QueueController(
     }
 
     override suspend fun playNow(trackIds: List<Long>, startIndex: Int) = onController { controller ->
-        val items = mediaItemSource.resolveTracks(trackIds)
-        if (items.isEmpty()) return@onController
-        controller.setMediaItems(items, startIndex.coerceIn(0, items.lastIndex), 0L)
+        if (trackIds.isEmpty()) return@onController
+        val start = startIndex.coerceIn(0, trackIds.lastIndex)
+        // Start the tapped track first so audio begins immediately, then fill the rest of the
+        // queue around it. Resolving and handing all of a 15k-track list to the service up front
+        // is a large main-thread Binder transaction that delays the first note by about a second.
+        val head = mediaItemSource.resolveTracks(listOf(trackIds[start]))
+        if (head.isEmpty()) return@onController
+        controller.setMediaItems(head, 0, 0L)
         controller.prepare()
         controller.play()
+        val before = mediaItemSource.resolveTracks(trackIds.subList(0, start))
+        if (before.isNotEmpty()) controller.addMediaItems(0, before)
+        val after = mediaItemSource.resolveTracks(trackIds.subList(start + 1, trackIds.size))
+        if (after.isNotEmpty()) controller.addMediaItems(after)
     }
 
     override suspend fun shuffleNow(trackIds: List<Long>) = onController { controller ->
