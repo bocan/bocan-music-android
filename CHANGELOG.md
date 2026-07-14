@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/bocan/bocan-music-android/compare/v0.2.0...v0.3.0) (2026-07-14)
+
+
+### Added
+
+* **app:** cap list content to a readable width on wide screens ([d62856a](https://github.com/bocan/bocan-music-android/commit/d62856a329530ecb71b66c403fd4a7c49804c0eb))
+* **app:** side-by-side Now Playing layout in landscape ([73d31a2](https://github.com/bocan/bocan-music-android/commit/73d31a2408f67ee03bf27541aebe663ca9f3c5f4))
+* **app:** use a navigation rail in landscape ([edf3240](https://github.com/bocan/bocan-music-android/commit/edf324024e6b38dcc870c5848cdeba2fb777e5ae))
+
+
+### Fixed
+
+* **app:** show the track title in landscape Now Playing ([a6fd5b1](https://github.com/bocan/bocan-music-android/commit/a6fd5b16ed512d099c73bc70155f9f9c8038b75e))
+* **playback:** make shuffle-all set the queue once instead of reordering ([2200c8f](https://github.com/bocan/bocan-music-android/commit/2200c8fafc550227e60df8be240e56a07ca3f673))
+* **playback:** start the tapped track before filling the whole queue ([c126efb](https://github.com/bocan/bocan-music-android/commit/c126efbfb63b7aa7c507e7be4e9845c9271d9245))
+
+
+### Changed
+
+* **app:** library Shuffle All reads ids on demand, not the whole track list ([b20e1ab](https://github.com/bocan/bocan-music-android/commit/b20e1ab71ddc3f5c9dbcd52c251eb06aeae5d7d8))
+* **persistence:** count artist tracks in SQL, not by loading every track ([0a2bbd3](https://github.com/bocan/bocan-music-android/commit/0a2bbd3ca0b3a145e3be16245e447498297c1bf1))
+
 ## [0.2.0](https://github.com/bocan/bocan-music-android/compare/v0.1.0...v0.2.0) (2026-07-13)
 
 
