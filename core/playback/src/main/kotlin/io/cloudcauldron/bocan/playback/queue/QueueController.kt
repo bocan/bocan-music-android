@@ -101,6 +101,19 @@ class QueueController(
         controller.play()
     }
 
+    override suspend fun shuffleNow(trackIds: List<Long>) = onController { controller ->
+        // Shuffle the ids first (cheap, O(n)) and set them once, rather than setting them in
+        // order and then reordering the queue item by item. The latter is O(n squared) and
+        // rebuilds the player timeline on every move, which hangs on a large library.
+        val items = mediaItemSource.resolveTracks(trackIds.shuffled(random()))
+        if (items.isEmpty()) return@onController
+        controller.setMediaItems(items, 0, 0L)
+        controller.prepare()
+        controller.play()
+        shuffleActive = true
+        pushState()
+    }
+
     override suspend fun playEpisodes(episodeIds: List<String>, startIndex: Int) = onController { controller ->
         val items = mediaItemSource.resolveEpisodes(episodeIds)
         if (items.isEmpty()) return@onController
@@ -201,16 +214,19 @@ class QueueController(
         pushState()
     }
 
-    /** Reorder the items after [afterIndex] to match [order] (a permutation of their media ids). */
+    /**
+     * Reorder the items after [afterIndex] to match [order] (a permutation of their media ids)
+     * in a single range replacement, rather than moving items one at a time. Per-item moves are
+     * O(n squared) with a find scan and rebuild the timeline on every move, which hangs a large
+     * queue; replaceMediaItems reorders the upcoming range in one operation.
+     */
     private fun applyOrder(controller: MediaController, afterIndex: Int, order: List<String>) {
-        var target = afterIndex + 1
-        for (mediaId in order) {
-            val from = (target until controller.mediaItemCount).firstOrNull {
-                controller.getMediaItemAt(it).mediaId == mediaId
-            } ?: continue
-            if (from != target) controller.moveMediaItem(from, target)
-            target++
-        }
+        val start = afterIndex + 1
+        val end = controller.mediaItemCount
+        if (start >= end) return
+        val byId = (start until end).associate { controller.getMediaItemAt(it).let { item -> item.mediaId to item } }
+        val reordered = order.mapNotNull { byId[it] }
+        if (reordered.size == end - start) controller.replaceMediaItems(start, end, reordered)
     }
 
     private suspend fun onController(block: suspend (MediaController) -> Unit) = withContext(dispatchers.main) {

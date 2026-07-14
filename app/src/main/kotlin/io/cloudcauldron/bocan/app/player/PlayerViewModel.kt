@@ -3,7 +3,6 @@ package io.cloudcauldron.bocan.app.player
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.queue.PlaybackTransport
 import io.cloudcauldron.bocan.playback.queue.PlayerUiState
-import io.cloudcauldron.bocan.playback.queue.ShuffleStrategy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -53,8 +52,7 @@ class PlayerViewModel(private val queueController: PlaybackTransport, dispatcher
         if (trackIds.isEmpty()) return
         scope.launch {
             queueController.connect()
-            queueController.playNow(trackIds, 0)
-            queueController.setShuffle(ShuffleStrategy.FisherYates)
+            queueController.shuffleNow(trackIds)
         }
     }
 

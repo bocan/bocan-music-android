@@ -18,6 +18,9 @@ interface PlaybackTransport {
 
     suspend fun playNow(trackIds: List<Long>, startIndex: Int)
 
+    /** Play [trackIds] in a fresh shuffle, set already shuffled so no per-item reorder is needed. */
+    suspend fun shuffleNow(trackIds: List<Long>)
+
     suspend fun playEpisodes(episodeIds: List<String>, startIndex: Int)
 
     suspend fun playNext(trackIds: List<Long>)
