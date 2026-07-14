@@ -1,6 +1,5 @@
 package io.cloudcauldron.bocan.app.library
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -18,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.AlbumCell
+import io.cloudcauldron.bocan.app.components.ReadableWidth
 import io.cloudcauldron.bocan.app.components.ShuffleAllAction
 import io.cloudcauldron.bocan.app.components.TrackList
 
@@ -45,30 +45,32 @@ fun AlbumsAndTracksDetail(
             )
         }
     ) { padding ->
-        TrackList(
-            tracks = tracks,
-            callbacks = callbacks,
-            modifier = Modifier.fillMaxSize().padding(padding)
-        ) {
-            if (albums.isNotEmpty()) {
-                item(key = "albums", contentType = "albums-row") {
-                    LazyRow(modifier = Modifier.fillMaxWidth()) {
-                        items(albums, key = { it.id }, contentType = { "album" }) { album ->
-                            AlbumCell(
-                                album = album,
-                                onClick = { callbacks.openAlbum(album.id) },
-                                modifier = Modifier.width(160.dp)
-                            )
+        ReadableWidth(modifier = Modifier.padding(padding)) { readable ->
+            TrackList(
+                tracks = tracks,
+                callbacks = callbacks,
+                modifier = readable
+            ) {
+                if (albums.isNotEmpty()) {
+                    item(key = "albums", contentType = "albums-row") {
+                        LazyRow(modifier = Modifier.fillMaxWidth()) {
+                            items(albums, key = { it.id }, contentType = { "album" }) { album ->
+                                AlbumCell(
+                                    album = album,
+                                    onClick = { callbacks.openAlbum(album.id) },
+                                    modifier = Modifier.width(160.dp)
+                                )
+                            }
                         }
                     }
                 }
-            }
-            item(key = "songs-title", contentType = "section") {
-                Text(
-                    text = stringResource(R.string.section_songs),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                item(key = "songs-title", contentType = "section") {
+                    Text(
+                        text = stringResource(R.string.section_songs),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
             }
         }
     }

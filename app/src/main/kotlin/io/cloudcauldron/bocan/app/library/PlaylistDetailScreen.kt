@@ -1,7 +1,6 @@
 package io.cloudcauldron.bocan.app.library
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.PlayShuffleRow
+import io.cloudcauldron.bocan.app.components.ReadableWidth
 import io.cloudcauldron.bocan.app.components.TrackList
 import kotlinx.coroutines.flow.StateFlow
 
@@ -41,24 +41,26 @@ fun PlaylistDetailScreen(
             )
         }
     ) { padding ->
-        TrackList(
-            tracks = ui.tracks,
-            callbacks = callbacks,
-            modifier = Modifier.fillMaxSize().padding(padding)
-        ) {
-            item(key = "header", contentType = "header") {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                    if (ui.smart) {
-                        Text(
-                            text = stringResource(R.string.playlist_smart_subtitle),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+        ReadableWidth(modifier = Modifier.padding(padding)) { readable ->
+            TrackList(
+                tracks = ui.tracks,
+                callbacks = callbacks,
+                modifier = readable
+            ) {
+                item(key = "header", contentType = "header") {
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        if (ui.smart) {
+                            Text(
+                                text = stringResource(R.string.playlist_smart_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        PlayShuffleRow(
+                            onPlay = { callbacks.playContext(ids, 0) },
+                            onShuffle = { callbacks.shuffle(ids) }
                         )
                     }
-                    PlayShuffleRow(
-                        onPlay = { callbacks.playContext(ids, 0) },
-                        onShuffle = { callbacks.shuffle(ids) }
-                    )
                 }
             }
         }

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.EmptyState
+import io.cloudcauldron.bocan.app.components.ReadableWidth
 import io.cloudcauldron.bocan.app.components.ShuffleAllButton
 import io.cloudcauldron.bocan.app.components.SortMenu
 import io.cloudcauldron.bocan.app.components.SortOption
@@ -121,9 +122,10 @@ private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, call
     when (tab) {
         LibraryTab.Artists -> {
             val artists by viewModel.artists.collectAsState()
-            ArtistsList(artists, callbacks.openArtist, Modifier.fillMaxSize())
+            ReadableWidth { m -> ArtistsList(artists, callbacks.openArtist, m) }
         }
         LibraryTab.Albums -> {
+            // The grid, not a single-column list, so it wants the full width for more columns.
             val albums by viewModel.albums.collectAsState()
             AlbumsGrid(albums, callbacks.openAlbum, Modifier.fillMaxSize())
         }
@@ -131,19 +133,19 @@ private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, call
             // Collected only on this tab so the 10k+ TrackUi list is not held while browsing
             // albums, artists, or genres.
             val songs by viewModel.songs.collectAsState()
-            SongsList(songs, callbacks, Modifier.fillMaxSize())
+            ReadableWidth { m -> SongsList(songs, callbacks, m) }
         }
         LibraryTab.Genres -> {
             val genres by viewModel.genres.collectAsState()
-            GenresList(genres, callbacks.openGenre, Modifier.fillMaxSize())
+            ReadableWidth { m -> GenresList(genres, callbacks.openGenre, m) }
         }
         LibraryTab.Playlists -> {
             val playlists by viewModel.playlists.collectAsState()
-            PlaylistsScreen(playlists, callbacks.openPlaylist, Modifier.fillMaxSize())
+            ReadableWidth { m -> PlaylistsScreen(playlists, callbacks.openPlaylist, m) }
         }
         LibraryTab.Folders -> {
             val items by viewModel.folderItems.collectAsState()
-            FoldersScreen(items, callbacks, Modifier.fillMaxSize())
+            ReadableWidth { m -> FoldersScreen(items, callbacks, m) }
         }
     }
 }
