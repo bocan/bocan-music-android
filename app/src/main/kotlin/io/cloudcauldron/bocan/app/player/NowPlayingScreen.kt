@@ -152,6 +152,7 @@ fun NowPlayingScreen(
                     labels = gestureLabels,
                     onOpenArtist = { ui.display.artistId?.let(onOpenArtist) },
                     onOpenAlbum = { ui.display.albumId?.let(onOpenAlbum) },
+                    landscape = isLandscape,
                     modifier = m
                 )
             }
@@ -386,6 +387,7 @@ private fun ArtworkStrip(
     labels: PlayerGestureLabels,
     onOpenArtist: () -> Unit,
     onOpenAlbum: () -> Unit,
+    landscape: Boolean,
     modifier: Modifier
 ) {
     Box(
@@ -400,16 +402,17 @@ private fun ArtworkStrip(
             // Pager convention: a leftward swipe advances, so the next card peeks in from the
             // right edge and the previous card from the left.
             ui.next?.let { neighbor ->
-                NeighborCard(neighbor, Modifier.offset { IntOffset((offset + width).roundToInt(), 0) })
+                NeighborCard(neighbor, landscape, Modifier.offset { IntOffset((offset + width).roundToInt(), 0) })
             }
             ui.previous?.let { neighbor ->
-                NeighborCard(neighbor, Modifier.offset { IntOffset((offset - width).roundToInt(), 0) })
+                NeighborCard(neighbor, landscape, Modifier.offset { IntOffset((offset - width).roundToInt(), 0) })
             }
         }
         CurrentCard(
             ui = ui,
             onOpenArtist = onOpenArtist,
             onOpenAlbum = onOpenAlbum,
+            landscape = landscape,
             modifier = Modifier
                 .fillMaxSize()
                 .offset { IntOffset(if (reducedMotion) 0 else gesture.horizontalOffset.roundToInt(), 0) }
@@ -417,9 +420,23 @@ private fun ArtworkStrip(
     }
 }
 
+/**
+ * Square cover sizing shared by the current and peeking cards: bounded by width in portrait,
+ * and by height in landscape so the title and artist have room beside it rather than being
+ * pushed off the bottom of the short landscape column.
+ */
+private const val ARTWORK_PORTRAIT_WIDTH_FRACTION = 0.85f
+private const val ARTWORK_LANDSCAPE_HEIGHT_FRACTION = 0.62f
+
+private fun Modifier.playerArtworkSize(landscape: Boolean): Modifier = if (landscape) {
+    fillMaxHeight(ARTWORK_LANDSCAPE_HEIGHT_FRACTION).aspectRatio(1f, matchHeightConstraintsFirst = true)
+} else {
+    fillMaxWidth(ARTWORK_PORTRAIT_WIDTH_FRACTION).aspectRatio(1f)
+}
+
 /** The peeking previous or next card: real artwork and titles, no placeholder, no controls. */
 @Composable
-private fun NeighborCard(neighbor: NeighborDisplay, modifier: Modifier) {
+private fun NeighborCard(neighbor: NeighborDisplay, landscape: Boolean, modifier: Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -427,7 +444,7 @@ private fun NeighborCard(neighbor: NeighborDisplay, modifier: Modifier) {
     ) {
         UriArtwork(
             uri = neighbor.artworkUri,
-            modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(RoundedCornerShape(16.dp))
+            modifier = Modifier.playerArtworkSize(landscape).clip(RoundedCornerShape(16.dp))
         )
         Text(
             text = neighbor.title,
@@ -447,7 +464,7 @@ private fun NeighborCard(neighbor: NeighborDisplay, modifier: Modifier) {
 }
 
 @Composable
-private fun CurrentCard(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOpenAlbum: () -> Unit, modifier: Modifier) {
+private fun CurrentCard(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOpenAlbum: () -> Unit, landscape: Boolean, modifier: Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -455,7 +472,7 @@ private fun CurrentCard(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOpenA
     ) {
         UriArtwork(
             uri = ui.artworkUri,
-            modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(RoundedCornerShape(16.dp))
+            modifier = Modifier.playerArtworkSize(landscape).clip(RoundedCornerShape(16.dp))
         )
         Text(
             text = ui.title,
