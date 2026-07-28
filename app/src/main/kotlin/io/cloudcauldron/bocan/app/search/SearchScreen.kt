@@ -17,8 +17,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -37,10 +42,20 @@ import io.cloudcauldron.bocan.app.library.LibraryCallbacks
 @Composable
 fun SearchScreen(viewModel: SearchViewModel, callbacks: LibraryCallbacks, modifier: Modifier = Modifier) {
     val ui by viewModel.state.collectAsState()
+    // The field text lives here, not in the view model. Driving the field from
+    // view-model state means every keystroke round-trips through its flows on a
+    // background dispatcher and comes back a beat late, and rewriting the field
+    // with that stale string yanks the cursor back mid-word. The composable owns
+    // the text; the view model only ever receives it (via snapshotFlow, which
+    // also re-seeds a fresh view model with restored text after recreation).
+    var query by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(viewModel) {
+        snapshotFlow { query }.collect { viewModel.onQueryChange(it) }
+    }
     Column(modifier = modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 8.dp)) {
         OutlinedTextField(
-            value = ui.query,
-            onValueChange = viewModel::onQueryChange,
+            value = query,
+            onValueChange = { query = it },
             singleLine = true,
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             placeholder = { Text(stringResource(R.string.search_hint)) },
@@ -48,8 +63,8 @@ fun SearchScreen(viewModel: SearchViewModel, callbacks: LibraryCallbacks, modifi
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
         )
-        if (!ui.hasQuery) {
-            RecentSearches(ui.recent, onTap = viewModel::onRecentTap, onClear = viewModel::clearRecent)
+        if (query.isBlank()) {
+            RecentSearches(ui.recent, onTap = { query = it }, onClear = viewModel::clearRecent)
         } else {
             SearchResultsList(ui, callbacks)
         }

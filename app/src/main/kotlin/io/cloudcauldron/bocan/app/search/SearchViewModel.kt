@@ -20,19 +20,28 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** Sectioned search results plus the current query and the recent-search history. */
 data class SearchUiState(
     val query: String = "",
+    /** The query the result sections were computed for; lags [query] while a search is in flight. */
+    val resultsFor: String = "",
     val tracks: List<TrackUi> = emptyList(),
     val albums: List<AlbumUi> = emptyList(),
     val artists: List<ArtistUi> = emptyList(),
     val recent: List<String> = emptyList()
 ) {
     val hasQuery: Boolean get() = query.isNotBlank()
-    val noResults: Boolean get() = hasQuery && tracks.isEmpty() && albums.isEmpty() && artists.isEmpty()
+
+    /**
+     * True only when the settled results for the current query came back empty.
+     * While a search is still debouncing or querying, the sections are empty but
+     * stale, and claiming "no results" then would flash on every keystroke.
+     */
+    val noResults: Boolean get() = hasQuery && resultsFor == query && tracks.isEmpty() && albums.isEmpty() && artists.isEmpty()
 }
 
 /**
@@ -50,14 +59,20 @@ class SearchViewModel(
     private val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
     private val query = MutableStateFlow("")
 
+    // Each result set is tagged with the query it answers, so the UI can tell
+    // "settled and empty" apart from "still searching".
     private val results = query
         .debounce(debounceMs)
-        .flatMapLatest { q -> if (q.isBlank()) flowOf(SearchResults.EMPTY) else searchDao.search(q) }
+        .flatMapLatest { q ->
+            val source = if (q.isBlank()) flowOf(SearchResults.EMPTY) else searchDao.search(q)
+            source.map { q to it }
+        }
 
     val state: StateFlow<SearchUiState> =
-        combine(query, results, prefs.recentSearches) { q, r, recent ->
+        combine(query, results, prefs.recentSearches) { q, (resultsFor, r), recent ->
             SearchUiState(
                 query = q,
+                resultsFor = resultsFor,
                 tracks = r.tracks.map { it.toUi() },
                 albums = r.albums.map { it.toUi() },
                 artists = r.artists.map { ArtistUi(it.id, it.name, albumCount = 0, songCount = 0) },
@@ -72,10 +87,6 @@ class SearchViewModel(
     fun onSubmit() {
         val submitted = query.value
         scope.launch { prefs.addRecentSearch(submitted) }
-    }
-
-    fun onRecentTap(recent: String) {
-        query.value = recent
     }
 
     fun clearRecent() = scope.launch { prefs.clearRecentSearches() }.let {}

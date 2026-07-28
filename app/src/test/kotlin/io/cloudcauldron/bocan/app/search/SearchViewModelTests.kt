@@ -9,7 +9,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -70,6 +72,40 @@ class SearchViewModelTests {
         assertTrue(ui.tracks.isEmpty() && ui.albums.isEmpty() && ui.artists.isEmpty())
         assertTrue(!ui.hasQuery)
         vm.dispose()
+    }
+
+    @Test
+    fun `a query still searching is not reported as no results`() = runTest {
+        val vm = SearchViewModel(
+            searchDao = searchDao,
+            prefs = prefs,
+            dispatchers = CoroutineDispatchers(io = Dispatchers.IO, default = UnconfinedTestDispatcher(testScheduler)),
+            debounceMs = 200
+        )
+        val subscriber = launch { vm.state.collect {} }
+        advanceTimeBy(250) // the initial blank query settles
+
+        vm.onQueryChange("rush")
+        runCurrent()
+        val typing = vm.state.value
+        assertEquals("rush", typing.query)
+        assertTrue(typing.tracks.isEmpty())
+        // The sections are empty only because the debounce has not fired yet;
+        // claiming no results here is the flash this guards against.
+        assertTrue(!typing.noResults)
+
+        advanceTimeBy(250)
+        assertEquals(listOf("rush"), vm.state.value.tracks.map { it.title })
+        subscriber.cancel()
+        vm.dispose()
+    }
+
+    @Test
+    fun `no results is reported only for the query the results were computed for`() {
+        val stillSearching = SearchUiState(query = "x", resultsFor = "")
+        assertTrue(!stillSearching.noResults)
+        val settledEmpty = SearchUiState(query = "x", resultsFor = "x")
+        assertTrue(settledEmpty.noResults)
     }
 
     @Test
