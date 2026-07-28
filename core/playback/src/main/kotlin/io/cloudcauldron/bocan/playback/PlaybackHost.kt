@@ -30,6 +30,7 @@ class PlaybackComponents(
     val queuePersistence: QueuePersistence,
     val mediaTree: MediaTree,
     val episodeSkipButtons: List<CommandButton>,
+    val artworkAccess: ArtworkAccess,
     val dispatchers: CoroutineDispatchers
 ) {
     /** The effects chain the service binds to its player, reached through the [playerFactory]. */

@@ -28,6 +28,7 @@ import io.cloudcauldron.bocan.app.onboarding.AppEntry
 import io.cloudcauldron.bocan.app.onboarding.resolveEntry
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
 import io.cloudcauldron.bocan.app.playback.AndroidMediaFileResolver
+import io.cloudcauldron.bocan.app.playback.ArtworkReadGrants
 import io.cloudcauldron.bocan.app.playback.HeadphoneReconnectMonitor
 import io.cloudcauldron.bocan.app.player.LyricsViewModel
 import io.cloudcauldron.bocan.app.player.NowPlayingViewModel
@@ -232,6 +233,7 @@ class AppGraph(val application: Application) {
             queuePersistence,
             mediaTree,
             episodeSkipButtons,
+            ArtworkReadGrants(application),
             playbackDispatchers
         )
     }

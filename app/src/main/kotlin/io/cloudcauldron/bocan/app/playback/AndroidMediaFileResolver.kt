@@ -22,7 +22,9 @@ class AndroidMediaFileResolver(private val context: Context, private val mediaLa
 
     // Artwork is read by other processes (Android Auto, the system media UI) that cannot open
     // an app-private file:// path, so hand out a content:// Uri from the FileProvider. Media3
-    // grants the connected controller read on it; the notification and in-app Coil load it too.
+    // never grants the reading process access on it (it forwards the Uri as-is, and its legacy
+    // browse path only inlines artworkData bytes, never loads artworkUri): ArtworkReadGrants,
+    // called from the session's onConnect, is what makes these Uris readable by controllers.
     override fun artworkUri(hash: String): Uri? = artworkStore.existing(hash)?.let { file ->
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     }

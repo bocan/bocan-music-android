@@ -56,6 +56,7 @@ class TestPlaybackApp :
             queuePersistence = QueuePersistence(cacheDir, dispatchers, NoopLog),
             mediaTree = MediaTree(EmptyBrowseDao, EMPTY_LABELS, { null }, dispatchers),
             episodeSkipButtons = emptyList(),
+            artworkAccess = {},
             dispatchers = dispatchers
         )
     }

@@ -58,8 +58,9 @@
     <!-- Serves content-addressed artwork as content:// so a separate process (Android Auto,
          the system media UI) can read it: a file:// path into app-private storage cannot
          cross the process boundary, which is why art showed in the notification (loaded in
-         app) but not in Android Auto. Media3 grants the connected controller read on the
-         content URI. Only the artwork subtree is shared, never the media files. -->
+         app) but not in Android Auto. Media3 does NOT grant controllers read on the URI;
+         ArtworkReadGrants issues that grant per connected controller from the session's
+         onConnect. Only the artwork subtree is shared, never the media files. -->
     <provider
       android:name="androidx.core.content.FileProvider"
       android:authorities="${applicationId}.fileprovider"

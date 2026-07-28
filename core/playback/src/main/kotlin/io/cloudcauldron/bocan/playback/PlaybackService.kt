@@ -191,6 +191,14 @@ class PlaybackService : MediaLibraryService() {
      */
     private inner class BrowseCallback : MediaLibrarySession.Callback {
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
+            // Remote controllers (Android Auto above all) load the artwork content Uris
+            // in our metadata from their own process, and nothing grants them access
+            // implicitly: Media3 never calls grantUriPermission, and the provider is
+            // not exported. Grant read on the artwork tree before any Uri reaches them,
+            // or every browse icon in Auto renders blank.
+            if (controller.packageName != this@PlaybackService.packageName) {
+                components.artworkAccess.grantReadTo(controller.packageName)
+            }
             val available = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
             BocanCommands.all().forEach { available.add(it) }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
