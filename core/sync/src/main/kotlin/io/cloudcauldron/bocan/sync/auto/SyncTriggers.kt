@@ -3,10 +3,13 @@ package io.cloudcauldron.bocan.sync.auto
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.sync.discovery.DiscoveredMac
+import io.cloudcauldron.bocan.sync.discovery.DiscoveryBackoff
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.retryWhen
 import okhttp3.HttpUrl
 
 /**
@@ -31,9 +34,28 @@ class SyncTriggers(
     private val log = AppLog.forCategory(LogCategory.Sync)
     private var lastTrigger: Instant? = null
 
-    /** Collect discovery forever (until the surrounding scope is cancelled). */
+    /**
+     * Collect discovery forever (until the surrounding scope is cancelled). A failing
+     * discovery stream is restarted rather than allowed to end the collection: this runs
+     * in an application-scoped coroutine with no exception handler, so letting it throw
+     * would both stop auto-sync for the life of the process and reach the default
+     * uncaught handler.
+     */
     suspend fun observe() {
-        discovery.collect { macs -> onDiscovery(macs) }
+        discovery
+            .retryWhen { cause, attempt ->
+                val wait = DiscoveryBackoff.delayMillis(attempt)
+                log.warning(
+                    "sync.discoveryRestarting",
+                    mapOf("attempt" to attempt, "waitMs" to wait, "error" to cause.toString())
+                )
+                // The last known address came from a stream that has now failed; drop it so
+                // a sync waits for a fresh sighting instead of dialling a stale host.
+                endpoint.value = null
+                delay(wait)
+                true
+            }
+            .collect { macs -> onDiscovery(macs) }
     }
 
     /** Exposed for tests: process one discovery emission. */

@@ -21,16 +21,27 @@ import kotlinx.coroutines.sync.withLock
  * time (the platform resolver rejects overlapping calls), and resolved services
  * are collected into a live snapshot emitted on the flow.
  *
+ * One browse session is fragile: it cannot start with no network and does not
+ * survive one changing underneath it. [restartWhileOnline] wraps the session so a
+ * failure or a Wi-Fi drop restarts it rather than ending the stream for good.
+ *
  * Uses the pre-API-34 resolveService path so a single code path serves minSdk 29
  * through the latest release; the API-34 registerServiceInfoCallback replacement
  * is not available at minSdk. Excluded from the coverage floor: NsdManager needs
  * a real network stack and cannot be exercised in a JVM unit test.
  */
-internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue: ResolveQueue = ResolveQueue()) : NsdServiceBrowser {
+internal class NsdServiceBrowserImpl(
+    context: Context,
+    private val resolveQueue: ResolveQueue = ResolveQueue(),
+    private val networkAvailability: NetworkAvailability = ConnectivityNetworkAvailability(context)
+) : NsdServiceBrowser {
     private val nsdManager = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val log = AppLog.forCategory(LogCategory.Network)
 
-    override fun services(): Flow<List<ResolvedService>> = callbackFlow {
+    override fun services(): Flow<List<ResolvedService>> = browse().restartWhileOnline(networkAvailability.online())
+
+    /** One browse session: live from registration until it is cancelled or fails. */
+    private fun browse(): Flow<List<ResolvedService>> = callbackFlow {
         val found = LinkedHashMap<String, ResolvedService>()
         // The raw discovered infos, kept so the periodic refresh below can re-resolve each.
         val discovered = LinkedHashMap<String, NsdServiceInfo>()
@@ -77,7 +88,9 @@ internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue:
             }
 
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                close(IllegalStateException("mDNS discovery failed to start: $errorCode"))
+                // Expected whenever there is no usable network yet, so it ends this session
+                // only. restartWhileOnline catches it and starts a fresh one after a backoff.
+                close(DiscoveryStartFailure(errorCode))
             }
 
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
@@ -132,6 +145,12 @@ internal class NsdServiceBrowserImpl(context: Context, private val resolveQueue:
         val txt = info.attributes.mapValues { (_, value) -> value?.toString(Charsets.US_ASCII) }
         return ResolvedService(info.serviceName, host, info.port, txt)
     }
+
+    /**
+     * NsdManager refused to start a browse. Never escapes this class: it ends one
+     * session so [restartWhileOnline] can retry, and collectors see an empty list.
+     */
+    private class DiscoveryStartFailure(errorCode: Int) : Exception("mDNS discovery failed to start: $errorCode")
 
     private companion object {
         // Fast enough that arming pairing on the Mac shows up on the phone within a few

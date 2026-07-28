@@ -50,6 +50,8 @@ kover {
                     "io.cloudcauldron.bocan.sync.discovery.NsdServiceBrowserImpl$*",
                     "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl",
                     "io.cloudcauldron.bocan.sync.discovery.WifiMulticastLeaseImpl$*",
+                    "io.cloudcauldron.bocan.sync.discovery.ConnectivityNetworkAvailability",
+                    "io.cloudcauldron.bocan.sync.discovery.ConnectivityNetworkAvailability$*",
                     // Platform glue over the foreground service, WorkManager, and
                     // the NotificationManager. The engine, triggers, downloader,
                     // and layout logic they delegate to are covered directly;
