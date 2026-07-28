@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1](https://github.com/bocan/bocan-music-android/compare/v0.3.0...v0.3.1) (2026-07-28)
+
+
+### Fixed
+
+* **app:** keep the search field cursor steady while typing ([1339a8e](https://github.com/bocan/bocan-music-android/commit/1339a8ec31c713648e96ae5f75076b4a4508c374))
+* **playback:** grant controllers read on artwork so Android Auto shows covers ([6b23ee8](https://github.com/bocan/bocan-music-android/commit/6b23ee8697695054168d1189880ad3ead73839ff))
+* **sync:** restart mDNS discovery instead of ending it on failure ([90f5b2f](https://github.com/bocan/bocan-music-android/commit/90f5b2f2de37dcd437df0b2794f7cc700ec49902))
+
 ## [0.3.0](https://github.com/bocan/bocan-music-android/compare/v0.2.0...v0.3.0) (2026-07-14)
 
 
