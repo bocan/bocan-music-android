@@ -21,6 +21,7 @@ import io.cloudcauldron.bocan.playback.audio.ReplayGainValues
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.queue.QueueSnapshot
+import io.cloudcauldron.bocan.playback.queue.ReorderingShufflePlayer
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 import io.cloudcauldron.bocan.playback.queue.fromPlayer
 import io.cloudcauldron.bocan.playback.queue.toPlayer
@@ -53,6 +54,11 @@ class PlaybackService : MediaLibraryService() {
     private val log = AppLog.forCategory(LogCategory.Playback)
     private lateinit var scope: CoroutineScope
     private lateinit var player: ExoPlayer
+
+    // The session's player: shuffle-as-reorder over [player]. Every controller
+    // (app, Auto, Bluetooth) sees this wrapper; the raw ExoPlayer shuffle mode
+    // stays off forever so the playback order is always the queue order.
+    private lateinit var sessionPlayer: ReorderingShufflePlayer
     private lateinit var session: MediaLibrarySession
     private lateinit var persistence: QueuePersistence
     private lateinit var effectsChain: EffectsChain
@@ -71,12 +77,14 @@ class PlaybackService : MediaLibraryService() {
         mediaTree = graph.mediaTree
         episodeSkipButtons = graph.episodeSkipButtons
 
-        session = MediaLibrarySession.Builder(this, player, BrowseCallback())
+        sessionPlayer = ReorderingShufflePlayer(player)
+        session = MediaLibrarySession.Builder(this, sessionPlayer, BrowseCallback())
             .build()
 
         graph.statsRecorder.attach(player, scope)
         graph.episodeRecorder.attach(player, scope)
         bindEffects()
+        attachDiagnostics()
         restoreQueuePaused()
         observeForPersistence()
     }
@@ -126,8 +134,41 @@ class PlaybackService : MediaLibraryService() {
         scope.launch { persistence.save(snapshot()) }
         scope.cancel()
         session.release()
+        sessionPlayer.release()
         player.release()
         super.onDestroy()
+    }
+
+    /**
+     * Debug-level transition forensics. The reason codes distinguish an auto-advance
+     * from a seek or a queue rewrite, which is the first question in any wrong-next-track
+     * report; the raw-shuffle warning fires if anything ever reaches the real ExoPlayer
+     * flag past [ReorderingShufflePlayer], which must never happen.
+     */
+    private fun attachDiagnostics() {
+        player.addListener(
+            object : Player.Listener {
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    log.debug(
+                        "playback.transition",
+                        mapOf("reason" to reason, "mediaId" to (mediaItem?.mediaId ?: "none"), "index" to player.currentMediaItemIndex)
+                    )
+                }
+
+                override fun onPositionDiscontinuity(old: Player.PositionInfo, new: Player.PositionInfo, reason: Int) {
+                    if (old.mediaItemIndex != new.mediaItemIndex) {
+                        log.debug(
+                            "playback.discontinuity",
+                            mapOf("reason" to reason, "fromIndex" to old.mediaItemIndex, "toIndex" to new.mediaItemIndex)
+                        )
+                    }
+                }
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    if (shuffleModeEnabled) log.warning("playback.rawShuffle.enabled", emptyMap())
+                }
+            }
+        )
     }
 
     private fun restoreQueuePaused() {
@@ -136,6 +177,14 @@ class PlaybackService : MediaLibraryService() {
             if (snapshot.mediaIds.isEmpty()) return@launch
             val items = components.mediaItemSource.resolve(snapshot.mediaIds.mapNotNull(MediaId::parse))
             if (items.isEmpty()) return@launch
+            // The restore is for a cold start only. Loading and resolving a large
+            // snapshot takes real time, and playback may have started meanwhile
+            // (Auto or Bluetooth connecting is exactly when the service cold-starts):
+            // whatever is queued wins, or a stale snapshot would stomp live audio.
+            if (player.mediaItemCount > 0) {
+                log.debug("playback.restore.skipped", mapOf("reason" to "queueInUse"))
+                return@launch
+            }
             val startIndex = snapshot.index.coerceIn(0, items.lastIndex)
             // Episodes own their own resume via EpisodeProgressRecorder; the music heuristic
             // must not also seek them, or the two resume paths fight.
@@ -147,7 +196,9 @@ class PlaybackService : MediaLibraryService() {
             }
             player.setMediaItems(items, startIndex, startPositionMs)
             player.repeatMode = snapshot.repeatMode.toPlayer()
-            player.shuffleModeEnabled = snapshot.shuffleActive
+            // Flag only, never a reorder: the restored queue already carries the
+            // order the listener last heard. The raw player flag stays off.
+            sessionPlayer.restoreShuffleFlag(snapshot.shuffleActive)
             player.prepare()
             // Restored paused, never auto-resumed.
             player.playWhenReady = false
@@ -178,7 +229,7 @@ class PlaybackService : MediaLibraryService() {
             index = player.currentMediaItemIndex,
             positionMs = player.currentPosition.coerceAtLeast(0),
             repeatMode = RepeatMode.fromPlayer(player.repeatMode),
-            shuffleActive = player.shuffleModeEnabled,
+            shuffleActive = sessionPlayer.shuffleModeEnabled,
             currentDurationMs = player.duration.coerceAtLeast(0)
         )
     }
@@ -264,7 +315,7 @@ class PlaybackService : MediaLibraryService() {
         when (action) {
             BocanCommands.SKIP_BACK -> player.seekTo((player.currentPosition - SKIP_BACK_MS).coerceAtLeast(0))
             BocanCommands.SKIP_FORWARD -> player.seekTo(player.currentPosition + SKIP_FORWARD_MS)
-            BocanCommands.TOGGLE_SHUFFLE -> player.shuffleModeEnabled = !player.shuffleModeEnabled
+            BocanCommands.TOGGLE_SHUFFLE -> sessionPlayer.shuffleModeEnabled = !sessionPlayer.shuffleModeEnabled
             BocanCommands.CYCLE_SPEED -> player.setPlaybackSpeed(nextSpeed(player.playbackParameters.speed))
             else -> log.warning("playback.command.unknown", mapOf("action" to action))
         }

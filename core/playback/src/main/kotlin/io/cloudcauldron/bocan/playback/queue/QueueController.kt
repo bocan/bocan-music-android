@@ -60,7 +60,6 @@ class QueueController(
     override val state: StateFlow<PlayerUiState> = uiState.asStateFlow()
 
     private var controller: MediaController? = null
-    private var shuffleActive: Boolean = false
 
     /**
      * Connect to the running service's session. Idempotent. If the session is not
@@ -119,8 +118,7 @@ class QueueController(
         controller.setMediaItems(items, 0, 0L)
         controller.prepare()
         controller.play()
-        shuffleActive = true
-        pushState()
+        controller.shuffleModeEnabled = true
     }
 
     override suspend fun playEpisodes(episodeIds: List<String>, startIndex: Int) = onController { controller ->
@@ -202,25 +200,26 @@ class QueueController(
      * Turn shuffle on with [strategy] (reordering the upcoming items in place, the
      * current item kept where it is), or off with null (the queue keeps its shuffled
      * order; only the flag clears, matching the Mac).
+     *
+     * The flag itself lives in the service's ReorderingShufflePlayer, so this surface,
+     * Android Auto's shuffle toggle, and a car's Bluetooth shuffle button all read and
+     * write one state. Raising the flag reorders upcoming uniformly service-side (the
+     * off-to-on edge); a weighted strategy then overwrites that uniform order with its
+     * own below, which is why the flag must be set first.
      */
     override suspend fun setShuffle(strategy: ShuffleStrategy?) = onController { controller ->
         if (strategy == null) {
-            shuffleActive = false
-            pushState()
+            controller.shuffleModeEnabled = false
             return@onController
         }
+        controller.shuffleModeEnabled = true
+        if (strategy is ShuffleStrategy.FisherYates) return@onController
         val count = controller.mediaItemCount
         val currentIndex = controller.currentMediaItemIndex
-        if (count <= 1 || currentIndex < 0) {
-            shuffleActive = true
-            pushState()
-            return@onController
-        }
+        if (count <= 1 || currentIndex < 0) return@onController
         val upcomingIds = ((currentIndex + 1) until count).map { controller.getMediaItemAt(it).mediaId }
         val order = strategy.order(shuffleInputs(upcomingIds), random())
         applyOrder(controller, currentIndex, order)
-        shuffleActive = true
-        pushState()
     }
 
     /**
@@ -264,7 +263,9 @@ class QueueController(
             queue = queue,
             queueIndex = controller.currentMediaItemIndex,
             repeatMode = RepeatMode.fromPlayer(controller.repeatMode),
-            shuffleActive = shuffleActive,
+            // The session player's flag: one shuffle state across the app, Auto, and
+            // Bluetooth, so a toggle from any of them shows here.
+            shuffleActive = controller.shuffleModeEnabled,
             speed = controller.playbackParameters.speed
         )
     }
