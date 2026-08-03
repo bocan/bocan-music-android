@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/bocan/bocan-music-android/compare/v0.3.1...v0.3.2) (2026-08-03)
+
+
+### Fixed
+
+* **playback:** keep one playback order by intercepting external shuffle toggles ([5b88be0](https://github.com/bocan/bocan-music-android/commit/5b88be07021e9a28324264a297c0eba22244fe92))
+
 ## [0.3.1](https://github.com/bocan/bocan-music-android/compare/v0.3.0...v0.3.1) (2026-07-28)
 
 
