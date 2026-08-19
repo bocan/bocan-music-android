@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
             val appearance by appGraph.appearancePreferences.settings.collectAsState(initial = AppearanceSettings())
             BocanTheme(appearance) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    RequestNotificationPermission()
+                    RequestStartupPermissions()
                     CompositionLocalProvider(LocalArtworkResolver provides { hash: String? -> appGraph.artworkFile(hash) }) {
                         AppRoot(appGraph)
                     }
@@ -104,15 +104,25 @@ private fun AppRoot(appGraph: AppGraph) {
     }
 }
 
-/** Ask for the notification permission (Android 13+) so sync and playback notifications can show. */
+/**
+ * Ask once at startup for the runtime permissions the app cannot do its job
+ * without: notifications (Android 13+) for the sync and playback notifications,
+ * and local network access (Android 17+) so mDNS discovery and the TLS
+ * connection to the paired Mac run unattended instead of the system interposing
+ * a per-connection device picker.
+ */
 @Composable
-private fun RequestNotificationPermission() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+private fun RequestStartupPermissions() {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
     LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        val wanted = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) add(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        }
+        val missing = wanted.filterNot {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isNotEmpty()) launcher.launch(missing.toTypedArray())
     }
 }

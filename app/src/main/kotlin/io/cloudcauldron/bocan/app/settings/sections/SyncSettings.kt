@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.LocalNetworkPermissionNotice
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
 import io.cloudcauldron.bocan.app.sync.SyncStatusUiState
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
@@ -104,6 +105,7 @@ fun SyncSettingsScreen(uiState: SyncStatusUiState, callbacks: SyncSettingsCallba
 private fun UnpairedContent(onPair: () -> Unit) {
     Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.sync_not_paired), style = MaterialTheme.typography.bodyLarge)
+        LocalNetworkPermissionNotice()
         Button(onClick = onPair) {
             Text(stringResource(R.string.home_pair_action))
         }
@@ -119,6 +121,7 @@ private fun PairedContent(uiState: SyncStatusUiState, callbacks: SyncSettingsCal
         PairedMacBlock(uiState, onUnpairRequested = { confirmUnpair = true })
         Spacer(Modifier.height(8.dp))
         StatusBlock(uiState)
+        LocalNetworkPermissionNotice()
         SyncActionButton(uiState.sync, callbacks.onSyncNow, callbacks.onCancel)
         Failures(uiState.sync)
     }

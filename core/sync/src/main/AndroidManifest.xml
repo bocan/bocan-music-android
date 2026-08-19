@@ -8,6 +8,11 @@
        flowing while Wi-Fi power save is active. -->
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
   <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+  <!-- Android 17+ blocks all LAN traffic (mDNS discovery and the TLS connection to
+       the Mac) unless this runtime permission is granted; without it the system
+       falls back to a per-connection device picker, which cannot serve unattended
+       sync. :app requests it once at startup alongside POST_NOTIFICATIONS. -->
+  <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
   <!-- A dataSync foreground service keeps a transfer alive while the user is away
        from the app. The POST_NOTIFICATIONS runtime permission (Android 13+) is

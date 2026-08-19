@@ -29,6 +29,10 @@
   <string name="pairing_error_busy">The Mac is busy updating its library. Try again in a moment.</string>
   <string name="pairing_error_rate_limited">Too many attempts. Wait a moment and try again.</string>
   <string name="pairing_error_network">Could not reach the Mac. Check that both devices are on the same Wi-Fi network.</string>
+
+  <!-- Android 17 local network permission -->
+  <string name="local_network_missing">Local network access is turned off, so this phone cannot see your Mac. Pairing and sync need it.</string>
+  <string name="local_network_allow">Allow local network access</string>
   <string name="pairing_error_pin">The Mac\'s identity could not be verified. Do not continue; try pairing again.</string>
   <string name="pairing_error_unsupported">This Mac is running a newer version of Bòcan. Update Bòcan on your phone.</string>
 

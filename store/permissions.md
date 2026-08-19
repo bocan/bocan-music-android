@@ -13,6 +13,7 @@ needs no permission at all.
 | `ACCESS_NETWORK_STATE` | Detect connectivity so sync and scrobble queues drain when the network returns, and back off when it is gone. |
 | `ACCESS_WIFI_STATE` | Confirm the phone is on Wi-Fi and identify the local network for discovery of the paired Mac. |
 | `CHANGE_WIFI_MULTICAST_STATE` | Hold a multicast lock so mDNS/NSD discovery of the Mac works; released as soon as discovery ends. |
+| `ACCESS_LOCAL_NETWORK` | Android 17+ runtime permission gating all local network traffic (mDNS discovery and the TLS connection to the paired Mac). Requested once at first launch; if denied, the system falls back to a per-connection device picker, which cannot serve unattended background sync. No effect below Android 17. |
 | `FOREGROUND_SERVICE` | Base permission for the playback and sync foreground services. |
 | `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Typed permission for the media playback foreground service (audio continues with the screen off). |
 | `FOREGROUND_SERVICE_DATA_SYNC` | Typed permission for the sync foreground service (a library sync survives the app going to the background). |
@@ -46,5 +47,6 @@ sync service stops when the sync completes, so no foreground service is held at 
 - No `READ_MEDIA_AUDIO` / `READ_EXTERNAL_STORAGE` / `MANAGE_EXTERNAL_STORAGE`: the app only
   ever reads its own app-specific external files directory, which requires no permission.
 - No location, contacts, camera, microphone, or Bluetooth-connect permissions: media routing
+/Users/chris/Play/bocan-music-android/store
   to Bluetooth is handled by the platform media session without app-held Bluetooth access.
 - No advertising or device-ID permission: there is no analytics or ads code to serve.

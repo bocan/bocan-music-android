@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.LocalNetworkPermissionNotice
 import io.cloudcauldron.bocan.app.userMessageRes
 import io.cloudcauldron.bocan.sync.SyncError
 import io.cloudcauldron.bocan.sync.discovery.DiscoveredMac
@@ -77,6 +78,8 @@ private fun DiscoveryContent(macs: List<DiscoveredMac>, onPair: (DiscoveredMac) 
         Text(stringResource(R.string.pairing_searching), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.pairing_no_macs), style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(8.dp))
+        LocalNetworkPermissionNotice()
         return
     }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
