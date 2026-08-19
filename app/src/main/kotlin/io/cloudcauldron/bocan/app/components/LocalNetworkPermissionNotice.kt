@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -26,8 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.sync.localNetworkAccessGranted
 
 /**
  * A recovery notice shown only while the Android 17 local network permission is
@@ -66,9 +65,7 @@ fun LocalNetworkPermissionNotice(modifier: Modifier = Modifier) {
     }
 }
 
-private fun localNetworkPermissionMissing(context: Context): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN &&
-    ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_LOCAL_NETWORK) !=
-    PackageManager.PERMISSION_GRANTED
+private fun localNetworkPermissionMissing(context: Context): Boolean = !localNetworkAccessGranted(context)
 
 private fun rationaleExpected(activity: Activity): Boolean =
     ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_LOCAL_NETWORK)

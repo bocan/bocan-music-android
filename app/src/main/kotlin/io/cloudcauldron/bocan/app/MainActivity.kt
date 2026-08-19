@@ -29,6 +29,7 @@ import io.cloudcauldron.bocan.app.data.AppearanceSettings
 import io.cloudcauldron.bocan.app.home.HomeScaffold
 import io.cloudcauldron.bocan.app.onboarding.AppEntry
 import io.cloudcauldron.bocan.app.onboarding.OnboardingFlow
+import io.cloudcauldron.bocan.app.sync.localNetworkAccessGranted
 import io.cloudcauldron.bocan.app.theme.BocanTheme
 import kotlinx.coroutines.flow.first
 
@@ -48,6 +49,17 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The application defers discovery until the Android 17 local network
+        // grant exists. Every grant path (startup dialog, the recovery notice,
+        // the system settings page) resumes this activity afterwards, so this is
+        // the one place that needs to catch up. start() is idempotent.
+        if (localNetworkAccessGranted(this)) {
+            (application as BocanApplication).appGraph.syncCoordinator.start()
         }
     }
 

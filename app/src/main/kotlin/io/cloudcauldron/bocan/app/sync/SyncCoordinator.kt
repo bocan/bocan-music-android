@@ -30,6 +30,7 @@ import io.cloudcauldron.bocan.sync.net.SyncHttpClientFactory
 import io.cloudcauldron.bocan.sync.net.TrustStore
 import io.cloudcauldron.bocan.sync.service.SyncForegroundService
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,6 +73,7 @@ class SyncCoordinator(
     override val syncState: StateFlow<SyncState> = syncStateFlow.asStateFlow()
 
     @Volatile private var cached: Pair<String, SyncEngine>? = null
+    private val started = AtomicBoolean(false)
 
     private val triggers = SyncTriggers(
         discovery = discovery.discover(),
@@ -80,8 +82,13 @@ class SyncCoordinator(
         onPairedVisible = { if (settings.syncOnDiscovery.value) SyncForegroundService.start(context, force = false) }
     )
 
-    /** Start the always-on discovery trigger and schedule the periodic worker. */
+    /**
+     * Start the always-on discovery trigger and schedule the periodic worker.
+     * Idempotent: callers race (application startup versus the activity catching
+     * up after the Android 17 local network grant) and only the first call wins.
+     */
     fun start() {
+        if (!started.compareAndSet(false, true)) return
         appScope.launch { triggers.observe() }
         applyWorkerSchedule()
     }

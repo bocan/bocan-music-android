@@ -3,6 +3,7 @@ package io.cloudcauldron.bocan.app
 import android.app.Application
 import androidx.media3.common.util.UnstableApi
 import androidx.work.Configuration
+import io.cloudcauldron.bocan.app.sync.localNetworkAccessGranted
 import io.cloudcauldron.bocan.observability.ReleaseLogTree
 import io.cloudcauldron.bocan.playback.PlaybackComponents
 import io.cloudcauldron.bocan.playback.PlaybackHost
@@ -36,7 +37,10 @@ class BocanApplication :
         super.onCreate()
         plantLogging()
         appGraph = AppGraph(this)
-        appGraph.syncCoordinator.start()
+        // On Android 17+ discovery must wait for the local network grant, or the
+        // very first mDNS pass summons the system device picker over the UI.
+        // MainActivity.onResume starts the coordinator once the grant lands.
+        if (localNetworkAccessGranted(this)) appGraph.syncCoordinator.start()
         appGraph.startEffects()
         appGraph.startScrobbling()
         appGraph.startWidget()
