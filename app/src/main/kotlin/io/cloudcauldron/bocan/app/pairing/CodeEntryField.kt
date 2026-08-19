@@ -64,8 +64,11 @@ fun CodeEntryField(onCodeComplete: (String) -> Unit, modifier: Modifier = Modifi
             }
         },
         enabled = enabled,
+        // Plain Number, not NumberPassword: a password keyboard type makes
+        // password managers offer to save the six digit pairing code, and the
+        // digits are drawn visibly in the boxes anyway.
         keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.NumberPassword,
+            keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Done
         ),
         modifier = modifier.focusRequester(focusRequester),
