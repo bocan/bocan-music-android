@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.2](https://github.com/bocan/bocan-music-android/compare/v0.3.1...v0.3.2) (2026-08-19)
+
+
+### Fixed
+
+* **app:** hold discovery until the local network grant lands ([708f94c](https://github.com/bocan/bocan-music-android/commit/708f94c087df0882789d1b847dee22e09d118f93))
+* **app:** stop password managers offering to save the pairing code ([6e791ab](https://github.com/bocan/bocan-music-android/commit/6e791ab5bcb6e200871fe3944b6e50b17b358674))
+* **playback:** keep one playback order by intercepting external shuffle toggles ([5b88be0](https://github.com/bocan/bocan-music-android/commit/5b88be07021e9a28324264a297c0eba22244fe92))
+* **sync:** adopt the Android 17 local network permission ([4c18799](https://github.com/bocan/bocan-music-android/commit/4c187990865fefccc0ba6bd26b7db24576efacf0))
+
 ## [0.3.1](https://github.com/bocan/bocan-music-android/compare/v0.3.0...v0.3.1) (2026-07-28)
 
 
