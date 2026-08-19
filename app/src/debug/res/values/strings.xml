@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-only launcher label so a debug install is distinguishable from the
+     release app on the same device. Build-type resources override main and
+     never ship in a release bundle. -->
+<resources>
+  <string name="app_name">Bòcan Debug</string>
+</resources>
