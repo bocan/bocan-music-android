@@ -116,6 +116,7 @@ File endpoints:
 - A `Range` whose start is at or past the end of the file draws `416`. The client must discard its partial file and restart that transfer cleanly rather than retrying the same range.
 - Set `ETag` to the item's `sha256` from the manifest. The client sends `If-Match` with the expected hash; if the file changed since the manifest was fetched the server replies `412` and the client re-fetches the manifest.
 - `Content-Type` is best-effort (`audio/flac`, `audio/mpeg`, `application/octet-stream` fallback); the client never trusts it for format detection.
+- The server may reply `503 busy` with `Retry-After` to a file request whose bytes are not currently materialised, while it re-prepares them (for example a transcoded artifact released after a completed transfer; see the served-bytes note in section 7). The client treats this like any other `busy`: retry after the delay. If the re-prepared bytes hash differently, the retry's `If-Match` draws an ordinary `412` and the client re-fetches the manifest, which then carries the new `sha256` and `size`.
 
 ## 7. Manifest
 
@@ -174,6 +175,7 @@ Notes:
 - All ids in the manifest (`id`, `artistId`, `albumArtistId`, `albumId`, playlist and podcast ids) are positive integers; a client may reserve 0 for internal fallback buckets.
 - `id` is the Mac's stable track id. The phone uses it as its primary key. Ids are stable across manifests; a re-added file gets a new id.
 - `relPath` is a sanitized relative path (no leading `/`, no `..`, forward slashes, NFC-normalized). The phone stores the file at `<mediaRoot>/library/<relPath>` but treats `relPath` as opaque; identity is `id`, change detection is `sha256`.
+- **Served bytes.** The file-describing fields (`relPath`, `size`, `sha256`, `format`, `bitrate`, `sampleRate`, `bitDepth`, `channelCount`, `isLossless`) always describe the bytes `GET /v1/file/track/{trackId}` will serve, which are not necessarily the bytes on the Mac's disk. When the Mac's sync profile selects a transcode quality, they describe the transcoded artifact (`format` of `"mp3"` or `"opus"`, `relPath` carrying the matching extension, `isLossless` false). The client needs no special handling: identity is `id` and change detection is `sha256` regardless of how the bytes were produced, and a quality change on the Mac arrives as an ordinary re-download diff. The optional `sourceFormat` field (additive, section 10) then carries the Mac-side source container (for example `"flac"`), for display only; it is omitted for tracks served as-is.
 - `rating` is 0 to 100, matching the Mac's schema. `loved` is the favourite flag. Both are display-only on the phone.
 - CUE virtual tracks: `clip` is `{ "sourceTrackId": 122, "startMs": 0, "endMs": 254000 }`. The audio bytes belong to the source track's file; a clipped track has no file of its own (its `relPath`, `size`, `sha256` duplicate the source's, and the client must only download the source once).
 
