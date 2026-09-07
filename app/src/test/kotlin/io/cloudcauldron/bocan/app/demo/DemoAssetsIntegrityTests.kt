@@ -2,6 +2,7 @@ package io.cloudcauldron.bocan.app.demo
 
 import io.cloudcauldron.bocan.persistence.model.manifest.Manifest
 import io.cloudcauldron.bocan.persistence.model.manifest.ManifestCodec
+import io.cloudcauldron.bocan.playback.podcast.ChaptersParser
 import java.io.File
 import java.security.MessageDigest
 import kotlin.test.assertEquals
@@ -20,10 +21,36 @@ class DemoAssetsIntegrityTests {
     fun `manifest envelope is the demo server with no podcasts`() {
         assertEquals(1, manifest.protocolVersion)
         assertEquals("demo", manifest.serverId)
-        assertTrue(manifest.podcasts.isEmpty())
-        assertTrue(manifest.episodes.isEmpty())
+        assertEquals(1, manifest.podcasts.size)
+        assertEquals(1, manifest.episodes.size)
         assertEquals(2, manifest.tracks.size)
         assertEquals(2, manifest.playlists.size)
+    }
+
+    @Test
+    fun `the demo show and episode are complete and their chapters parse`() {
+        val show = manifest.podcasts.single()
+        val episode = manifest.episodes.single()
+        assertTrue(show.id >= DemoLibrary.ID_BASE, "show id ${show.id}")
+        assertEquals(show.id, episode.podcastId)
+        assertTrue(episode.id.startsWith(DemoLibrary.EPISODE_ID_PREFIX), episode.id)
+        assertTrue(episode.relPath.startsWith(DemoLibrary.EPISODE_REL_PATH_PREFIX), episode.relPath)
+        listOf(show.author, show.descriptionHtml, show.artworkHash, episode.publishedAt, episode.durationMs, episode.descriptionHtml)
+            .forEachIndexed { index, value -> assertTrue(value != null, "podcast field $index is null") }
+
+        val file = File(DEMO_ASSET_DIR, episode.relPath)
+        assertTrue(file.isFile, "missing ${episode.relPath}")
+        assertEquals(episode.size, file.length())
+        assertEquals(episode.sha256, sha256(file))
+        val cover = File(DEMO_ASSET_DIR, "artwork/${show.artworkHash}")
+        assertEquals(show.artworkHash, sha256(cover))
+
+        assertTrue(episode.hasChapters)
+        val chapters = ChaptersParser.parse(File(DEMO_ASSET_DIR, "chapters/${episode.id}.json").readText())
+        assertTrue(chapters.size >= MIN_CHAPTERS, "only ${chapters.size} chapters")
+        assertEquals(0L, chapters.first().startTimeMs)
+        val duration = checkNotNull(episode.durationMs)
+        assertTrue(chapters.all { it.startTimeMs < duration && it.title.isNotBlank() })
     }
 
     @Test
@@ -97,6 +124,7 @@ class DemoAssetsIntegrityTests {
 
     private companion object {
         const val MIN_TIMED_LINES = 12
+        const val MIN_CHAPTERS = 3
         const val MIN_DURATION_MS = 58_000L
         const val MAX_DURATION_MS = 62_000L
     }

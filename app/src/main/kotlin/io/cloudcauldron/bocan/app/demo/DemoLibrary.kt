@@ -82,13 +82,40 @@ class DemoLibrary(
         dao.server() == null && dao.allTracks().isEmpty() && dao.allEpisodes().isEmpty()
     }
 
-    /** True when no Mac is paired, at least one track exists, and every track is a demo track. */
+    /**
+     * True when no Mac is paired, something is in the library, and every track and
+     * episode is a demo one. A half-and-half library (a real sync happened, then the
+     * user unpaired) is never "the demo".
+     */
     suspend fun isActive(): Boolean = withContext(dispatchers.io) {
         val dao = store.database.syncDao()
-        dao.server() == null && dao.allTracks().isAllDemo()
+        if (dao.server() != null) return@withContext false
+        val tracks = dao.allTracks()
+        val episodes = dao.allEpisodes()
+        (tracks.isNotEmpty() || episodes.isNotEmpty()) &&
+            tracks.all { it.relPath.startsWith(REL_PATH_PREFIX) } &&
+            episodes.all { it.relPath.startsWith(EPISODE_REL_PATH_PREFIX) }
     }
 
-    /** [isActive] as a flow; a paired phone short-circuits without reading the tracks table. */
+    /**
+     * Chapters for a demo episode, straight from the assets, or null for any other id so
+     * the caller falls through to the Mac. The demo is the only source of chapters an
+     * unpaired phone can have.
+     */
+    suspend fun chaptersJson(episodeId: String): String? = withContext(dispatchers.io) {
+        if (!episodeId.startsWith(EPISODE_ID_PREFIX)) return@withContext null
+        try {
+            assets.open("$CHAPTERS_DIR/$episodeId.json").use { it.readBytes().decodeToString() }
+        } catch (missing: IOException) {
+            log.warning("demo.chapters.missing", mapOf("episodeId" to episodeId, "error" to missing.toString()))
+            null
+        }
+    }
+
+    /**
+     * [isActive] as a flow, on the tracks table alone (the demo always ships tracks);
+     * a paired phone short-circuits without reading it.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeActive(): Flow<Boolean> = store.database.syncDao().observeServer().flatMapLatest { server ->
         if (server != null) flowOf(false) else store.database.libraryDao().observeAllTracksByTitle().map { it.isAllDemo() }
@@ -131,9 +158,15 @@ class DemoLibrary(
     suspend fun clear() = mutex.withLock {
         withContext(dispatchers.io) {
             if (!isActive()) return@withContext
-            val tracks = store.database.syncDao().allTracks()
+            val dao = store.database.syncDao()
+            val tracks = dao.allTracks()
             val playlists = store.database.playlistDao().observePlaylistTree().first()
-            val artworkHashes = (tracks.mapNotNull { it.artworkHash } + playlists.mapNotNull { it.artworkHash }).toSet()
+            val podcasts = dao.allPodcasts()
+            val artworkHashes = buildSet {
+                tracks.forEach { track -> track.artworkHash?.let(::add) }
+                playlists.forEach { playlist -> playlist.artworkHash?.let(::add) }
+                podcasts.forEach { podcast -> podcast.artworkHash?.let(::add) }
+            }
 
             val plan = store.applier.apply(emptyManifest())
             plan.relPathsToDelete.forEach { relPath -> DemoFiles.deleteQuietly(store.mediaLayout.fileForRelPath(relPath), log) }
@@ -152,12 +185,16 @@ class DemoLibrary(
             manifest.tracks.forEach { track ->
                 DemoFiles.copyVerified(assets, "$LIBRARY_DIR/${track.relPath}", store.mediaLayout.trackFile(track.relPath), track.sha256)
             }
+            // Episode relPaths already start with Podcasts/, and the assets mirror the media root.
+            manifest.episodes.forEach { episode ->
+                DemoFiles.copyVerified(assets, episode.relPath, store.mediaLayout.episodeFile(episode.relPath), episode.sha256)
+            }
             manifest.artworkHashes().forEach { hash ->
                 DemoFiles.copyVerified(assets, "$ARTWORK_DIR/$hash", store.artworkStore.fileFor(hash), hash)
             }
 
             store.applier.apply(manifest)
-            store.applier.markDownloaded(manifest.tracks.map { it.id }, emptyList())
+            store.applier.markDownloaded(manifest.tracks.map { it.id }, manifest.episodes.map { it.id })
             seedLyrics(manifest)
 
             log.info("demo.seeded", mapOf("tracks" to manifest.tracks.size, "ms" to (now().toEpochMilli() - started.toEpochMilli())))
@@ -198,12 +235,19 @@ class DemoLibrary(
         /** Every demo track relPath starts with this folder. */
         const val REL_PATH_PREFIX = "Demo/"
 
+        /** Every demo episode relPath starts with this folder (episode paths always start with Podcasts/). */
+        const val EPISODE_REL_PATH_PREFIX = "Podcasts/Demo/"
+
+        /** Every demo episode id starts with this; Mac episode ids are content hashes and cannot. */
+        const val EPISODE_ID_PREFIX = "demo-episode-"
+
         fun isDemoTrackId(id: Long): Boolean = id >= ID_BASE
 
         private const val MANIFEST_PATH = "manifest.json"
         private const val LIBRARY_DIR = "library"
         private const val ARTWORK_DIR = "artwork"
         private const val LYRICS_DIR = "lyrics"
+        private const val CHAPTERS_DIR = "chapters"
         private const val PROTOCOL_VERSION = 1
         private const val SERVER_ID = "demo"
         private const val SERVER_NAME = "Demo library"
@@ -212,4 +256,8 @@ class DemoLibrary(
 
 private fun List<TrackEntity>.isAllDemo(): Boolean = isNotEmpty() && all { it.relPath.startsWith(DemoLibrary.REL_PATH_PREFIX) }
 
-private fun Manifest.artworkHashes(): Set<String> = (tracks.mapNotNull { it.artworkHash } + playlists.mapNotNull { it.artworkHash }).toSet()
+private fun Manifest.artworkHashes(): Set<String> = buildSet {
+    tracks.forEach { track -> track.artworkHash?.let(::add) }
+    playlists.forEach { playlist -> playlist.artworkHash?.let(::add) }
+    podcasts.forEach { podcast -> podcast.artworkHash?.let(::add) }
+}

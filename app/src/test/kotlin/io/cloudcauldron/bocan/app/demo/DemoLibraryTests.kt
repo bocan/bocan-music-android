@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
@@ -96,9 +97,28 @@ class DemoLibraryTests {
             assertEquals(track.sha256, sha256(file))
             assertEquals(track.lyricsHash, db.lyricsDao().get(track.id)?.lyricsHash)
         }
-        val hashes = demoManifest.tracks.mapNotNull { it.artworkHash }.toSet()
+        val hashes = (demoManifest.tracks.mapNotNull { it.artworkHash } + demoManifest.podcasts.mapNotNull { it.artworkHash }).toSet()
         hashes.forEach { hash -> assertEquals(hash, sha256(artworkStore.fileFor(hash))) }
+
+        assertEquals(demoManifest.podcasts.map { it.id }, db.syncDao().allPodcasts().map { it.id })
+        val episodes = db.syncDao().allEpisodes()
+        assertEquals(demoManifest.episodes.map { it.id }, episodes.map { it.id })
+        assertTrue(episodes.all { it.downloadState == DownloadState.Downloaded && it.hasChapters })
+        demoManifest.episodes.forEach { episode ->
+            assertEquals(episode.sha256, sha256(mediaLayout.episodeFile(episode.relPath)))
+        }
         assertTrue(library().isActive())
+    }
+
+    @Test
+    fun `chapters come from the assets for the demo episode and from nowhere else`() = runTest {
+        val demo = library()
+        val episode = demoManifest.episodes.single()
+
+        val json = assertNotNull(demo.chaptersJson(episode.id))
+        assertTrue(json.contains("\"chapters\""))
+        assertNull(demo.chaptersJson("e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6"))
+        assertNull(demo.chaptersJson("${DemoLibrary.EPISODE_ID_PREFIX}missing"))
     }
 
     @Test
@@ -161,11 +181,14 @@ class DemoLibraryTests {
         val real = realManifest()
 
         val plan = applier.plan(real)
-        assertEquals(demoManifest.tracks.map { it.relPath }.sorted(), plan.relPathsToDelete)
+        val demoPaths = demoManifest.tracks.map { it.relPath } + demoManifest.episodes.map { it.relPath }
+        assertEquals(demoPaths.sorted(), plan.relPathsToDelete)
 
         db.syncDao().insertServer(pairedServer())
         applier.apply(real)
         assertTrue(db.syncDao().allTracks().none { DemoLibrary.isDemoTrackId(it.id) })
+        assertTrue(db.syncDao().allEpisodes().isEmpty())
+        assertTrue(db.syncDao().allPodcasts().isEmpty())
         assertTrue(db.libraryDao().observeAlbumsByName().first().none { DemoLibrary.isDemoTrackId(it.id) })
         assertTrue(db.libraryDao().observeArtists().first().none { DemoLibrary.isDemoTrackId(it.id) })
         assertTrue(db.playlistDao().observePlaylistTree().first().none { DemoLibrary.isDemoTrackId(it.id) })
@@ -180,10 +203,15 @@ class DemoLibraryTests {
         demo.clear()
 
         assertTrue(db.syncDao().allTracks().isEmpty())
+        assertTrue(db.syncDao().allEpisodes().isEmpty())
+        assertTrue(db.syncDao().allPodcasts().isEmpty())
         assertTrue(db.playlistDao().observePlaylistTree().first().isEmpty())
         demoManifest.tracks.forEach { track ->
             assertFalse(mediaLayout.trackFile(track.relPath).exists(), track.relPath)
             assertNull(db.lyricsDao().get(track.id))
+        }
+        demoManifest.episodes.forEach { episode ->
+            assertFalse(mediaLayout.episodeFile(episode.relPath).exists(), episode.relPath)
         }
         demoManifest.tracks.mapNotNull { it.artworkHash }.forEach { hash -> assertNull(artworkStore.existing(hash)) }
         val demoDir = File(checkNotNull(mediaLayout.mediaRoot()), "library/Demo")

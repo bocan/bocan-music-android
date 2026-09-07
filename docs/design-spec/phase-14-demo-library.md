@@ -12,7 +12,8 @@ The Play Console "App access" declaration then changes to "All functionality is 
 
 ## Non-goals
 
-- No demo podcast episode. The Podcasts tab stays empty on a demo install. A follow-up phase can add one if a reviewer asks.
+- No third-party podcast content. The demo show is one spoken episode Chris recorded (see "Demo podcast"); bundling someone else's episode would need a licence.
+- No transcripts. Phase 07 cut them and the protocol only sketches a future endpoint; the demo episode has chapters and show notes instead.
 - No change to the sync engine, the manifest DTOs, or `sync-protocol.md`. The demo goes through `SyncApplier.apply` like a real manifest and needs no new write path.
 - No demo mode toggle, no hidden settings, no build flavour. The demo library is ordinary content that happens to come from assets.
 - No scrobbling of demo plays. Demo tracks are skipped at the scrobble boundary (see plan step 7); nothing else in scrobbling changes.
@@ -22,17 +23,22 @@ The Play Console "App access" declaration then changes to "All functionality is 
 
 ```
 scripts/demo-media/
-  generate.py                       // Mac-side generator: tones, covers, tags, lyrics, manifest.json (stdlib Python + ffmpeg + magick)
+  generate.py                       // Mac-side generator: tones, covers, tags, lyrics, chapters, manifest.json (stdlib Python + ffmpeg + magick)
+  podcast.txt                       // the spoken episode script, with `say` pause marks
+  podcast-voice.mp3                 // the recorded episode audio; copied, never re-encoded
   README.md                         // how to regenerate and what must stay in step
 
 app/src/main/assets/demo/           // mirrors the media root layout under getExternalFilesDir(null)/media
   manifest.json                     // a real Manifest document (ManifestCodec decodes it), serverId "demo"
   library/Demo/01 Demo Audio 1.mp3
   library/Demo/02 Demo Audio 2.mp3
+  Podcasts/Demo/01 Welcome to the demo.mp3
   artwork/<sha256 of cover 1>       // no extension, same as ArtworkStore
   artwork/<sha256 of cover 2>
+  artwork/<sha256 of the show cover>
   lyrics/9000000001.lrc             // keyed by demo track id
   lyrics/9000000002.lrc
+  chapters/demo-episode-1.json      // Podcasting 2.0 chapters, keyed by demo episode id
 
 app/src/main/kotlin/io/cloudcauldron/bocan/app/demo/
   DemoLibrary.kt                    // eligibility, seed, clear, isActive; the only class that knows the assets exist
@@ -238,6 +244,29 @@ Track 2 (`lyrics/9000000002.lrc`):
 
 `lyricsHash` is the sha256 of the LRC file bytes. The generator computes it and writes it into `manifest.json`; the integrity test checks it.
 
+### Demo podcast
+
+One show, one episode, so the Podcasts tab, the show page, show notes, chapters, resume, and per-show speed all have something to work on with no Mac.
+
+| | Value |
+|---|---|
+| show id | 9000000001 |
+| show title | Bòcan Demo Podcast |
+| author | Chris Funderburg |
+| show notes | two short paragraphs of HTML with one https link, so the link handling in the notes sheet is exercised |
+| show cover | its own gradient (purple to pink) with a ring and a play triangle, distinct from both track covers at 48 dp |
+| playbackSpeed | 1.0 |
+| episode id | `demo-episode-1` (Mac episode ids are content hashes and can never start with `demo-episode-`) |
+| episode title | Welcome to the demo |
+| relPath | `Podcasts/Demo/01 Welcome to the demo.mp3` |
+| audio | the checked-in `scripts/demo-media/podcast-voice.mp3`, about 28 s, spoken by the Mac's Serena (Premium) voice from `podcast.txt`; the generator copies the stream and adds tags and the cover |
+| hasChapters | true; `chapters/demo-episode-1.json` holds four Podcasting 2.0 chapters placed on the pauses in the recording |
+| playState | unplayed, position 0 |
+
+Chapters normally come from the Mac at play time through `ChaptersFetcher`. The app graph's fetcher asks `DemoLibrary.chaptersJson(episodeId)` first, which serves the asset for a demo id and null for everything else, so the Mac path is untouched.
+
+The episode file lands at `media/<relPath>` through `MediaLayout.episodeFile`, and its row goes in with the tracks through the same `apply`. "Active" therefore means: unpaired, something in the library, every track under `Demo/`, and every episode under `Podcasts/Demo/`. The first real sync lists the episode relPath as departed like any other.
+
 Playlists in the manifest:
 
 | id | name | kind | accentColor | artworkHash | trackIds |
@@ -284,6 +313,8 @@ No new Gradle dependencies. Mac-side tooling for the generator only: ffmpeg (wit
   6. `clear()` removes the rows, the two track files, the two artwork files, the `Demo/` directory, and the lyrics rows, and `isEligible()` is true again.
   7. A `DemoAssets` that throws `IOException` on the second track leaves no rows and returns `Failed`.
   8. A sha256 mismatch (assets that return altered bytes) returns `Failed` and writes no rows.
+  9. `seed()` also writes 1 podcast and 1 episode marked `Downloaded`, with the file at `mediaLayout.episodeFile(relPath)`; `chaptersJson` returns the chapters document for the demo episode id and null for any other id; a real manifest's plan lists the episode relPath among the departed; `clear()` removes the episode file and rows.
+- `DemoAssetsIntegrityTests` also checks the show and episode: the file, size, sha256, the `Podcasts/Demo/` prefix, the show cover, and that the chapters document parses to at least three chapters inside the episode's duration.
 - `LibraryViewModelTests`: add "status is content when unpaired but tracks exist" and "status is loading while the demo is seeding".
 - `AppGraph` scrobble mapping: a track with id `ID_BASE + 1` resolves to null; a track with id 1 resolves as before.
 - Compose semantics (`ComponentUiTests`): `EmptyState` renders the secondary action when both parameters are given and omits it otherwise.
@@ -303,6 +334,8 @@ No new Gradle dependencies. Mac-side tooling for the generator only: ffmpeg (wit
 - [x] "Try the demo library" on the not-paired empty state reseeds after "Remove the demo album". (Wired through `LibraryEmptyActions.onLoadDemo` and `SyncSettingsCallbacks.onRemoveDemo`; `DemoLibraryTests` covers clear then seed.)
 - [x] Demo plays never reach a scrobble provider. (`AppGraph.resolveScrobbleTrack` returns null for `DemoLibrary.isDemoTrackId`; the id rule is tested.)
 - [x] `DemoAssetsIntegrityTests` fails if any asset is changed without regenerating the manifest.
+- [ ] The Podcasts tab shows the demo show; the episode plays, resumes, shows its notes, and its chapters sheet lists four chapters that follow the audio.
+      Device check for playback and the sheet. `DemoLibraryTests` pins the rows, the file, and the chapters document served for the demo id.
 - [x] `store/listing.md` App access section says "no restriction" and the full description mentions the demo.
 - [x] `./gradlew check test koverVerify` green; `/android-standards` and `/protocol-guard` run and clean.
 

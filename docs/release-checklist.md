@@ -148,6 +148,9 @@ R8 breaks are runtime breaks, so exercise every major flow on the actual signed 
       with two tracks, one artist, and two playlists, with no tap beyond the skip.
 - [ ] Play both tracks: each shows its own cover, the lyrics view highlights lines on time
       and follows a seek, song details show mp3, 128 kbps, rating and loved state.
+- [ ] Podcasts tab shows "Bòcan Demo Podcast"; the episode plays, its show notes open with a
+      working link, the chapters sheet lists four chapters that follow the audio, and leaving
+      mid-episode puts it on the continue-listening shelf at the right position.
 - [ ] Settings, Library sync (unpaired) shows the demo line and "Remove the demo album";
       removing it empties the library and "Try the demo album" brings it back.
 - [ ] Pair and sync a real Mac: every demo row and file is gone (Library tabs, Folders
