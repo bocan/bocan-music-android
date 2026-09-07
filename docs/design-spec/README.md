@@ -33,8 +33,9 @@ Goal, Non-goals, Outcome shape, Implementation plan, Definitions and contracts, 
 | `phase-10-system-integration.md` | Android Auto, Glance home-screen widget, Bluetooth/AVRCP metadata, media notification polish, app shortcuts. |
 | `phase-11-polish.md` | Material You theming audit, TalkBack accessibility pass, localization scaffolding, settings surface, onboarding flow. |
 | `phase-13-gestures.md` | Now Playing touch gestures: swipe to change track, swipe up for the song details sheet, swipe down to dismiss. Numbered 13, built before 12. |
-| `phase-12-release.md` | CI/CD on GitHub Actions, signing, versioning, Play Store and F-Droid readiness, privacy declarations. |
+| `phase-12-release.md` | CI/CD on GitHub Actions, signing, versioning, Play Store and F-Droid readiness, privacy declarations. Versioning and the release flow are superseded by phase 16. |
 | `phase-14-demo-library.md` | A two-track demo album bundled in the APK, seeded through the normal sync apply path on a fresh unpaired install and removed by the first real sync. Unblocks Play review without a Mac. |
+| `phase-16-trunk-and-releases.md` | The Mac repo's process ported: trunk-based branches, squash PRs with a Conventional title, a human-written release note per PR under Unreleased, a hand-started Release workflow that decides the version and ships the signed APK, release-please removed, and one proving cycle. |
 | `phase-mac-1-sync-server.md` | The Mac side: a new `SyncServer` module in the `bocan-music` repo. Bonjour advertising, pairing UI in Settings, manifest generation from GRDB, file serving. Implemented over there, specified here so the contract stays in one place. |
 
 ## Feature parity map (Mac feature -> Android disposition)
