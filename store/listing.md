@@ -30,29 +30,22 @@ Do not use em dashes or en dashes anywhere in this copy.
 
 ### App access (sign-in details)
 
-- Select **"All or some functionality in my app is restricted."** The form's own
-  definition of restricted access includes "actions to be carried out on another
-  device", and Bòcan's core functionality is exactly that: sync requires pairing with
-  a Mac the reviewer does not have, confirmed on the Mac. There is still no account,
-  login, or credential anywhere in the app; the restriction is the companion device.
-- Add **one** instruction set:
-  - **Instruction name:** `Mac companion pairing`
-  - **Username / password:** `none` in each (the fields are mandatory but do not apply;
-    the free text explains).
-  - **"Any other information required to access your app"** (limit 500 characters;
-    the copy below is 432 with a `youtu.be`-length link):
-
-  ```
-  No accounts, sign-in, passwords, or OTPs exist. Sync requires the user's own Mac running the Bòcan desktop app on the same Wi-Fi; pairing is confirmed on the Mac (mutual TLS, device to device, no server to log into). Without a paired Mac the app launches and all screens are reachable but the library is empty. Demo videos of pairing, sync, and playback: https://youtu.be/XXXXXXXXXXX. Username/password are placeholders; none exist.
-  ```
-
-- Use **one** video link in that field: a single combined demo (pairing, then Sync Now,
-  then locked-screen playback) or an unlisted YouTube playlist. The two
-  foreground-service declarations have their own video fields (see below), so they do
-  not need to be squeezed in here. If the URL runs long (e.g. a Drive link), drop the
-  last sentence of the copy first.
-- Record a short pairing demo alongside the two foreground-service videos so the
-  "action on another device" part is covered end to end.
+- Select **"All functionality in my app is available without any access restrictions."**
+  There is no account, login, credential, or membership anywhere in the app, and a
+  fresh install is not empty: the bundled demo album (phase 14) loads on first launch,
+  so every screen (library, Now Playing, lyrics, equalizer, playlists, song details,
+  widget, Android Auto) works with no Mac at all. The Mac is a hardware companion for
+  syncing the user's own library, which is not an access restriction in the form's sense.
+- Do **not** add an instruction set. The first submission declared restricted access,
+  explained the Mac requirement, and attached a video, and was rejected because the
+  reviewer could not sync. The demo album is the answer to that: give the reviewer
+  content, not instructions.
+- The pairing and sync demo videos still belong on the two foreground-service
+  declarations (see below), which have their own video fields. Keep them current.
+- If a reviewer asks about the Mac anyway, the appeal text is: "Sync is an optional
+  companion feature that needs the user's own Mac on the same Wi-Fi. All app
+  functionality is available and testable with the built-in demo album; see the
+  attached videos for the sync flow."
 
 ### Ads
 
@@ -143,6 +136,8 @@ Limit: 4000 characters.
 
 ```
 Bòcan Music (also written "Bocan") is the companion player for the Bòcan music app on your Mac. Pair once, and your music, playlists, and podcasts follow you onto your phone over your own Wi-Fi. No cloud, no account, nothing to sign up for.
+
+No Mac nearby? A short demo album is built in, so you can try the player, lyrics, equalizer, and playlists right away. Your first sync replaces it with your own music.
 
 Bòcan syncs one way, from your Mac to your phone, with both devices verifying each other's certificates. Your library stays yours: there is no cloud service in the middle, no analytics, and no telemetry. The only things that ever leave your phone are requests to your paired Mac and, if you turn scrobbling on, the plays you send to a service you choose.
 

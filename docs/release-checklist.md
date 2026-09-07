@@ -142,6 +142,18 @@ R8 breaks are runtime breaks, so exercise every major flow on the actual signed 
 - [ ] Podcasts: subscribe/continue-listening, artwork, playback.
 - [ ] Scrobble: enable a provider and confirm a play is submitted.
 
+### Demo album (phase 14, fresh install, no Mac)
+
+- [ ] Uninstall, install the release build, skip onboarding: the Library shows "Bòcan Demo"
+      with two tracks, one artist, and two playlists, with no tap beyond the skip.
+- [ ] Play both tracks: each shows its own cover, the lyrics view highlights lines on time
+      and follows a seek, song details show mp3, 128 kbps, rating and loved state.
+- [ ] Settings, Library sync (unpaired) shows the demo line and "Remove the demo album";
+      removing it empties the library and "Try the demo album" brings it back.
+- [ ] Pair and sync a real Mac: every demo row and file is gone (Library tabs, Folders
+      shows no `Demo`, `media/library/Demo/` absent).
+- [ ] With a scrobble provider enabled, a demo play submits nothing.
+
 ### Phase 10 device matrix (manual, not automatable)
 
 - [ ] Android Auto via the Desktop Head Unit (DHU): browse and play.
