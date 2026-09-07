@@ -27,13 +27,14 @@ class LibraryViewModelTests {
     private val playlistDao = FakePlaylistDao()
     private val prefs = FakeLibraryPreferences()
 
+    private val demoSeeding = MutableStateFlow(false)
+
     private fun viewModel(): LibraryViewModel {
         val dispatcher = UnconfinedTestDispatcher()
         return LibraryViewModel(
             libraryDao = libraryDao,
             playlistDao = playlistDao,
-            syncServer = server,
-            syncState = syncState,
+            signals = LibraryViewModel.Signals(syncServer = server, syncState = syncState, demoSeeding = demoSeeding),
             prefs = prefs,
             dispatchers = CoroutineDispatchers(io = dispatcher, default = dispatcher)
         )
@@ -42,6 +43,24 @@ class LibraryViewModelTests {
     @Test
     fun `status is not paired when there is no server`() = runTest {
         viewModel().status.test {
+            assertEquals(LibraryStatus.NotPaired, awaitItem())
+        }
+    }
+
+    @Test
+    fun `status is content when unpaired but tracks exist`() = runTest {
+        libraryDao.countsFlow.value = DownloadCounts(pending = 0, downloaded = 2, failed = 0)
+        viewModel().status.test {
+            assertEquals(LibraryStatus.Content, awaitItem())
+        }
+    }
+
+    @Test
+    fun `status is loading while the demo album is seeding`() = runTest {
+        demoSeeding.value = true
+        viewModel().status.test {
+            assertEquals(LibraryStatus.Loading, awaitItem())
+            demoSeeding.value = false
             assertEquals(LibraryStatus.NotPaired, awaitItem())
         }
     }

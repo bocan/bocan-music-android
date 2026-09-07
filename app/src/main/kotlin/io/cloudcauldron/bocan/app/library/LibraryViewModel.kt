@@ -43,11 +43,17 @@ sealed interface LibraryStatus {
 class LibraryViewModel(
     libraryDao: LibraryDao,
     playlistDao: PlaylistDao,
-    syncServer: Flow<SyncServerEntity?>,
-    syncState: StateFlow<SyncState>,
+    signals: Signals,
     private val prefs: LibraryPreferencesSource,
     dispatchers: CoroutineDispatchers
 ) {
+    /** The live inputs, beyond the DAOs, that decide the first-run status. */
+    class Signals(
+        val syncServer: Flow<SyncServerEntity?>,
+        val syncState: StateFlow<SyncState>,
+        val demoSeeding: Flow<Boolean> = MutableStateFlow(false)
+    )
+
     private val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
 
     private val tab = MutableStateFlow(LibraryTab.Albums)
@@ -87,13 +93,20 @@ class LibraryViewModel(
             .map { tracks -> tracks.map { FolderTree.Item(it.id, it.relPath) } }
             .share(emptyList())
 
+    // Content wins over "not paired": an unpaired phone can hold the bundled demo album.
     val status: StateFlow<LibraryStatus> =
-        combine(syncServer, libraryDao.observeDownloadCounts(), syncState) { server, counts, sync ->
+        combine(
+            signals.syncServer,
+            libraryDao.observeDownloadCounts(),
+            signals.syncState,
+            signals.demoSeeding
+        ) { server, counts, sync, seeding ->
             val total = counts.pending + counts.downloaded + counts.failed
             val syncing = sync is SyncState.CheckingManifest || sync is SyncState.Transferring || sync is SyncState.Applying
             when {
-                server == null -> LibraryStatus.NotPaired
                 total > 0 -> LibraryStatus.Content
+                seeding -> LibraryStatus.Loading
+                server == null -> LibraryStatus.NotPaired
                 sync is SyncState.Transferring -> LibraryStatus.Syncing(sync.filesDone, sync.filesTotal)
                 syncing -> LibraryStatus.Syncing(0, 0)
                 else -> LibraryStatus.Empty

@@ -32,7 +32,9 @@ data class SyncStatusUiState(
     val syncOnDiscovery: Boolean = true,
     val periodicSync: Boolean = true,
     val chargingOnly: Boolean = false,
-    val removingMedia: Boolean = false
+    val removingMedia: Boolean = false,
+    /** The bundled demo album is what the unpaired library holds. */
+    val demoActive: Boolean = false
 )
 
 /**
@@ -52,7 +54,8 @@ class SyncStatusViewModel(private val sources: Sources, private val actions: Act
         val server: Flow<SyncServerEntity?>,
         val counts: Flow<DownloadCounts>,
         val toggles: ToggleFlows,
-        val storageBytes: suspend () -> Long
+        val storageBytes: suspend () -> Long,
+        val demoActive: Flow<Boolean> = MutableStateFlow(false)
     )
 
     /** The three auto-sync toggle setters, grouped to mirror [ToggleFlows]. */
@@ -68,7 +71,8 @@ class SyncStatusViewModel(private val sources: Sources, private val actions: Act
         val cancel: () -> Unit,
         val toggles: ToggleActions,
         val unpair: () -> Unit,
-        val removeAllMedia: suspend () -> Unit
+        val removeAllMedia: suspend () -> Unit,
+        val removeDemo: suspend () -> Unit = {}
     )
 
     private val scope = CoroutineScope(SupervisorJob() + dispatchers.default)
@@ -82,7 +86,13 @@ class SyncStatusViewModel(private val sources: Sources, private val actions: Act
             sources.toggles.periodicSync,
             sources.toggles.chargingOnly
         ) { d, p, c -> Triple(d, p, c) }
-        combine(sources.syncState, serverAndCounts, toggles, removing) { sync, (srv, cnt, bytes), (disc, periodic, charging), busy ->
+        combine(
+            sources.syncState,
+            serverAndCounts,
+            toggles,
+            removing,
+            sources.demoActive
+        ) { sync, (srv, cnt, bytes), (disc, periodic, charging), busy, demo ->
             SyncStatusUiState(
                 paired = srv != null,
                 serverName = srv?.serverName,
@@ -95,7 +105,8 @@ class SyncStatusViewModel(private val sources: Sources, private val actions: Act
                 syncOnDiscovery = disc,
                 periodicSync = periodic,
                 chargingOnly = charging,
-                removingMedia = busy
+                removingMedia = busy,
+                demoActive = demo
             )
         }.stateIn(scope, SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), SyncStatusUiState())
     }
@@ -131,6 +142,20 @@ class SyncStatusViewModel(private val sources: Sources, private val actions: Act
         scope.launch {
             try {
                 actions.removeAllMedia()
+            } finally {
+                removing.value = false
+                refreshStorage()
+            }
+        }
+    }
+
+    /** Remove the bundled demo album; shares the busy flag with remove-all so the two cannot overlap. */
+    fun removeDemo() {
+        if (removing.value) return
+        removing.value = true
+        scope.launch {
+            try {
+                actions.removeDemo()
             } finally {
                 removing.value = false
                 refreshStorage()

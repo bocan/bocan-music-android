@@ -55,7 +55,8 @@ fun BocanNavHost(navController: NavHostController, appGraph: AppGraph, callbacks
                 callbacks = callbacks,
                 emptyActions = LibraryEmptyActions(
                     onPair = { navController.navigate(Destination.Pairing) },
-                    onSyncNow = { navController.navigate(Destination.SyncStatus) }
+                    onSyncNow = { navController.navigate(Destination.SyncStatus) },
+                    onLoadDemo = appGraph::loadDemoLibrary
                 )
             )
         }

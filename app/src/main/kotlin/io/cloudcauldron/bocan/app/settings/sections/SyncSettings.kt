@@ -62,7 +62,8 @@ fun SyncSettingsScreen(viewModel: SyncStatusViewModel, onPair: () -> Unit, onBac
             onUnpair = viewModel::unpair,
             onRemoveAllMedia = viewModel::removeAllMedia,
             onPair = onPair,
-            onBack = onBack
+            onBack = onBack,
+            onRemoveDemo = viewModel::removeDemo
         ),
         modifier = modifier
     )
@@ -93,7 +94,7 @@ fun SyncSettingsScreen(uiState: SyncStatusUiState, callbacks: SyncSettingsCallba
                 .padding(bottom = 24.dp)
         ) {
             if (!uiState.paired) {
-                UnpairedContent(callbacks.onPair)
+                UnpairedContent(uiState, callbacks.onPair, callbacks.onRemoveDemo)
             } else {
                 PairedContent(uiState, callbacks)
             }
@@ -102,12 +103,18 @@ fun SyncSettingsScreen(uiState: SyncStatusUiState, callbacks: SyncSettingsCallba
 }
 
 @Composable
-private fun UnpairedContent(onPair: () -> Unit) {
+private fun UnpairedContent(uiState: SyncStatusUiState, onPair: () -> Unit, onRemoveDemo: () -> Unit) {
     Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.sync_not_paired), style = MaterialTheme.typography.bodyLarge)
         LocalNetworkPermissionNotice()
         Button(onClick = onPair) {
             Text(stringResource(R.string.home_pair_action))
+        }
+        if (uiState.demoActive) {
+            Text(stringResource(R.string.sync_demo_active), style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = onRemoveDemo, enabled = !uiState.removingMedia) {
+                Text(stringResource(R.string.sync_demo_remove_action))
+            }
         }
     }
 }

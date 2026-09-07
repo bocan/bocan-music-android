@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,8 +18,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
- * A centered empty or first-run state: an icon, a message, and an optional action. Used
- * for not-yet-paired, paired-but-empty, mid-first-sync, and no-results screens.
+ * A centered empty or first-run state: an icon, a message, an optional action, and an
+ * optional quieter second action beneath it. Used for not-yet-paired, paired-but-empty,
+ * mid-first-sync, and no-results screens.
  */
 @Composable
 fun EmptyState(
@@ -27,7 +29,9 @@ fun EmptyState(
     message: String,
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
-    onAction: (() -> Unit)? = null
+    onAction: (() -> Unit)? = null,
+    secondaryLabel: String? = null,
+    onSecondary: (() -> Unit)? = null
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -51,6 +55,9 @@ fun EmptyState(
         )
         if (actionLabel != null && onAction != null) {
             Button(onClick = onAction) { Text(actionLabel) }
+        }
+        if (secondaryLabel != null && onSecondary != null) {
+            TextButton(onClick = onSecondary) { Text(secondaryLabel) }
         }
     }
 }

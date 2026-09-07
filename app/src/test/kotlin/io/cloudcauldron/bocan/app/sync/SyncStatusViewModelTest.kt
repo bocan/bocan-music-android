@@ -32,8 +32,10 @@ class SyncStatusViewModelTest {
     private var cancelCalls = 0
     private var unpairCalls = 0
     private var removeCalls = 0
+    private var removeDemoCalls = 0
     private var storageReads = 0
     private val removeGate = CompletableDeferred<Unit>()
+    private val demoActive = MutableStateFlow(false)
     private val discoverySets = mutableListOf<Boolean>()
     private val periodicSets = mutableListOf<Boolean>()
     private val chargingSets = mutableListOf<Boolean>()
@@ -48,6 +50,7 @@ class SyncStatusViewModelTest {
                 periodicSync = periodicSync,
                 chargingOnly = chargingOnly
             ),
+            demoActive = demoActive,
             storageBytes = {
                 storageReads++
                 2_048L
@@ -64,6 +67,10 @@ class SyncStatusViewModelTest {
             unpair = { unpairCalls++ },
             removeAllMedia = {
                 removeCalls++
+                removeGate.await()
+            },
+            removeDemo = {
+                removeDemoCalls++
                 removeGate.await()
             }
         ),
@@ -123,6 +130,35 @@ class SyncStatusViewModelTest {
         assertEquals(listOf(false), periodicSets)
         assertEquals(listOf(true), chargingSets)
         assertEquals(1, unpairCalls)
+        vm.dispose()
+    }
+
+    @Test
+    fun `state reports the demo album while it is the unpaired library`() = runTest {
+        demoActive.value = true
+        val vm = viewModel()
+
+        vm.state.test {
+            var state = awaitItem()
+            while (!state.demoActive) state = awaitItem()
+            assertFalse(state.paired)
+            assertTrue(state.demoActive)
+            cancelAndIgnoreRemainingEvents()
+        }
+        vm.dispose()
+    }
+
+    @Test
+    fun `remove demo shares the busy flag with remove all media`() = runTest {
+        val vm = viewModel()
+
+        vm.removeDemo()
+        vm.removeAllMedia()
+        vm.removeDemo()
+        assertEquals(1, removeDemoCalls)
+        assertEquals(0, removeCalls)
+
+        removeGate.complete(Unit)
         vm.dispose()
     }
 
