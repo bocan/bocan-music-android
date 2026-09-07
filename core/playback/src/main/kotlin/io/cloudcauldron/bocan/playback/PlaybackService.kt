@@ -80,6 +80,10 @@ class PlaybackService : MediaLibraryService() {
         sessionPlayer = ReorderingShufflePlayer(player)
         session = MediaLibrarySession.Builder(this, sessionPlayer, BrowseCallback())
             .build()
+        // System UI (lock screen, quick settings media controls) reads the artwork Uri
+        // straight out of the session metadata without ever connecting as a controller,
+        // so the onConnect grant never reaches it. Grant up front, once per service start.
+        graph.artworkAccess.grantReadTo(SYSTEM_UI_PACKAGE)
 
         graph.statsRecorder.attach(player, scope)
         graph.episodeRecorder.attach(player, scope)
@@ -338,12 +342,14 @@ class PlaybackService : MediaLibraryService() {
         return future
     }
 
-    private companion object {
-        const val PERSIST_INTERVAL_MS = 5_000L
-        const val FADE_TICK_MS = 200L
-        const val SKIP_BACK_MS = 15_000L
-        const val SKIP_FORWARD_MS = 30_000L
-        const val SPEED_EPSILON = 0.01f
-        val SPEED_CYCLE = listOf(1.0f, 1.25f, 1.5f, 2.0f, 0.8f)
+    companion object {
+        /** The process that renders lock-screen and quick-settings media controls. */
+        const val SYSTEM_UI_PACKAGE = "com.android.systemui"
+        private const val PERSIST_INTERVAL_MS = 5_000L
+        private const val FADE_TICK_MS = 200L
+        private const val SKIP_BACK_MS = 15_000L
+        private const val SKIP_FORWARD_MS = 30_000L
+        private const val SPEED_EPSILON = 0.01f
+        private val SPEED_CYCLE = listOf(1.0f, 1.25f, 1.5f, 2.0f, 0.8f)
     }
 }
