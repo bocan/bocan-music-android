@@ -26,6 +26,7 @@ import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Test
@@ -56,10 +57,13 @@ class TestPlaybackApp :
             queuePersistence = QueuePersistence(cacheDir, dispatchers, NoopLog),
             mediaTree = MediaTree(EmptyBrowseDao, EMPTY_LABELS, { null }, dispatchers),
             episodeSkipButtons = emptyList(),
-            artworkAccess = {},
+            artworkAccess = { packageName -> grantedPackages.add(packageName) },
             dispatchers = dispatchers
         )
     }
+
+    /** Every package the service asked to be granted artwork read access. */
+    val grantedPackages = mutableListOf<String>()
 
     private companion object {
         val EMPTY_LABELS = BrowseLabels("Continue", "Playlists", "Albums", "Artists", "Podcasts", "Songs")
@@ -88,6 +92,15 @@ class PlaybackServiceTests {
     fun `the service starts and builds its session`() {
         val controller = Robolectric.buildService(PlaybackService::class.java).create()
         assertNotNull(controller.get())
+        controller.destroy()
+    }
+
+    @Test
+    fun `starting the service grants system ui read on the artwork tree`() {
+        val app = ApplicationProvider.getApplicationContext<TestPlaybackApp>()
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+
+        assertTrue(PlaybackService.SYSTEM_UI_PACKAGE in app.grantedPackages)
         controller.destroy()
     }
 
