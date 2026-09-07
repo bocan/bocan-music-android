@@ -35,6 +35,7 @@ Goal, Non-goals, Outcome shape, Implementation plan, Definitions and contracts, 
 | `phase-13-gestures.md` | Now Playing touch gestures: swipe to change track, swipe up for the song details sheet, swipe down to dismiss. Numbered 13, built before 12. |
 | `phase-12-release.md` | CI/CD on GitHub Actions, signing, versioning, Play Store and F-Droid readiness, privacy declarations. |
 | `phase-14-demo-library.md` | A two-track demo album bundled in the APK, seeded through the normal sync apply path on a fresh unpaired install and removed by the first real sync. Unblocks Play review without a Mac. |
+| `phase-15-android-auto.md` | The car browse tree reshaped so a song is three taps or one sentence away: no silent list cap, letter buckets, search bar and voice, root tabs, cover grids, Recently Played. |
 | `phase-mac-1-sync-server.md` | The Mac side: a new `SyncServer` module in the `bocan-music` repo. Bonjour advertising, pairing UI in Settings, manifest generation from GRDB, file serving. Implemented over there, specified here so the contract stays in one place. |
 
 ## Feature parity map (Mac feature -> Android disposition)
