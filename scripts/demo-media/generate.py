@@ -10,11 +10,18 @@ across verbatim:
 
     demo/manifest.json                 a real Manifest document, serverId "demo"
     demo/library/Demo/<NN Title>.mp3   tracks, ID3v2.3 tagged, cover attached
+    demo/Podcasts/Demo/<NN Title>.mp3  the demo podcast episode, same tagging
     demo/artwork/<sha256>              covers, content addressed, no extension
     demo/lyrics/<trackId>.lrc          synced lyrics, one per track
+    demo/chapters/<episodeId>.json     Podcasting 2.0 chapters for the episode
 
 Every id is DEMO_ID_BASE + n so phone-local rows keyed by track id can never
-collide with a track from a real Mac.
+collide with a track from a real Mac. Episode ids are strings on the wire; the
+demo's start with "demo-episode-", which no Mac hash can produce.
+
+The episode audio is not synthesised here: it is the checked-in
+`podcast-voice.mp3`, spoken by the Mac from `podcast.txt` (see README.md).
+Its audio stream is copied, never re-encoded; only tags and the cover are added.
 """
 
 from __future__ import annotations
@@ -31,8 +38,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+HERE = Path(__file__).resolve().parent
 OUT = REPO / "app" / "src" / "main" / "assets" / "demo"
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+VOICE_SOURCE = HERE / "podcast-voice.mp3"
+VOICE_SCRIPT = HERE / "podcast.txt"
+REPO_URL = "https://github.com/bocan/bocan-music-android"
 
 DEMO_ID_BASE = 9_000_000_000
 ARTIST = "Chris Funderburg"
@@ -143,6 +154,30 @@ TRACKS = [
         wave="polyline 60,300 200,380 340,320 480,520 620,480 760,700 940,780",
     ),
 ]
+
+PODCAST_ID = DEMO_ID_BASE + 1
+PODCAST_TITLE = "Bòcan Demo Podcast"
+PODCAST_DESCRIPTION = (
+    "<p>A one-episode show built into Bòcan Music for Android, so the Podcasts tab has "
+    "something to play before you sync your own shows from the Mac.</p>"
+    f'<p>Source and issues: <a href="{REPO_URL}">{REPO_URL}</a></p>'
+)
+EPISODE_ID = "demo-episode-1"
+EPISODE_TITLE = "Welcome to the demo"
+EPISODE_REL_PATH = f"Podcasts/Demo/01 {EPISODE_TITLE}.mp3"
+EPISODE_DESCRIPTION = (
+    "<p>A short spoken tour of what Bòcan does with podcasts: resume where you stopped, "
+    "per-show speed, chapters, and show notes like these.</p>"
+    "<p>This episode is replaced by your own shows on your first sync.</p>"
+)
+# Chapter starts in seconds, placed on the pauses in the recording.
+EPISODE_CHAPTERS = [
+    (0.0, "Welcome"),
+    (3.9, "A built-in episode"),
+    (11.1, "What Bòcan remembers"),
+    (20.1, "Your own shows"),
+]
+PODCAST_GRADIENT = ("#6A1FA3", "#E0457B")
 
 PLAYLISTS = [
     {
@@ -268,6 +303,65 @@ def tag_audio(track: Track, audio: Path, cover: Path, gain: dict[str, float], ta
     run(*args)
 
 
+def render_podcast_cover(target: Path) -> None:
+    """A ring and a play triangle on its own gradient, so the show reads as a podcast at 48 dp."""
+    start, end = PODCAST_GRADIENT
+    run(
+        "magick",
+        "-size", "1000x1000",
+        "-define", "gradient:angle=135",
+        f"gradient:{start}-{end}",
+        "-fill", "none", "-stroke", "white", "-strokewidth", "28",
+        "-draw", "circle 500,500 500,190",
+        "-fill", "white", "-stroke", "none",
+        "-draw", "polygon 420,360 420,640 660,500",
+        "-alpha", "off", "-depth", "8", "-strip",
+        "-define", "png:compression-level=9",
+        str(target),
+    )
+
+
+def spoken_script() -> str:
+    """The episode text as spoken, with the `say` pause commands removed."""
+    text = VOICE_SCRIPT.read_text(encoding="utf-8")
+    return re.sub(r"\s*\[\[slnc \d+\]\]", "", text).strip() + "\n"
+
+
+def tag_episode(cover: Path, target: Path) -> None:
+    """Copy the spoken audio stream untouched and add ID3v2.3 tags plus the show cover."""
+    def meta(key: str, value: str) -> list[str]:
+        return ["-metadata", f"{key}={value}"]
+
+    args = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-i", str(VOICE_SOURCE), "-i", str(cover),
+        "-map", "0:a", "-map", "1:v", "-c", "copy", "-disposition:v", "attached_pic",
+        "-map_metadata", "-1", "-id3v2_version", "3", "-write_id3v1", "1",
+    ]
+    args += meta("title", EPISODE_TITLE)
+    args += meta("artist", ARTIST)
+    args += meta("album_artist", ARTIST)
+    args += meta("album", PODCAST_TITLE)
+    args += meta("track", "1/1")
+    args += meta("date", str(YEAR))
+    args += meta("genre", "Podcast")
+    args += meta("comment", COMMENT)
+    args += meta("copyright", COPYRIGHT)
+    args += meta("publisher", PUBLISHER)
+    args += meta("TLAN", "eng")
+    args += meta("lyrics", spoken_script())
+    args += ["-metadata:s:v", "title=Album cover", "-metadata:s:v", "comment=Cover (front)"]
+    args.append(str(target))
+    run(*args)
+
+
+def chapters_document() -> dict:
+    return {
+        "version": "1.2.0",
+        "chapters": [{"startTime": start, "title": title} for start, title in EPISODE_CHAPTERS],
+    }
+
+
 def check_no_dashes(text: str, where: str) -> None:
     if "–" in text or "—" in text:
         raise SystemExit(f"em or en dash in {where}; the standards forbid them")
@@ -277,14 +371,25 @@ def main() -> None:
     for tool in ("ffmpeg", "ffprobe", "magick"):
         if shutil.which(tool) is None:
             raise SystemExit(f"{tool} is not on PATH")
-    for text, where in ((COMMENT, "comment"), (LYRICS_1, "lyrics 1"), (LYRICS_2, "lyrics 2")):
+    for text, where in (
+        (COMMENT, "comment"),
+        (LYRICS_1, "lyrics 1"),
+        (LYRICS_2, "lyrics 2"),
+        (PODCAST_DESCRIPTION, "podcast description"),
+        (EPISODE_DESCRIPTION, "episode description"),
+        (spoken_script(), "podcast script"),
+    ):
         check_no_dashes(text, where)
+    if not VOICE_SOURCE.is_file():
+        raise SystemExit(f"missing {VOICE_SOURCE}; see README.md for the say and ffmpeg steps")
 
     if OUT.exists():
         shutil.rmtree(OUT)
     (OUT / "library" / "Demo").mkdir(parents=True)
+    (OUT / "Podcasts" / "Demo").mkdir(parents=True)
     (OUT / "artwork").mkdir()
     (OUT / "lyrics").mkdir()
+    (OUT / "chapters").mkdir()
 
     with tempfile.TemporaryDirectory() as tmp_name:
         tmp = Path(tmp_name)
@@ -356,6 +461,42 @@ def main() -> None:
                 "lyricsHash": sha256_text(track.lyrics),
             })
 
+        podcast_cover = tmp / "cover-podcast.png"
+        render_podcast_cover(podcast_cover)
+        podcast_cover_hash = sha256_of(podcast_cover)
+        shutil.copyfile(podcast_cover, OUT / "artwork" / podcast_cover_hash)
+
+        episode_file = OUT / EPISODE_REL_PATH
+        tag_episode(podcast_cover, episode_file)
+        (OUT / "chapters" / f"{EPISODE_ID}.json").write_text(
+            json.dumps(chapters_document(), indent=2) + "\n", encoding="utf-8"
+        )
+
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    manifest_podcasts = [{
+        "id": PODCAST_ID,
+        "title": PODCAST_TITLE,
+        "author": ARTIST,
+        "descriptionHtml": PODCAST_DESCRIPTION,
+        "artworkHash": podcast_cover_hash,
+        "playbackSpeed": 1.0,
+    }]
+    manifest_episodes = [{
+        "id": EPISODE_ID,
+        "podcastId": PODCAST_ID,
+        "guid": f"bocan-demo:{EPISODE_ID}",
+        "title": EPISODE_TITLE,
+        "publishedAt": generated_at,
+        "durationMs": probe_duration_ms(episode_file),
+        "descriptionHtml": EPISODE_DESCRIPTION,
+        "relPath": EPISODE_REL_PATH,
+        "size": episode_file.stat().st_size,
+        "sha256": sha256_of(episode_file),
+        "hasChapters": True,
+        "playPositionMs": 0,
+        "playState": "unplayed",
+    }]
+
     manifest_playlists = []
     for playlist in PLAYLISTS:
         manifest_playlists.append({
@@ -373,11 +514,11 @@ def main() -> None:
         "serverId": "demo",
         "serverName": "Demo library",
         "generation": 0,
-        "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generatedAt": generated_at,
         "tracks": manifest_tracks,
         "playlists": manifest_playlists,
-        "podcasts": [],
-        "episodes": [],
+        "podcasts": manifest_podcasts,
+        "episodes": manifest_episodes,
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

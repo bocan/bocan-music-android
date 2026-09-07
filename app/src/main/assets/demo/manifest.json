@@ -3,7 +3,7 @@
   "serverId": "demo",
   "serverName": "Demo library",
   "generation": 0,
-  "generatedAt": "2026-09-07T14:07:42Z",
+  "generatedAt": "2026-09-07T15:30:00Z",
   "tracks": [
     {
       "id": 9000000001,
@@ -105,6 +105,31 @@
       ]
     }
   ],
-  "podcasts": [],
-  "episodes": []
+  "podcasts": [
+    {
+      "id": 9000000001,
+      "title": "Bòcan Demo Podcast",
+      "author": "Chris Funderburg",
+      "descriptionHtml": "<p>A one-episode show built into Bòcan Music for Android, so the Podcasts tab has something to play before you sync your own shows from the Mac.</p><p>Source and issues: <a href=\"https://github.com/bocan/bocan-music-android\">https://github.com/bocan/bocan-music-android</a></p>",
+      "artworkHash": "79793ee6005b86ac93ada47d7c918889ea7b0d19cc14bbeeea7cf95e7db3175d",
+      "playbackSpeed": 1.0
+    }
+  ],
+  "episodes": [
+    {
+      "id": "demo-episode-1",
+      "podcastId": 9000000001,
+      "guid": "bocan-demo:demo-episode-1",
+      "title": "Welcome to the demo",
+      "publishedAt": "2026-09-07T15:30:00Z",
+      "durationMs": 27917,
+      "descriptionHtml": "<p>A short spoken tour of what Bòcan does with podcasts: resume where you stopped, per-show speed, chapters, and show notes like these.</p><p>This episode is replaced by your own shows on your first sync.</p>",
+      "relPath": "Podcasts/Demo/01 Welcome to the demo.mp3",
+      "size": 274044,
+      "sha256": "39957437eeaa5510d17dad4cf91d01af1090b58586416e6579291e36c56d5405",
+      "hasChapters": true,
+      "playPositionMs": 0,
+      "playState": "unplayed"
+    }
+  ]
 }

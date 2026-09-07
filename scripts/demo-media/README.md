@@ -25,8 +25,31 @@ It wipes `app/src/main/assets/demo/` and writes:
 |------|------|
 | `manifest.json` | A real manifest document, `serverId` "demo", ids at or above 9000000001 |
 | `library/Demo/NN Title.mp3` | 60 s tone tracks, 128 kbps stereo, ID3v2.3 with cover, lyrics, ReplayGain |
-| `artwork/<sha256>` | The two covers, content addressed like `ArtworkStore` |
+| `Podcasts/Demo/01 Welcome to the demo.mp3` | The spoken demo episode, tagged, show cover attached |
+| `artwork/<sha256>` | The three covers (two tracks, one show), content addressed like `ArtworkStore` |
 | `lyrics/<trackId>.lrc` | Synced lyrics, one per track |
+| `chapters/demo-episode-1.json` | Podcasting 2.0 chapters for the episode |
+
+## The spoken episode
+
+The episode audio is `podcast-voice.mp3`, checked in next to this file. It was spoken
+by macOS's Serena (Premium) voice, which is a download under System Settings,
+Accessibility, Spoken Content, and not the stock Daniel voice. The generator copies
+its audio stream untouched and only adds tags and the cover, so regenerating the demo
+never changes the voice. To re-record it, edit `podcast.txt` (the `[[slnc 800]]`
+marks are pauses `say` understands) and run:
+
+```
+say -v "Serena (Premium)" -r 170 -f scripts/demo-media/podcast.txt -o scripts/demo-media/podcast.aiff
+ffmpeg -i scripts/demo-media/podcast.aiff -ac 1 -ar 44100 -c:a libmp3lame -b:a 64k scripts/demo-media/podcast-voice.mp3
+```
+
+`say -v '?'` lists the exact voice names installed on the machine.
+
+Then find the pauses with `ffmpeg -i scripts/demo-media/podcast-voice.mp3 -af
+silencedetect=noise=-35dB:d=0.45 -f null -` and update `EPISODE_CHAPTERS` in
+`generate.py` so the chapter marks land on them. The `.aiff` is scratch; do not
+commit it.
 
 ## What lives where
 

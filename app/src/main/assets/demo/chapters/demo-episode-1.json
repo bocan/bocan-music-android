@@ -1,0 +1,21 @@
+{
+  "version": "1.2.0",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "title": "Welcome"
+    },
+    {
+      "startTime": 3.9,
+      "title": "A built-in episode"
+    },
+    {
+      "startTime": 11.1,
+      "title": "What B\u00f2can remembers"
+    },
+    {
+      "startTime": 20.1,
+      "title": "Your own shows"
+    }
+  ]
+}

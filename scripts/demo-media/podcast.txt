@@ -1,0 +1,5 @@
+Hello, and welcome to the Bòcan demo podcast. [[slnc 800]]
+This is a short episode built into the app, so you can see how podcasts work before you sync your own. [[slnc 800]]
+Bòcan remembers where you stopped, plays each show at the speed you choose, and keeps your listening on your phone. Nothing goes to the cloud. [[slnc 800]]
+When you pair a Mac and sync, this episode disappears and your own shows take its place. [[slnc 500]]
+That's it. Thanks for listening.
