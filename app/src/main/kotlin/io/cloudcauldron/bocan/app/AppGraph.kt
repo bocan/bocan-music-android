@@ -258,8 +258,9 @@ class AppGraph(val application: Application) {
 
     fun equalizerViewModel(): EqualizerViewModel = EqualizerViewModel(eqPreferences, playbackDispatchers)
 
+    // The bundled demo episode carries its chapters in the assets; everything else asks the Mac.
     private val chaptersFetcher = io.cloudcauldron.bocan.playback.podcast.ChaptersFetcher { episodeId ->
-        syncCoordinator.fetchChapters(episodeId)
+        demoLibrary.chaptersJson(episodeId) ?: syncCoordinator.fetchChapters(episodeId)
     }
 
     val chaptersRepository: ChaptersRepository by lazy {
