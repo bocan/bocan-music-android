@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.0](https://github.com/bocan/bocan-music-android/compare/v0.3.2...v0.4.0) (2026-09-07)
+
+
+### Added
+
+* **app:** seed the bundled demo album on a fresh unpaired install ([f6ac7ba](https://github.com/bocan/bocan-music-android/commit/f6ac7ba7a33f4ef47383477c20f2f06e83b117f5))
+* **app:** seed the demo podcast and serve its chapters from the assets ([a419731](https://github.com/bocan/bocan-music-android/commit/a419731e03a409fc35830866b78d30f0c03053aa))
+* **persistence:** delete one lyrics cache row ([1f8daa2](https://github.com/bocan/bocan-music-android/commit/1f8daa2637ad9e91cf08f349d7cde7b26ea934fc))
+
+
+### Fixed
+
+* **app:** read the Now Playing ambient colour through the content resolver ([6b57383](https://github.com/bocan/bocan-music-android/commit/6b5738399154ef9a7367569d4a7313c44d62faaf))
+* **app:** show the playing track's cover in the mini player ([0829cda](https://github.com/bocan/bocan-music-android/commit/0829cda216b726c2ef7e06f740ce1bd6a585db98))
+* **playback:** connect the transport on demand so a cold-start play is never dropped ([210e4d7](https://github.com/bocan/bocan-music-android/commit/210e4d717339178dad43cd70cfe22dc051dee980))
+* **playback:** grant System UI read on artwork so lock screen art loads ([9b00192](https://github.com/bocan/bocan-music-android/commit/9b00192900169fc2c19361b980624f073c71c55f))
+* **sync:** wait out a 503 busy on a file download instead of failing the item ([a8ef8b7](https://github.com/bocan/bocan-music-android/commit/a8ef8b791aa4a062ab09835d745ce3cf7443f982))
+
 ## [0.3.2](https://github.com/bocan/bocan-music-android/compare/v0.3.1...v0.3.2) (2026-08-19)
 
 
