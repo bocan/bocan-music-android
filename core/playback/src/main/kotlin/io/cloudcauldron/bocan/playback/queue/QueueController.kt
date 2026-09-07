@@ -178,7 +178,7 @@ class QueueController(
      */
     @Suppress("TooGenericExceptionCaught")
     override suspend fun currentAudioFormat(): AudioPipelineFormat? = withContext(dispatchers.main) {
-        val controller = controller ?: return@withContext null
+        val controller = awaitController() ?: return@withContext null
         val command = SessionCommand(SessionCommands.GET_AUDIO_FORMAT, Bundle.EMPTY)
         if (!controller.isSessionCommandAvailable(command)) return@withContext null
         val result = try {
@@ -237,9 +237,20 @@ class QueueController(
         if (reordered.size == end - start) controller.replaceMediaItems(start, end, reordered)
     }
 
+    /**
+     * Run [block] against a connected controller, connecting first when none is bound
+     * yet. A cold start from a surface that never connected (the podcast screens, a
+     * lyrics tap) must not drop its command on the floor; if the session is still
+     * unreachable after the attempt the command is skipped, never crashed.
+     */
     private suspend fun onController(block: suspend (MediaController) -> Unit) = withContext(dispatchers.main) {
-        controller?.let { block(it) }
+        awaitController()?.let { block(it) }
         pushState()
+    }
+
+    private suspend fun awaitController(): MediaController? {
+        if (controller == null) connect()
+        return controller
     }
 
     private fun startPositionTicker() {
