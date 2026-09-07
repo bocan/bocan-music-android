@@ -13,4 +13,8 @@ interface LyricsDao {
 
     @Upsert
     suspend fun upsert(entity: LyricsCacheEntity)
+
+    /** Drop one cached document; used when its track leaves for good (the demo library). */
+    @Query("DELETE FROM lyrics_cache WHERE trackId = :trackId")
+    suspend fun delete(trackId: Long)
 }
