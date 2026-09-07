@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
-import io.cloudcauldron.bocan.app.components.ArtworkImage
 import io.cloudcauldron.bocan.playback.queue.PlayerUiState
 
 /**
@@ -55,8 +54,10 @@ fun MiniPlayerBar(state: PlayerUiState, onPlayPause: () -> Unit, onTap: () -> Un
                     .clickable(onClick = onTap)
                     .padding(horizontal = 8.dp, vertical = 6.dp)
             ) {
-                ArtworkImage(
-                    artworkHash = null,
+                // The session metadata carries the cover as a content Uri; load that directly,
+                // the same way Now Playing does, so the bar shows the playing track's art.
+                UriArtwork(
+                    uri = current.artworkUri,
                     modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp))
                 )
                 Spacer(Modifier.width(10.dp))
