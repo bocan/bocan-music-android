@@ -37,6 +37,7 @@ Goal, Non-goals, Outcome shape, Implementation plan, Definitions and contracts, 
 | `phase-14-demo-library.md` | A two-track demo album bundled in the APK, seeded through the normal sync apply path on a fresh unpaired install and removed by the first real sync. Unblocks Play review without a Mac. |
 | `phase-15-android-auto.md` | The car browse tree reshaped so a song is three taps or one sentence away: no silent list cap, letter buckets, search bar and voice, root tabs, cover grids, Recently Played. |
 | `phase-16-trunk-and-releases.md` | The Mac repo's process ported: trunk-based branches, squash PRs with a Conventional title, a human-written release note per PR under Unreleased, a hand-started Release workflow that decides the version and ships the signed APK, release-please removed, and one proving cycle. |
+| `phase-17-end-to-end.md` | `make end-to-end` on an emulator: a fixture library loaded without a Mac, a stable tag on every control with an audit that fails when one is missing, and table-driven suites that tap, toggle, slide, and swipe every control on every screen with a defined postcondition. |
 | `phase-mac-1-sync-server.md` | The Mac side: a new `SyncServer` module in the `bocan-music` repo. Bonjour advertising, pairing UI in Settings, manifest generation from GRDB, file serving. Implemented over there, specified here so the contract stays in one place. |
 
 ## Feature parity map (Mac feature -> Android disposition)
