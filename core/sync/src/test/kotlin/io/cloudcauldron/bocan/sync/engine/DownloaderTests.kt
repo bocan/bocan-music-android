@@ -45,8 +45,20 @@ class DownloaderTests {
         server.close()
     }
 
-    private fun downloader(readTimeoutMs: Long = 30_000): Downloader =
-        Downloader(OkHttpClient.Builder().readTimeout(readTimeoutMs, TimeUnit.MILLISECONDS).build(), dispatchers)
+    /** Every busy wait the downloader asked for, in millis, instead of real sleeping. */
+    private val waits = mutableListOf<Long>()
+
+    private fun downloader(readTimeoutMs: Long = 30_000): Downloader = Downloader(
+        OkHttpClient.Builder().readTimeout(readTimeoutMs, TimeUnit.MILLISECONDS).build(),
+        dispatchers,
+        wait = { waits.add(it) }
+    )
+
+    private fun busy(retryAfterSeconds: Int? = null): MockResponse = MockResponse.Builder()
+        .code(503)
+        .apply { retryAfterSeconds?.let { addHeader("Retry-After", it.toString()) } }
+        .body("""{"error":"busy","message":"Preparing the file"}""")
+        .build()
 
     private fun url() = server.url("/v1/file/track/1").toString().toHttpUrl()
 
@@ -165,6 +177,82 @@ class DownloaderTests {
             assertTrue(e.url!!.contains("/v1/file/track/1"))
             assertFalse(target.exists())
         }
+    }
+
+    @Test
+    fun `a 503 busy waits Retry-After and then downloads`() = runTest {
+        server.enqueue(busy(retryAfterSeconds = 2))
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(payload)).build())
+        val target = target()
+
+        val result = downloader().download(url(), payloadSha, target)
+
+        assertEquals(Downloader.Result.Downloaded, result)
+        assertArrayed(payload, target.readBytes())
+        assertEquals(listOf(2_000L), waits)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `a 503 busy without Retry-After waits the default`() = runTest {
+        server.enqueue(busy())
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(payload)).build())
+
+        val result = downloader().download(url(), payloadSha, target())
+
+        assertEquals(Downloader.Result.Downloaded, result)
+        assertEquals(listOf(15_000L), waits)
+    }
+
+    @Test
+    fun `an oversized Retry-After is capped`() = runTest {
+        server.enqueue(busy(retryAfterSeconds = 3_600))
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(payload)).build())
+
+        downloader().download(url(), payloadSha, target())
+
+        assertEquals(listOf(60_000L), waits)
+    }
+
+    @Test
+    fun `a server that stays busy is left for the next sync after bounded waits`() = runTest {
+        repeat(6) { server.enqueue(busy(retryAfterSeconds = 15)) }
+        val target = target()
+
+        val result = downloader().download(url(), payloadSha, target)
+
+        assertTrue(result is Downloader.Result.Failed)
+        assertTrue((result as Downloader.Result.Failed).reason.contains("503"))
+        assertEquals(4, waits.size)
+        assertEquals(5, server.requestCount)
+        assertFalse(target.exists())
+    }
+
+    @Test
+    fun `a 503 busy on a resume keeps the part and re-sends the same range`() = runTest {
+        val target = target()
+        val prefixLength = 100_000
+        partOf(target).writeBytes(payload.copyOf(prefixLength))
+        val rangeAware = rangeAwareDispatcher()
+        server.dispatcher = object : Dispatcher() {
+            private var first = true
+
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if (first) {
+                    first = false
+                    return busy(retryAfterSeconds = 1)
+                }
+                return rangeAware.dispatch(request)
+            }
+        }
+
+        val result = downloader().download(url(), payloadSha, target)
+
+        assertEquals(Downloader.Result.Downloaded, result)
+        assertArrayed(payload, target.readBytes())
+        assertEquals(listOf(1_000L), waits)
+        assertEquals("bytes=$prefixLength-", server.takeRequest().headers["Range"])
+        assertEquals("bytes=$prefixLength-", server.takeRequest().headers["Range"])
     }
 
     private fun rangeAwareDispatcher(): Dispatcher = object : Dispatcher() {
