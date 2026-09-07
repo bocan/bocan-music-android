@@ -1,0 +1,110 @@
+{
+  "protocolVersion": 1,
+  "serverId": "demo",
+  "serverName": "Demo library",
+  "generation": 0,
+  "generatedAt": "2026-09-07T14:07:42Z",
+  "tracks": [
+    {
+      "id": 9000000001,
+      "relPath": "Demo/01 Demo Audio 1.mp3",
+      "size": 998830,
+      "sha256": "2586d0056e952ddd28d6966c00d9e13819d2b972a35628a77c1b774bb556e36b",
+      "format": "mp3",
+      "durationMs": 60000,
+      "title": "Demo Audio 1",
+      "artist": "Chris Funderburg",
+      "artistId": 9000000001,
+      "albumArtist": "Chris Funderburg",
+      "albumArtistId": 9000000001,
+      "album": "Bòcan Demo",
+      "albumId": 9000000001,
+      "trackNumber": 1,
+      "trackTotal": 2,
+      "discNumber": 1,
+      "discTotal": 1,
+      "year": 2026,
+      "genre": "Electronic",
+      "composer": "Chris Funderburg",
+      "bpm": 120.0,
+      "rating": 100,
+      "loved": true,
+      "sampleRate": 44100,
+      "bitrate": 128,
+      "channelCount": 2,
+      "isLossless": false,
+      "replayGain": {
+        "trackGain": 0.82,
+        "trackPeak": 0.237537,
+        "albumGain": -0.21,
+        "albumPeak": 0.263681
+      },
+      "artworkHash": "d1da98dec476605c990bd7b465cb54e1e91568b9fba1a71f8c63935619c98818",
+      "lyricsHash": "948e52e8522bca34625db7d9e9702594c8132c5476ee967a9f48255f48b0b625"
+    },
+    {
+      "id": 9000000002,
+      "relPath": "Demo/02 Demo Audio 2.mp3",
+      "size": 1005864,
+      "sha256": "0a8b544aa183d104b0f7b5e6be6463e96b3c78728a6a045ec3c6d6adb199832b",
+      "format": "mp3",
+      "durationMs": 60000,
+      "title": "Demo Audio 2",
+      "artist": "Chris Funderburg",
+      "artistId": 9000000001,
+      "albumArtist": "Chris Funderburg",
+      "albumArtistId": 9000000001,
+      "album": "Bòcan Demo",
+      "albumId": 9000000001,
+      "trackNumber": 2,
+      "trackTotal": 2,
+      "discNumber": 1,
+      "discTotal": 1,
+      "year": 2026,
+      "genre": "Electronic",
+      "composer": "Chris Funderburg",
+      "bpm": 90.0,
+      "rating": 60,
+      "loved": false,
+      "sampleRate": 44100,
+      "bitrate": 128,
+      "channelCount": 2,
+      "isLossless": false,
+      "replayGain": {
+        "trackGain": -1.23,
+        "trackPeak": 0.263681,
+        "albumGain": -0.21,
+        "albumPeak": 0.263681
+      },
+      "artworkHash": "9a011ecbd040a9b65be9ec1cdb6cb00ddc49927edf2770cc1f7bbb2cf7adcad0",
+      "lyricsHash": "fcbf1737b83e547f7ee29e3eefc0f8cef94e6ac48ce124d0cc6eb67cfd60acbc"
+    }
+  ],
+  "playlists": [
+    {
+      "id": 9000000001,
+      "name": "Demo Playlist",
+      "kind": "manual",
+      "sortOrder": 1,
+      "accentColor": "#FF7A00",
+      "artworkHash": "d1da98dec476605c990bd7b465cb54e1e91568b9fba1a71f8c63935619c98818",
+      "trackIds": [
+        9000000001,
+        9000000002
+      ]
+    },
+    {
+      "id": 9000000002,
+      "name": "Loved Demo Tracks",
+      "kind": "smart",
+      "sortOrder": 2,
+      "accentColor": "#1FA3A3",
+      "artworkHash": "9a011ecbd040a9b65be9ec1cdb6cb00ddc49927edf2770cc1f7bbb2cf7adcad0",
+      "trackIds": [
+        9000000001
+      ]
+    }
+  ],
+  "podcasts": [],
+  "episodes": []
+}
