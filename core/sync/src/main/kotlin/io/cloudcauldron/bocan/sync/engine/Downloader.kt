@@ -13,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
@@ -41,11 +42,24 @@ import okhttp3.Response
  *  5. A verified file is moved into place with an atomic rename, so a reader
  *     never sees a half-written file.
  *
+ * A `503 busy` means the server is re-preparing the bytes (a transcoded
+ * artifact released after an earlier transfer, sync-protocol.md section 6):
+ * the downloader waits `Retry-After` seconds (bounded, with a default when the
+ * header is absent) and asks again, a limited number of times, before it
+ * records the item as failed for the next sync to retry. A busy reply never
+ * touches the `.part`.
+ *
  * The client's read timeout is the stall detector: if no bytes arrive for the
  * timeout window the socket read throws and the `.part` is left intact for a
  * later resume (the sync pauses rather than failing the item).
+ *
+ * [wait] is the busy-wait sleep, injectable so tests never spend real time.
  */
-class Downloader(private val client: OkHttpClient, private val dispatchers: CoroutineDispatchers) {
+class Downloader(
+    private val client: OkHttpClient,
+    private val dispatchers: CoroutineDispatchers,
+    private val wait: suspend (millis: Long) -> Unit = { delay(it) }
+) {
     private val log = AppLog.forCategory(LogCategory.Sync)
 
     /** The outcome of a single file download. */
@@ -76,13 +90,13 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
             if (part.isFile && sha256Of(part) == expectedSha256) {
                 return@withContext finish(part, target)
             }
-            when (val first = streamToPart(url, expectedSha256, part, allowResume = true, onProgress)) {
+            when (val first = streamWaitingOnBusy(url, expectedSha256, part, allowResume = true, onProgress)) {
                 is Attempt.Verified -> return@withContext finish(part, target)
                 is Attempt.Failed -> return@withContext Result.Failed(first.reason)
                 Attempt.DigestMismatch -> Unit // fall through to a single clean retry
             }
             part.delete()
-            when (val second = streamToPart(url, expectedSha256, part, allowResume = false, onProgress)) {
+            when (val second = streamWaitingOnBusy(url, expectedSha256, part, allowResume = false, onProgress)) {
                 is Attempt.Verified -> finish(part, target)
                 is Attempt.Failed -> {
                     part.delete()
@@ -101,10 +115,47 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
         return Result.Downloaded
     }
 
-    private sealed interface Attempt {
+    /** The outcome of one HTTP exchange: a settled [Attempt], or a busy server to wait on. */
+    private sealed interface Exchange {
+        data class Busy(val retryAfterSeconds: Int?) : Exchange
+    }
+
+    /** The outcome of one logical attempt, after any busy waits. */
+    private sealed interface Attempt : Exchange {
         data object Verified : Attempt
         data object DigestMismatch : Attempt
         data class Failed(val reason: String) : Attempt
+    }
+
+    /**
+     * One logical attempt: repeats the exchange while the server answers
+     * `503 busy`, sleeping `Retry-After` (bounded, defaulted) between tries, up
+     * to [MAX_BUSY_WAITS] waits. The `.part` is untouched across the waits, so a
+     * resume keeps its range.
+     */
+    private suspend fun streamWaitingOnBusy(
+        url: HttpUrl,
+        expectedSha256: String,
+        part: File,
+        allowResume: Boolean,
+        onProgress: (Long) -> Unit
+    ): Attempt {
+        var waits = 0
+        while (true) {
+            val busy = when (val exchange = streamToPart(url, expectedSha256, part, allowResume, onProgress)) {
+                is Attempt -> return exchange
+                is Exchange.Busy -> exchange
+            }
+            if (waits >= MAX_BUSY_WAITS) {
+                log.warning("download.busyExhausted", mapOf("url" to url.encodedPath, "waits" to waits))
+                return Attempt.Failed("http $HTTP_SERVICE_UNAVAILABLE after $waits waits")
+            }
+            waits++
+            val seconds = (busy.retryAfterSeconds ?: DEFAULT_RETRY_AFTER_SECONDS)
+                .coerceIn(MIN_RETRY_AFTER_SECONDS, MAX_RETRY_AFTER_SECONDS)
+            log.debug("download.busy", mapOf("url" to url.encodedPath, "retryAfterSeconds" to seconds, "wait" to waits))
+            wait(seconds * MILLIS_PER_SECOND)
+        }
     }
 
     private suspend fun streamToPart(
@@ -113,7 +164,7 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
         part: File,
         allowResume: Boolean,
         onProgress: (Long) -> Unit
-    ): Attempt {
+    ): Exchange {
         val digest = MessageDigest.getInstance(SHA_256)
         var existing = if (allowResume && part.isFile) part.length() else 0L
         if (existing > 0 && !rehashPrefix(part, digest)) {
@@ -138,7 +189,7 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
         }
     }
 
-    private suspend fun consume(response: Response, sink: Sink, existing: Long, expectedSha256: String): Attempt {
+    private suspend fun consume(response: Response, sink: Sink, existing: Long, expectedSha256: String): Exchange {
         if (response.code == HTTP_PRECONDITION_FAILED) {
             throw SyncError.ManifestStale(response.request.url.toString())
         }
@@ -146,6 +197,8 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
             // Our .part reaches past the file's end: it cannot be a valid
             // prefix, so fall through to the delete-and-retry-clean path.
             HTTP_RANGE_NOT_SATISFIABLE -> Attempt.DigestMismatch
+            // The bytes are being re-prepared (sync-protocol.md section 6): wait and ask again.
+            HTTP_SERVICE_UNAVAILABLE -> Exchange.Busy(response.header(HEADER_RETRY_AFTER)?.trim()?.toIntOrNull())
             HTTP_OK, HTTP_PARTIAL -> streamAndVerify(response, sink, existing, expectedSha256)
             else -> Attempt.Failed("http ${response.code}")
         }
@@ -187,32 +240,46 @@ class Downloader(private val client: OkHttpClient, private val dispatchers: Coro
         false
     }
 
-    private fun sha256Of(file: File): String {
-        val digest = MessageDigest.getInstance(SHA_256)
-        file.inputStream().use { input -> digestAll(input, digest) }
-        return Fingerprints.toHex(digest.digest())
-    }
-
-    private fun digestAll(input: InputStream, digest: MessageDigest) {
-        val buffer = ByteArray(BUFFER_BYTES)
-        while (true) {
-            val read = input.read(buffer)
-            if (read < 0) break
-            digest.update(buffer, 0, read)
-        }
-    }
-
     private class Sink(val part: File, val digest: MessageDigest, val onProgress: (Long) -> Unit)
 
     private companion object {
         const val PART_SUFFIX = ".part"
-        const val SHA_256 = "SHA-256"
-        const val BUFFER_BYTES = 64 * 1024
         const val HEADER_IF_MATCH = "If-Match"
         const val HEADER_RANGE = "Range"
+        const val HEADER_RETRY_AFTER = "Retry-After"
         const val HTTP_OK = 200
         const val HTTP_PARTIAL = 206
         const val HTTP_PRECONDITION_FAILED = 412
         const val HTTP_RANGE_NOT_SATISFIABLE = 416
+        const val HTTP_SERVICE_UNAVAILABLE = 503
+
+        /** Busy waits per logical attempt before the item is left for the next sync. */
+        const val MAX_BUSY_WAITS = 4
+
+        /** Used when the server sends no Retry-After; the Mac's debounce plus one encode fits inside it. */
+        const val DEFAULT_RETRY_AFTER_SECONDS = 15
+        const val MIN_RETRY_AFTER_SECONDS = 1
+        const val MAX_RETRY_AFTER_SECONDS = 60
+        const val MILLIS_PER_SECOND = 1_000L
+    }
+}
+
+private const val SHA_256 = "SHA-256"
+private const val BUFFER_BYTES = 64 * 1024
+
+/** SHA-256 of a whole file, hex encoded. */
+private fun sha256Of(file: File): String {
+    val digest = MessageDigest.getInstance(SHA_256)
+    file.inputStream().use { input -> digestAll(input, digest) }
+    return Fingerprints.toHex(digest.digest())
+}
+
+/** Feeds every byte of [input] into [digest]. */
+private fun digestAll(input: InputStream, digest: MessageDigest) {
+    val buffer = ByteArray(BUFFER_BYTES)
+    while (true) {
+        val read = input.read(buffer)
+        if (read < 0) break
+        digest.update(buffer, 0, read)
     }
 }
