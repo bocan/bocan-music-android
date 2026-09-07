@@ -43,6 +43,8 @@
   <string name="home_sync_action">Library sync</string>
   <string name="sync_status_title">Library sync</string>
   <string name="sync_not_paired">No Mac paired yet. Pair a Mac to sync your library.</string>
+  <string name="sync_demo_active">The demo album is loaded. Pairing a Mac replaces it with your own music.</string>
+  <string name="sync_demo_remove_action">Remove the demo album</string>
   <string name="sync_now_action">Sync now</string>
   <string name="sync_cancel_action">Cancel</string>
   <string name="sync_server_label">Paired with %1$s</string>
@@ -168,6 +170,7 @@
   <!-- Library empty and first-run states -->
   <string name="library_empty_unpaired_title">No Mac paired yet</string>
   <string name="library_empty_unpaired_message">Pair a Mac to bring your music over.</string>
+  <string name="library_demo_load_action">Try the demo album</string>
   <string name="library_empty_title">Your library is empty</string>
   <string name="library_empty_message">Sync with your Mac to download your music.</string>
   <string name="library_syncing_title">Syncing your library</string>

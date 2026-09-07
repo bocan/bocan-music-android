@@ -10,5 +10,6 @@ data class SyncSettingsCallbacks(
     val onUnpair: () -> Unit,
     val onRemoveAllMedia: () -> Unit,
     val onPair: () -> Unit,
-    val onBack: () -> Unit
+    val onBack: () -> Unit,
+    val onRemoveDemo: () -> Unit = {}
 )

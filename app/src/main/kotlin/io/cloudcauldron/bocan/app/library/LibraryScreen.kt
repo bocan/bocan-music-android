@@ -62,7 +62,9 @@ fun LibraryScreen(
                     title = stringResource(R.string.library_empty_unpaired_title),
                     message = stringResource(R.string.library_empty_unpaired_message),
                     actionLabel = stringResource(R.string.home_pair_action),
-                    onAction = emptyActions.onPair
+                    onAction = emptyActions.onPair,
+                    secondaryLabel = stringResource(R.string.library_demo_load_action),
+                    onSecondary = emptyActions.onLoadDemo
                 )
                 LibraryStatus.Empty -> EmptyState(
                     icon = Icons.Rounded.LibraryMusic,
@@ -150,5 +152,5 @@ private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, call
     }
 }
 
-/** Actions the library's first-run empty states raise (pairing, sync). */
-class LibraryEmptyActions(val onPair: () -> Unit = {}, val onSyncNow: () -> Unit = {})
+/** Actions the library's first-run empty states raise (pairing, sync, the bundled demo album). */
+class LibraryEmptyActions(val onPair: () -> Unit = {}, val onSyncNow: () -> Unit = {}, val onLoadDemo: () -> Unit = {})

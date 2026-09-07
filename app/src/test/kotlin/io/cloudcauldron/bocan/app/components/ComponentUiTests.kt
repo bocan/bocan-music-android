@@ -65,6 +65,41 @@ class ComponentUiTests {
     }
 
     @Test
+    fun `empty state renders a secondary action only when both parts are given`() {
+        var secondaryClicked = false
+        compose.setContent {
+            BocanTheme {
+                EmptyState(
+                    icon = Icons.Rounded.LibraryMusic,
+                    title = "No Mac paired yet",
+                    message = "Pair a Mac",
+                    actionLabel = "Pair",
+                    onAction = {},
+                    secondaryLabel = "Try the demo album",
+                    onSecondary = { secondaryClicked = true }
+                )
+            }
+        }
+        compose.onNodeWithText("Try the demo album").performClick()
+        assertEquals(true, secondaryClicked)
+    }
+
+    @Test
+    fun `empty state omits the secondary action without a handler`() {
+        compose.setContent {
+            BocanTheme {
+                EmptyState(
+                    icon = Icons.Rounded.LibraryMusic,
+                    title = "Nothing here",
+                    message = "Sync to fill it",
+                    secondaryLabel = "Try the demo album"
+                )
+            }
+        }
+        compose.onNodeWithText("Try the demo album").assertDoesNotExist()
+    }
+
+    @Test
     fun `an album cell taps with its own id`() {
         var tappedId = -1L
         val album = AlbumUi(id = 42, name = "Moving Pictures", artist = "Rush", year = 1981, artworkHash = null, trackCount = 7)

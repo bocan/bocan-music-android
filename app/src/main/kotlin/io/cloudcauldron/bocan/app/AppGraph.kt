@@ -18,6 +18,9 @@ import io.cloudcauldron.bocan.app.data.PlaybackPreferences
 import io.cloudcauldron.bocan.app.data.PodcastPreferences
 import io.cloudcauldron.bocan.app.data.ScrobbleSettings
 import io.cloudcauldron.bocan.app.data.ThemeMode
+import io.cloudcauldron.bocan.app.demo.AndroidDemoAssets
+import io.cloudcauldron.bocan.app.demo.DemoLibrary
+import io.cloudcauldron.bocan.app.demo.DemoPreferences
 import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
@@ -91,6 +94,7 @@ import io.cloudcauldron.bocan.sync.net.TrustStore
 import io.cloudcauldron.bocan.sync.pairing.PairingClient
 import io.cloudcauldron.bocan.sync.service.SyncForegroundService
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -504,7 +508,11 @@ class AppGraph(val application: Application) {
         )
     }
 
+    // The bundled demo album never reaches a scrobble provider.
     private suspend fun resolveScrobbleTrack(trackId: Long): ScrobbleTrack? =
+        if (DemoLibrary.isDemoTrackId(trackId)) null else scrobbleTrackFor(trackId)
+
+    private suspend fun scrobbleTrackFor(trackId: Long): ScrobbleTrack? =
         database.libraryDao().tracksByIds(listOf(trackId)).firstOrNull()?.let { track ->
             ScrobbleTrack(
                 title = track.title,
@@ -541,11 +549,46 @@ class AppGraph(val application: Application) {
     fun libraryViewModel(): LibraryViewModel = LibraryViewModel(
         libraryDao = database.libraryDao(),
         playlistDao = database.playlistDao(),
-        syncServer = database.syncDao().observeServer(),
-        syncState = syncCoordinator.syncState,
+        signals = LibraryViewModel.Signals(
+            syncServer = database.syncDao().observeServer(),
+            syncState = syncCoordinator.syncState,
+            demoSeeding = demoLibrary.seeding
+        ),
         prefs = libraryPreferences,
         dispatchers = dispatchers
     )
+
+    // Demo library (phase 14): the bundled album a fresh unpaired install gets.
+
+    val demoPreferences: DemoPreferences by lazy { DemoPreferences(application) }
+
+    val demoLibrary: DemoLibrary by lazy {
+        DemoLibrary(
+            assets = AndroidDemoAssets(application),
+            store = DemoLibrary.Store(database, syncApplier, mediaLayout, artworkStore),
+            prefs = demoPreferences,
+            dispatchers = dispatchers
+        )
+    }
+
+    private val homeShown = AtomicBoolean(false)
+
+    /** Home is on screen: give the demo album its one automatic seed, once per process. */
+    fun onHomeShown() {
+        if (!homeShown.compareAndSet(false, true)) return
+        playbackScope.launch { demoLibrary.seedOnFirstLaunch() }
+    }
+
+    /** The empty state's "Try the demo album" action. */
+    fun loadDemoLibrary() {
+        playbackScope.launch { demoLibrary.seed() }
+    }
+
+    /** Stop and clear playback first (the files are about to vanish), then remove the demo rows and files. */
+    suspend fun removeDemoLibrary() {
+        queueController.clear()
+        demoLibrary.clear()
+    }
 
     fun albumDetailViewModel(albumId: Long): AlbumDetailViewModel = AlbumDetailViewModel(albumId, database.libraryDao(), dispatchers)
 
@@ -569,7 +612,8 @@ class AppGraph(val application: Application) {
                 periodicSync = syncSettings.periodicSync,
                 chargingOnly = syncSettings.chargingOnly
             ),
-            storageBytes = syncCoordinator::storageBytes
+            storageBytes = syncCoordinator::storageBytes,
+            demoActive = demoLibrary.observeActive()
         ),
         actions = SyncStatusViewModel.Actions(
             syncNow = { SyncForegroundService.start(application, force = true) },
@@ -580,7 +624,8 @@ class AppGraph(val application: Application) {
                 setChargingOnly = syncCoordinator::setChargingOnly
             ),
             unpair = syncCoordinator::unpair,
-            removeAllMedia = ::removeAllSyncedMedia
+            removeAllMedia = ::removeAllSyncedMedia,
+            removeDemo = ::removeDemoLibrary
         ),
         dispatchers = dispatchers
     )

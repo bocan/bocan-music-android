@@ -100,6 +100,10 @@ private fun AppRoot(appGraph: AppGraph) {
             entry = appGraph.appEntry().first { it != AppEntry.Undetermined }
         }
     }
+    // Both roads to Home (a resolved entry, or finishing onboarding) give the demo album its one chance.
+    LaunchedEffect(entry) {
+        if (entry == AppEntry.Home) appGraph.onHomeShown()
+    }
     when (entry) {
         AppEntry.Undetermined -> Unit
         AppEntry.Onboarding -> OnboardingFlow(
