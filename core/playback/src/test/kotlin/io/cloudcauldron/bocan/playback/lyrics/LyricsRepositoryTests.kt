@@ -24,6 +24,9 @@ class LyricsRepositoryTests {
         override suspend fun upsert(entity: LyricsCacheEntity) {
             rows[entity.trackId] = entity
         }
+        override suspend fun delete(trackId: Long) {
+            rows.remove(trackId)
+        }
     }
 
     private class FakeFetcher(private val result: FetchResult) : LyricsFetcher {
