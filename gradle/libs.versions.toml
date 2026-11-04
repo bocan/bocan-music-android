@@ -27,6 +27,7 @@ junit = "4.13.2"
 robolectric = "4.17"
 androidxTestExtJunit = "1.3.0"
 androidxTestCore = "1.7.0"
+espresso = "3.7.0"
 turbine = "1.2.1"
 detekt = "1.23.8"
 ktlintGradle = "14.2.0"
@@ -79,6 +80,7 @@ detekt-api = { group = "io.gitlab.arturbosch.detekt", name = "detekt-api", versi
 detekt-test = { group = "io.gitlab.arturbosch.detekt", name = "detekt-test", version.ref = "detekt" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

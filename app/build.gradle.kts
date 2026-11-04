@@ -148,6 +148,9 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.compose.ui.test.junit4)
+    // Compose ui-test still pulls Espresso 3.5.0, which reflects on
+    // InputManager.getInstance(); Android 17 removed it, so the Robolectric API 37 sandbox needs 3.7.0.
+    testImplementation(libs.androidx.test.espresso.core)
     debugImplementation(libs.compose.ui.test.manifest)
     // Host SQLite natives for the in-memory database a view model test wires up.
     testImplementation(libs.sqlite.bundled.jvm)
