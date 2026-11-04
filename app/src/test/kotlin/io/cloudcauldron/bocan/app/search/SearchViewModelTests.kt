@@ -16,11 +16,9 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class SearchViewModelTests {
     private val searchDao = FakeSearchDao()
     private val prefs = FakeLibraryPreferences()

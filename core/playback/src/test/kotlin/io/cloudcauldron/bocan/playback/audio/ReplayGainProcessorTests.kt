@@ -9,11 +9,9 @@ import java.nio.ByteOrder
 import kotlin.test.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class ReplayGainProcessorTests {
     private fun configured(encoding: Int): ReplayGainProcessor {
         val processor = ReplayGainProcessor()

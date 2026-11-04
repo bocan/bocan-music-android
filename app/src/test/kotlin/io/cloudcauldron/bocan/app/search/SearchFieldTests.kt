@@ -16,7 +16,6 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /**
  * Regression cover for the jumping search cursor: the field used to display the
@@ -27,7 +26,6 @@ import org.robolectric.annotation.Config
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class SearchFieldTests {
     @get:Rule
     val compose = createComposeRule()

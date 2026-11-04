@@ -19,11 +19,9 @@ import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /** Exact labels and state descriptions for the highest-traffic controls. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class SemanticsTests {
     @get:Rule
     val compose = createComposeRule()

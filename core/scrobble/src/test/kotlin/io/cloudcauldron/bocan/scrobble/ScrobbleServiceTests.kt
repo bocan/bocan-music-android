@@ -16,11 +16,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class ScrobbleServiceTests {
     private val track = ScrobbleTrack("Song", "Artist", "Album", "Album Artist", durationSec = 200)
 

@@ -15,11 +15,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class BassBoostProcessorTests {
     @Test
     fun `off is a pass-through`() {
