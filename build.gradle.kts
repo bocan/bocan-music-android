@@ -30,4 +30,10 @@ subprojects {
             add("detektPlugins", project(":detekt-rules"))
         }
     }
+
+    // Robolectric 4.17 sets up FileDescriptor state through jdk.internal.access.SharedSecrets,
+    // which java.base does not export. Robolectric's own build opens the package the same way.
+    tasks.withType<Test>().configureEach {
+        jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    }
 }
