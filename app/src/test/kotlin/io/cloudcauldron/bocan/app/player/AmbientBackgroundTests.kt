@@ -18,7 +18,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
@@ -30,7 +29,6 @@ import org.robolectric.annotation.GraphicsMode
  * the app's own external files dir.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AmbientBackgroundTests {
     private val context: Context = ApplicationProvider.getApplicationContext()

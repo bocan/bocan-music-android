@@ -8,7 +8,6 @@ import io.cloudcauldron.bocan.sync.SyncError
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /**
  * Every sealed error case maps to a non-empty string resource. The mappers'
@@ -16,7 +15,6 @@ import org.robolectric.annotation.Config
  * resources they point at actually resolve to real copy.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class ErrorMessagesTests {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 

@@ -10,10 +10,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class AppearancePreferencesTests {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 

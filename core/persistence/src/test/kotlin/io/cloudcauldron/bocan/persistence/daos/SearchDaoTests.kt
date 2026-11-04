@@ -12,10 +12,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class SearchDaoTests {
     private val library = Manifests.manifest(
         tracks = listOf(

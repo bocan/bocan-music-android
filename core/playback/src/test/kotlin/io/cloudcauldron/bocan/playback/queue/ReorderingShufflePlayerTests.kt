@@ -17,7 +17,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 
 /**
  * Regression cover for the wrong-next-track-during-shuffle bug: an external
@@ -29,7 +28,6 @@ import org.robolectric.annotation.Config
  */
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class ReorderingShufflePlayerTests {
     private lateinit var raw: ExoPlayer
     private lateinit var wrapper: ReorderingShufflePlayer

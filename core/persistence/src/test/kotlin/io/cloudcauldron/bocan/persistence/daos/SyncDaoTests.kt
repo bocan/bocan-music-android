@@ -13,10 +13,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class SyncDaoTests {
     @Test
     fun `observeServer emits reactively across pair and unpair`() = runDbTest { db ->

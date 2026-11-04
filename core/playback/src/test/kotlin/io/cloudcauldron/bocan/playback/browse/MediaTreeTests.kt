@@ -20,12 +20,10 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class MediaTreeTests {
     private val labels = BrowseLabels("Continue", "Playlists", "Albums", "Artists", "Podcasts", "Songs")
 

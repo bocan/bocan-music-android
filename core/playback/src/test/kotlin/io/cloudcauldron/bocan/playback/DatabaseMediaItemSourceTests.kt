@@ -17,7 +17,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /** A LibraryDao stub that only answers tracksByIds, from a fixed set. */
 private class FakeLibraryDao(tracks: List<TrackEntity>) : LibraryDao {
@@ -41,7 +40,6 @@ private class FakeLibraryDao(tracks: List<TrackEntity>) : LibraryDao {
 @OptIn(ExperimentalCoroutinesApi::class)
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class DatabaseMediaItemSourceTests {
     private fun source(tracks: List<TrackEntity>): DatabaseMediaItemSource {
         val dispatcher = UnconfinedTestDispatcher()

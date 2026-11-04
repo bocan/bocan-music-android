@@ -86,7 +86,7 @@ private object EmptyBrowseDao : BrowseDao {
 
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
-@Config(application = TestPlaybackApp::class, sdk = [36])
+@Config(application = TestPlaybackApp::class)
 class PlaybackServiceTests {
     @Test
     fun `the service starts and builds its session`() {

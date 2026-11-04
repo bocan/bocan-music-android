@@ -16,11 +16,9 @@ import kotlin.test.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /** The gesture surface must expose exactly the four custom actions, and the sheet must label rows. */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class PlayerGestureSemanticsTests {
     @get:Rule
     val compose = createComposeRule()

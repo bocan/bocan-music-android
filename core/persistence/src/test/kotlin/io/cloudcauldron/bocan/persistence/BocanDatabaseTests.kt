@@ -9,10 +9,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class BocanDatabaseTests {
     @Test
     fun `production database opens at version 1 with WAL in effect`() = runTest {

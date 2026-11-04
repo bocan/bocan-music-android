@@ -9,7 +9,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /**
  * Regression cover for blank artwork in Android Auto: Media3 never grants a
@@ -19,7 +18,6 @@ import org.robolectric.annotation.Config
  * from file_paths.xml); if either side is renamed this pins the breakage.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [36])
 class ArtworkReadGrantsTests {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
