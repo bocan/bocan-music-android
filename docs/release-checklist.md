@@ -176,6 +176,30 @@ R8 breaks are runtime breaks, so exercise every major flow on the actual signed 
 > reconnect. Once the app ships on any Play track (internal included) it appears with no
 > toggle, so this friction is specific to sideloading.
 
+### Android Auto browse, search, and voice (phase 15, on the DHU)
+
+Use a synced library with at least a few hundred artists (2,000 is the target) and some
+play history, so Recently Played is not empty. Each box needs the DHU, not a unit test.
+
+- [ ] The root shows four tabs: Home, Playlists, Albums, Artists.
+- [ ] Home lists Recently Played, Continue Listening, Podcasts, Songs. Recently Played is the
+      tracks played last, newest first, at most 50.
+- [ ] Podcasts shows the shows as a grid of covers.
+- [ ] Albums shows letters; a letter shows its albums as a grid of covers; an album plays.
+- [ ] Artists shows letters (only letters that have artists, then 0-9 and #); a letter shows
+      its artists in order; tapping an artist and a track plays it.
+- [ ] Every artist is reachable: pick ten names at random from the phone's Artists tab,
+      including one that starts with "The", one with an accent, and one with a digit, and
+      find each one under its letter.
+- [ ] The search bar shows; "slow" (or any partial name in the library) returns sections
+      headed Artists, Albums, Songs, Podcasts, and a result plays.
+- [ ] Voice "play <an artist in the library> on Bocan" plays that artist.
+- [ ] Voice "play Bocan" plays Recently Played.
+- [ ] Voice "play <nonsense> on Bocan" does not stop or replace what is playing.
+- [ ] The phone's Library, search, and Now Playing behave as before.
+
+When every box above passes on the head unit, tick the phase 10 Android Auto box too.
+
 ### Upgrade-in-place
 
 - [ ] Install the previous release, add data (pair, sync, scrobble a play, subscribe to a
