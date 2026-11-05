@@ -65,6 +65,9 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var mediaTree: MediaTree
     private lateinit var episodeSkipButtons: List<CommandButton>
 
+    // Touched only from session callbacks, which all run on the application thread.
+    private val rootChildrenLimits = mutableMapOf<MediaSession.ControllerInfo, Int>()
+
     private val components: PlaybackComponents get() = (application as PlaybackHost).playbackComponents
 
     override fun onCreate() {
@@ -277,11 +280,20 @@ class PlaybackService : MediaLibraryService() {
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
 
+        override fun onDisconnected(session: MediaSession, controller: MediaSession.ControllerInfo) {
+            rootChildrenLimits.remove(controller)
+        }
+
+        // The car's root children limit arrives only here, so it is kept per controller for
+        // the root's children request that follows.
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?
-        ): ListenableFuture<LibraryResult<MediaItem>> = Futures.immediateFuture(LibraryResult.ofItem(mediaTree.rootItem(), params))
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            MediaTree.rootChildrenLimit(params?.extras)?.let { rootChildrenLimits[browser] = it }
+            return Futures.immediateFuture(LibraryResult.ofItem(mediaTree.rootItem(), params))
+        }
 
         override fun onGetChildren(
             session: MediaLibrarySession,
@@ -290,8 +302,11 @@ class PlaybackService : MediaLibraryService() {
             page: Int,
             pageSize: Int,
             params: LibraryParams?
-        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = future {
-            LibraryResult.ofItemList(ImmutableList.copyOf(mediaTree.children(parentId, page, pageSize)), params)
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val rootLimit = rootChildrenLimits[browser]
+            return future {
+                LibraryResult.ofItemList(ImmutableList.copyOf(mediaTree.children(parentId, page, pageSize, rootLimit)), params)
+            }
         }
 
         // Browse items carry only a media id; resolve them to real playable items before they enter the queue.

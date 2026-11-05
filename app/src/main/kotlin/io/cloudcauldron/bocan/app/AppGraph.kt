@@ -63,6 +63,7 @@ import io.cloudcauldron.bocan.playback.SleepTimer
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.audio.WaveformSource
 import io.cloudcauldron.bocan.playback.browse.BrowseLabels
+import io.cloudcauldron.bocan.playback.browse.BrowseStyle
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
 import io.cloudcauldron.bocan.playback.lyrics.LyricsRepository
@@ -196,20 +197,35 @@ class AppGraph(val application: Application) {
         QueuePersistence(File(application.filesDir, PLAYBACK_DIR), playbackDispatchers, playbackLog)
     }
 
-    /** The Android Auto browse tree; category titles stay localized in the app's resources. */
+    /** The car browse titles, localized in the app's resources. */
+    private val browseLabels by lazy {
+        BrowseLabels(
+            home = application.getString(R.string.browse_home),
+            recentlyPlayed = application.getString(R.string.browse_recently_played),
+            continueListening = application.getString(R.string.browse_continue),
+            playlists = application.getString(R.string.browse_playlists),
+            albums = application.getString(R.string.browse_albums),
+            artists = application.getString(R.string.browse_artists),
+            podcasts = application.getString(R.string.browse_podcasts),
+            songs = application.getString(R.string.browse_songs),
+            digitsBucket = application.getString(R.string.browse_bucket_digits),
+            otherBucket = application.getString(R.string.browse_bucket_other)
+        )
+    }
+
+    /** Builds every car browse item and its style hints. */
+    private val browseStyle by lazy {
+        BrowseStyle(artworkUri = { hash -> hash?.let(mediaFileResolver::artworkUri) })
+    }
+
+    /** The Android Auto browse tree. */
     private val mediaTree by lazy {
         MediaTree(
             browseDao = database.browseDao(),
-            labels = BrowseLabels(
-                continueListening = application.getString(R.string.browse_continue),
-                playlists = application.getString(R.string.browse_playlists),
-                albums = application.getString(R.string.browse_albums),
-                artists = application.getString(R.string.browse_artists),
-                podcasts = application.getString(R.string.browse_podcasts),
-                songs = application.getString(R.string.browse_songs)
-            ),
-            artworkUri = { hash -> hash?.let(mediaFileResolver::artworkUri) },
-            dispatchers = playbackDispatchers
+            labels = browseLabels,
+            style = browseStyle,
+            dispatchers = playbackDispatchers,
+            log = playbackLog
         )
     }
 

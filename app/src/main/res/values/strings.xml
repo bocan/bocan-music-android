@@ -405,6 +405,11 @@
   <string name="browse_artists">Artists</string>
   <string name="browse_podcasts">Podcasts</string>
   <string name="browse_songs">Songs</string>
+  <string name="browse_home">Home</string>
+  <string name="browse_recently_played">Recently Played</string>
+  <!-- Letter index buckets in the car: names that start with a digit, and names that start with anything else. -->
+  <string name="browse_bucket_digits">0-9</string>
+  <string name="browse_bucket_other">#</string>
   <string name="widget_description">Bòcan playback controls</string>
   <string name="widget_nothing_playing">Nothing playing</string>
   <string name="widget_play">Play</string>
