@@ -20,6 +20,7 @@ import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.NameRow
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.browse.BrowseLabels
+import io.cloudcauldron.bocan.playback.browse.BrowseStyle
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
@@ -56,7 +57,7 @@ class TestPlaybackApp :
             statsRecorder = PlayStatsRecorder(FakePlayStatsDao(), dispatchers, NoopLog),
             episodeRecorder = EpisodeProgressRecorder(FakeEpisodeStateDao(), FakePodcastDao(), dispatchers, NoopLog),
             queuePersistence = QueuePersistence(cacheDir, dispatchers, NoopLog),
-            mediaTree = MediaTree(EmptyBrowseDao, EMPTY_LABELS, { null }, dispatchers),
+            mediaTree = MediaTree(EmptyBrowseDao, EMPTY_LABELS, BrowseStyle { null }, dispatchers, NoopLog),
             episodeSkipButtons = emptyList(),
             artworkAccess = { packageName -> grantedPackages.add(packageName) },
             dispatchers = dispatchers
@@ -67,7 +68,7 @@ class TestPlaybackApp :
     val grantedPackages = mutableListOf<String>()
 
     private companion object {
-        val EMPTY_LABELS = BrowseLabels("Continue", "Playlists", "Albums", "Artists", "Podcasts", "Songs")
+        val EMPTY_LABELS = BrowseLabels("Home", "Recent", "Continue", "Playlists", "Albums", "Artists", "Podcasts", "Songs", "0-9", "#")
     }
 }
 
