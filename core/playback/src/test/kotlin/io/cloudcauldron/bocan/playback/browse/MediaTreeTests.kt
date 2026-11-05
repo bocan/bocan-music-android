@@ -10,6 +10,7 @@ import io.cloudcauldron.bocan.persistence.entities.EpisodeEntity
 import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
 import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
+import io.cloudcauldron.bocan.persistence.model.NameRow
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.episode
 import io.cloudcauldron.bocan.playback.track
@@ -129,4 +130,10 @@ private class FakeBrowseDao(
 
     override suspend fun episodesPage(podcastId: Long, limit: Int, offset: Int) = episodesByShow[podcastId].orEmpty().page(limit, offset)
     override suspend fun continueListeningPage(limit: Int, offset: Int) = continueListening.page(limit, offset)
+    override suspend fun artistNames() = artists.map { NameRow(it.id, it.name) }
+    override suspend fun albumNames() = albums.map { NameRow(it.id, it.name) }
+    override suspend fun artistsByIds(ids: List<Long>) = artists.filter { it.id in ids }
+    override suspend fun albumsByIds(ids: List<Long>) = albums.filter { it.id in ids }
+    override suspend fun recentlyPlayedPage(limit: Int, offset: Int) = emptyList<TrackEntity>()
+    override suspend fun downloadedTrackIds() = songs.map { it.id }
 }

@@ -86,4 +86,54 @@ class SearchDaoTests {
         assertEquals("\"\"\"quoted\"\"\"*", ftsMatchExpression("\"quoted\""))
         assertNull(ftsMatchExpression("   "))
     }
+
+    @Test
+    fun `word terms only drops terms with no letter or digit`() {
+        assertEquals("\"slow\"*", ftsMatchExpression("slow ...", wordTermsOnly = true))
+        assertNull(ftsMatchExpression("... !! …", wordTermsOnly = true))
+        assertEquals("\"...\"*", ftsMatchExpression("...", wordTermsOnly = false))
+    }
+
+    @Test
+    fun `search once returns every section capped at the limit`() = runDbTest { db ->
+        fixedClockApplier(db).apply(library)
+        val stop = db.searchDao().searchOnce("stop", limit = 10)
+        assertEquals(setOf(2L, 4L), stop.tracks.map { it.id }.toSet())
+        assertEquals(listOf(62L), stop.albums.map { it.id })
+        assertEquals(1, db.searchDao().searchOnce("stop", limit = 1).tracks.size)
+        assertEquals(listOf(9L), db.searchDao().searchOnce("journey", limit = 10).artists.map { it.id })
+    }
+
+    @Test
+    fun `search once on punctuation only returns empty and never throws`() = runDbTest { db ->
+        fixedClockApplier(db).apply(library)
+        assertEquals(SearchResults.EMPTY, db.searchDao().searchOnce("...", limit = 10))
+        assertEquals(SearchResults.EMPTY, db.searchDao().searchOnce("… !?", limit = 10))
+        assertEquals(listOf(1L), db.searchDao().searchOnce("only ...", limit = 10).tracks.map { it.id })
+    }
+
+    @Test
+    fun `shows match by title substring with like wildcards taken literally`() = runDbTest { db ->
+        fixedClockApplier(db).apply(
+            Manifests.manifest(
+                podcasts = listOf(
+                    Manifests.podcast(1, title = "The Slow Show"),
+                    Manifests.podcast(2, title = "100% Pure"),
+                    Manifests.podcast(3, title = "100 Pure_Tones")
+                )
+            )
+        )
+        val dao = db.searchDao()
+        assertEquals(listOf(1L), dao.searchShows("slow", limit = 10).map { it.id })
+        assertEquals(listOf(2L), dao.searchShows("100%", limit = 10).map { it.id })
+        assertEquals(listOf(3L), dao.searchShows("pure_", limit = 10).map { it.id })
+        assertTrue(dao.searchShows("  ", limit = 10).isEmpty())
+        assertTrue(dao.searchShows("%", limit = 10).isEmpty())
+    }
+
+    @Test
+    fun `like pattern escapes wildcards and the escape character`() {
+        assertEquals("%a\\%b\\_c\\\\d%", likeContainsPattern(" a%b_c\\d "))
+        assertNull(likeContainsPattern("%_"))
+    }
 }
