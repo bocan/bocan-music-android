@@ -389,13 +389,20 @@ class PlaybackService : MediaLibraryService() {
 
     private fun nextSpeed(current: Float): Float = SPEED_CYCLE.firstOrNull { it > current + SPEED_EPSILON } ?: SPEED_CYCLE.first()
 
-    /** Bridge a suspend browse/resolve to a [ListenableFuture] on the service scope. */
+    /**
+     * Bridge a suspend browse/resolve to a [ListenableFuture] on the service scope. A typed
+     * [PlaybackError] is an expected outcome (a voice query that matched nothing) and logs as
+     * a warning; anything else is a real failure.
+     */
     @Suppress("TooGenericExceptionCaught")
     private fun <T> future(block: suspend () -> T): ListenableFuture<T> {
         val future = SettableFuture.create<T>()
         scope.launch {
             try {
                 future.set(block())
+            } catch (error: PlaybackError) {
+                log.warning("playback.browse.failed", mapOf("error" to error.toString()))
+                future.setException(error)
             } catch (error: Exception) {
                 log.error("playback.browse.failed", mapOf("error" to error.toString()))
                 future.setException(error)
