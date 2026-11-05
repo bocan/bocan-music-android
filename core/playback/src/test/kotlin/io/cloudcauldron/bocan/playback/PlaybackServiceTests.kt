@@ -17,6 +17,7 @@ import io.cloudcauldron.bocan.persistence.entities.PlayStatsEntity
 import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
 import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
+import io.cloudcauldron.bocan.persistence.model.NameRow
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.browse.BrowseLabels
 import io.cloudcauldron.bocan.playback.browse.MediaTree
@@ -82,6 +83,12 @@ private object EmptyBrowseDao : BrowseDao {
     override suspend fun playlistTracksPage(playlistId: Long, limit: Int, offset: Int) = emptyList<TrackEntity>()
     override suspend fun episodesPage(podcastId: Long, limit: Int, offset: Int) = emptyList<EpisodeEntity>()
     override suspend fun continueListeningPage(limit: Int, offset: Int) = emptyList<EpisodeEntity>()
+    override suspend fun artistNames() = emptyList<NameRow>()
+    override suspend fun albumNames() = emptyList<NameRow>()
+    override suspend fun artistsByIds(ids: List<Long>) = emptyList<ArtistEntity>()
+    override suspend fun albumsByIds(ids: List<Long>) = emptyList<AlbumEntity>()
+    override suspend fun recentlyPlayedPage(limit: Int, offset: Int) = emptyList<TrackEntity>()
+    override suspend fun downloadedTrackIds() = emptyList<Long>()
 }
 
 @UnstableApi

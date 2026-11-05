@@ -8,15 +8,44 @@ import io.cloudcauldron.bocan.persistence.entities.EpisodeEntity
 import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
 import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
+import io.cloudcauldron.bocan.persistence.model.NameRow
 
 /**
  * Paged, snapshot reads for the Android Auto browse tree. Auto calls onGetChildren with a
  * page and page size and expects a fast answer, so these are LIMIT/OFFSET queries served
  * straight from indices (phase 10 gotcha: never compute folder trees on demand). Only
  * downloaded tracks and episodes are browsable, since Auto can only play local files.
+ *
+ * Letter buckets (phase 15) are the one exception to paging in SQL: SQLite cannot fold
+ * accents, so the tree reads the light [NameRow] projections, buckets them in Kotlin, and
+ * reads one bucket's members back by id.
  */
 @Dao
-interface BrowseDao {
+interface BrowseDao : DownloadedTrackIdsQuery {
+    /** Every artist as (id, name), for letter bucketing. */
+    @Query("SELECT id, name FROM artists")
+    suspend fun artistNames(): List<NameRow>
+
+    /** Every album as (id, name), for letter bucketing. */
+    @Query("SELECT id, name FROM albums")
+    suspend fun albumNames(): List<NameRow>
+
+    @Query("SELECT * FROM artists WHERE id IN (:ids) ORDER BY name COLLATE NOCASE, id")
+    suspend fun artistsByIds(ids: List<Long>): List<ArtistEntity>
+
+    @Query("SELECT * FROM albums WHERE id IN (:ids) ORDER BY name COLLATE NOCASE, id")
+    suspend fun albumsByIds(ids: List<Long>): List<AlbumEntity>
+
+    /** Downloaded tracks the phone has played, newest play first. Never-played tracks are left out. */
+    @Query(
+        """
+        SELECT t.* FROM play_stats s JOIN tracks t ON t.id = s.trackId
+        WHERE s.lastPlayedAt IS NOT NULL AND t.downloadState = 'downloaded'
+        ORDER BY s.lastPlayedAt DESC, t.id LIMIT :limit OFFSET :offset
+        """
+    )
+    suspend fun recentlyPlayedPage(limit: Int, offset: Int): List<TrackEntity>
+
     @Query("SELECT * FROM albums ORDER BY name COLLATE NOCASE, id LIMIT :limit OFFSET :offset")
     suspend fun albumsPage(limit: Int, offset: Int): List<AlbumEntity>
 

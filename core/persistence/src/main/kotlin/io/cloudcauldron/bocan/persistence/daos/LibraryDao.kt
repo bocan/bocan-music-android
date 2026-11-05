@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 
 /** Reactive reads over the synced library tables. */
 @Dao
-interface LibraryDao {
+interface LibraryDao : DownloadedTrackIdsQuery {
     fun observeAlbums(sort: AlbumSort): Flow<List<AlbumEntity>> = when (sort) {
         AlbumSort.Name -> observeAlbumsByName()
         AlbumSort.Artist -> observeAlbumsByArtist()
@@ -75,10 +75,6 @@ interface LibraryDao {
 
     @Query("SELECT * FROM tracks WHERE id IN (:ids)")
     suspend fun tracksByIds(ids: List<Long>): List<TrackEntity>
-
-    /** Ids of every downloaded track, for the Shuffle library shortcut. */
-    @Query("SELECT id FROM tracks WHERE downloadState = 'downloaded' ORDER BY id")
-    suspend fun downloadedTrackIds(): List<Long>
 
     @Query(
         """

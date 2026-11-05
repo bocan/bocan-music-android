@@ -9,6 +9,7 @@ import io.cloudcauldron.bocan.persistence.daos.SearchDao
 import io.cloudcauldron.bocan.persistence.entities.AlbumEntity
 import io.cloudcauldron.bocan.persistence.entities.ArtistEntity
 import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
+import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.persistence.entities.SyncServerEntity
 import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.AlbumSort
@@ -121,6 +122,10 @@ class FakeSearchDao : SearchDao {
     override fun observeTrackMatches(match: String): Flow<List<TrackEntity>> = flowOf(emptyList())
     override fun observeAlbumMatches(match: String): Flow<List<AlbumEntity>> = flowOf(emptyList())
     override fun observeArtistMatches(match: String): Flow<List<ArtistEntity>> = flowOf(emptyList())
+    override suspend fun trackMatches(match: String, limit: Int): List<TrackEntity> = emptyList()
+    override suspend fun albumMatches(match: String, limit: Int): List<AlbumEntity> = emptyList()
+    override suspend fun artistMatches(match: String, limit: Int): List<ArtistEntity> = emptyList()
+    override suspend fun showMatches(pattern: String, limit: Int): List<PodcastEntity> = emptyList()
 }
 
 /** An in-memory preferences fake for the view models. */
