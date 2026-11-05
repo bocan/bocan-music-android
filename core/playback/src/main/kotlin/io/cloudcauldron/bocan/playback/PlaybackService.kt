@@ -1,5 +1,6 @@
 package io.cloudcauldron.bocan.playback
 
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -9,6 +10,7 @@ import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionCommands
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -18,6 +20,7 @@ import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.audio.ReplayGainValues
+import io.cloudcauldron.bocan.playback.browse.BrowseSearch
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.queue.QueueSnapshot
@@ -63,6 +66,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var persistence: QueuePersistence
     private lateinit var effectsChain: EffectsChain
     private lateinit var mediaTree: MediaTree
+    private lateinit var browseSearch: BrowseSearch
     private lateinit var episodeSkipButtons: List<CommandButton>
 
     // Touched only from session callbacks, which all run on the application thread.
@@ -78,6 +82,7 @@ class PlaybackService : MediaLibraryService() {
         persistence = graph.queuePersistence
         effectsChain = graph.effectsChain
         mediaTree = graph.mediaTree
+        browseSearch = graph.browseSearch
         episodeSkipButtons = graph.episodeSkipButtons
 
         sessionPlayer = ReorderingShufflePlayer(player)
@@ -257,10 +262,8 @@ class PlaybackService : MediaLibraryService() {
             if (controller.packageName != this@PlaybackService.packageName) {
                 components.artworkAccess.grantReadTo(controller.packageName)
             }
-            val available = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
-            BocanCommands.all().forEach { available.add(it) }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                .setAvailableSessionCommands(available.build())
+                .setAvailableSessionCommands(availableSessionCommands())
                 .build()
         }
 
@@ -306,6 +309,50 @@ class PlaybackService : MediaLibraryService() {
             val rootLimit = rootChildrenLimits[browser]
             return future {
                 LibraryResult.ofItemList(ImmutableList.copyOf(mediaTree.children(parentId, page, pageSize, rootLimit)), params)
+            }
+        }
+
+        // Acknowledge at once, then tell the browser how many results are waiting. Media3 only
+        // advertises search to the car while COMMAND_CODE_LIBRARY_SEARCH stays available.
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<Void>> {
+            future { session.notifySearchResultChanged(browser, query, browseSearch.search(query).size, params) }
+            return Futures.immediateFuture(LibraryResult.ofVoid())
+        }
+
+        // Search sections are contiguous runs with one group title, so the whole list is page 0.
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = future {
+            val items = if (page == 0) browseSearch.search(query) else emptyList()
+            LibraryResult.ofItemList(ImmutableList.copyOf(items), params)
+        }
+
+        // "Play X on Bocan" arrives as one item with an empty id and the query in its request
+        // metadata. It plays through the normal media id path, so stats and scrobbles behave as
+        // for a tap. No match fails the request: a successful empty list would wipe the queue.
+        override fun onSetMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>,
+            startIndex: Int,
+            startPositionMs: Long
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            val query = BrowseSearch.voiceQuery(mediaItems)
+                ?: return super.onSetMediaItems(mediaSession, controller, mediaItems, startIndex, startPositionMs)
+            return future {
+                val items = components.mediaItemSource.resolve(browseSearch.resolveVoice(query))
+                if (items.isEmpty()) throw PlaybackError.VoiceNoMatch(query)
+                MediaSession.MediaItemsWithStartPosition(items, 0, C.TIME_UNSET)
             }
         }
 
@@ -366,5 +413,16 @@ class PlaybackService : MediaLibraryService() {
         private const val SKIP_FORWARD_MS = 30_000L
         private const val SPEED_EPSILON = 0.01f
         private val SPEED_CYCLE = listOf(1.0f, 1.25f, 1.5f, 2.0f, 0.8f)
+
+        /**
+         * Every command a controller may send: Media3's session and library defaults plus the
+         * custom ones. The library search command must stay in this set, because Media3 1.9.0
+         * writes the car's SEARCH_SUPPORTED root extra from it (phase 15).
+         */
+        fun availableSessionCommands(): SessionCommands {
+            val available = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+            BocanCommands.all().forEach { available.add(it) }
+            return available.build()
+        }
     }
 }

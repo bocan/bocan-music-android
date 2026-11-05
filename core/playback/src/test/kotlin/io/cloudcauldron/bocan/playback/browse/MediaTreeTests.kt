@@ -6,15 +6,10 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaConstants
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.persistence.daos.BrowseDao
 import io.cloudcauldron.bocan.persistence.entities.AlbumEntity
 import io.cloudcauldron.bocan.persistence.entities.ArtistEntity
-import io.cloudcauldron.bocan.persistence.entities.EpisodeEntity
-import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
 import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
-import io.cloudcauldron.bocan.persistence.entities.TrackEntity
-import io.cloudcauldron.bocan.persistence.model.NameRow
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
 import io.cloudcauldron.bocan.playback.episode
 import io.cloudcauldron.bocan.playback.track
@@ -233,19 +228,6 @@ class MediaTreeTests {
     }
 
     private companion object {
-        val TEST_LABELS = BrowseLabels(
-            home = "Home",
-            recentlyPlayed = "Recently Played",
-            continueListening = "Continue",
-            playlists = "Playlists",
-            albums = "Albums",
-            artists = "Artists",
-            podcasts = "Podcasts",
-            songs = "Songs",
-            digitsBucket = "Digits",
-            otherBucket = "Other"
-        )
-
         /** Thirty artists across six buckets: A, B, M, S, 0-9, and #. */
         val THIRTY_ARTISTS: List<ArtistEntity> = listOf(
             "Air", "Aphex Twin", "Arcade Fire", "Arab Strap", "Autechre",
@@ -256,60 +238,4 @@ class MediaTreeTests {
             "…And You Will Know Us", "!!!", "Øyvind", "_underscore", "\"Quoted\""
         ).mapIndexed { index, name -> ArtistEntity(index + 1L, name) }
     }
-}
-
-/** An [AppLog] that keeps warnings so a test can assert on them. */
-private class RecordingLog : AppLog {
-    val warnings = mutableListOf<Pair<String, Map<String, Any?>>>()
-
-    override fun debug(event: String, fields: Map<String, Any?>) = Unit
-    override fun info(event: String, fields: Map<String, Any?>) = Unit
-    override fun warning(event: String, fields: Map<String, Any?>) {
-        warnings += event to fields
-    }
-    override fun error(event: String, fields: Map<String, Any?>) = Unit
-}
-
-/** A hand-fed [BrowseDao] so the tree logic is tested without a real database. */
-private data class FakeBrowseDao(
-    private val albums: List<AlbumEntity> = emptyList(),
-    private val artists: List<ArtistEntity> = emptyList(),
-    private val shows: List<PodcastEntity> = emptyList(),
-    private val playlists: List<PlaylistEntity> = emptyList(),
-    private val songs: List<TrackEntity> = emptyList(),
-    private val recentlyPlayed: List<TrackEntity> = emptyList(),
-    private val albumTracks: Map<Long, List<TrackEntity>> = emptyMap(),
-    private val artistTracks: Map<Long, List<TrackEntity>> = emptyMap(),
-    private val playlistTracks: Map<Long, List<TrackEntity>> = emptyMap(),
-    private val episodesByShow: Map<Long, List<EpisodeEntity>> = emptyMap(),
-    private val continueListening: List<EpisodeEntity> = emptyList()
-) : BrowseDao {
-    var lastPlaylistsPaging: Pair<Int, Int>? = null
-
-    fun copyWith(artistTracks: Map<Long, List<TrackEntity>>): FakeBrowseDao = copy(artistTracks = artistTracks)
-
-    private fun <T> List<T>.page(limit: Int, offset: Int): List<T> = drop(offset).take(limit)
-
-    override suspend fun albumsPage(limit: Int, offset: Int) = albums.page(limit, offset)
-    override suspend fun artistsPage(limit: Int, offset: Int) = artists.page(limit, offset)
-    override suspend fun showsPage(limit: Int, offset: Int) = shows.page(limit, offset)
-    override suspend fun playlistsPage(limit: Int, offset: Int): List<PlaylistEntity> {
-        lastPlaylistsPaging = limit to offset
-        return playlists.page(limit, offset)
-    }
-
-    override suspend fun recentSongsPage(limit: Int, offset: Int) = songs.page(limit, offset)
-    override suspend fun albumTracksPage(albumId: Long, limit: Int, offset: Int) = albumTracks[albumId].orEmpty().page(limit, offset)
-    override suspend fun artistTracksPage(artistId: Long, limit: Int, offset: Int) = artistTracks[artistId].orEmpty().page(limit, offset)
-    override suspend fun playlistTracksPage(playlistId: Long, limit: Int, offset: Int) =
-        playlistTracks[playlistId].orEmpty().page(limit, offset)
-
-    override suspend fun episodesPage(podcastId: Long, limit: Int, offset: Int) = episodesByShow[podcastId].orEmpty().page(limit, offset)
-    override suspend fun continueListeningPage(limit: Int, offset: Int) = continueListening.page(limit, offset)
-    override suspend fun artistNames() = artists.map { NameRow(it.id, it.name) }
-    override suspend fun albumNames() = albums.map { NameRow(it.id, it.name) }
-    override suspend fun artistsByIds(ids: List<Long>) = artists.filter { it.id in ids }.sortedBy { it.name.lowercase() }
-    override suspend fun albumsByIds(ids: List<Long>) = albums.filter { it.id in ids }.sortedBy { it.name.lowercase() }
-    override suspend fun recentlyPlayedPage(limit: Int, offset: Int) = recentlyPlayed.page(limit, offset)
-    override suspend fun downloadedTrackIds() = songs.map { it.id }
 }

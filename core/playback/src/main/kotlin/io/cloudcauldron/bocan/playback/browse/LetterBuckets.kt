@@ -42,9 +42,15 @@ object LetterBuckets {
         return ORDER.mapNotNull { key -> byKey[key]?.let { key to it.sortedWith(alphabetical) } }.toMap()
     }
 
+    /** [text] upper-cased with accents folded (NFD, combining marks dropped). Search ranking shares it. */
+    internal fun fold(text: String): String {
+        val decomposed = Normalizer.normalize(text, Normalizer.Form.NFD)
+        return COMBINING_MARKS.replace(decomposed, "").uppercase(Locale.ROOT)
+    }
+
     /** The upper-cased, accent-folded name with a leading article removed when a word follows it. */
     private fun sortName(name: String): String {
-        val folded = COMBINING_MARKS.replace(Normalizer.normalize(name.trim(), Normalizer.Form.NFD), "").uppercase(Locale.ROOT)
+        val folded = fold(name.trim())
         val article = ARTICLES.firstOrNull { folded.startsWith(it) && folded.length > it.length }
         return if (article == null) folded else folded.substring(article.length).trimStart()
     }

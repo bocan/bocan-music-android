@@ -2,6 +2,7 @@ package io.cloudcauldron.bocan.playback
 
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
+import io.cloudcauldron.bocan.playback.browse.BrowseSearch
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
@@ -29,6 +30,7 @@ class PlaybackComponents(
     val episodeRecorder: EpisodeProgressRecorder,
     val queuePersistence: QueuePersistence,
     val mediaTree: MediaTree,
+    val browseSearch: BrowseSearch,
     val episodeSkipButtons: List<CommandButton>,
     val artworkAccess: ArtworkAccess,
     val dispatchers: CoroutineDispatchers

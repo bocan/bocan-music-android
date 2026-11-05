@@ -5,6 +5,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.source.SilenceMediaSource
+import androidx.media3.session.SessionCommand
 import androidx.media3.test.utils.robolectric.TestPlayerRunHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -20,10 +21,13 @@ import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.NameRow
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.browse.BrowseLabels
+import io.cloudcauldron.bocan.playback.browse.BrowseSearch
 import io.cloudcauldron.bocan.playback.browse.BrowseStyle
+import io.cloudcauldron.bocan.playback.browse.FakeSearchDao
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.podcast.EpisodeProgressRecorder
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
+import io.cloudcauldron.bocan.playback.session.SessionCommands as BocanCommands
 import io.cloudcauldron.bocan.playback.stats.PlayStatsRecorder
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -58,6 +62,7 @@ class TestPlaybackApp :
             episodeRecorder = EpisodeProgressRecorder(FakeEpisodeStateDao(), FakePodcastDao(), dispatchers, NoopLog),
             queuePersistence = QueuePersistence(cacheDir, dispatchers, NoopLog),
             mediaTree = MediaTree(EmptyBrowseDao, EMPTY_LABELS, BrowseStyle { null }, dispatchers, NoopLog),
+            browseSearch = BrowseSearch(FakeSearchDao(), EmptyBrowseDao, BrowseStyle { null }, EMPTY_LABELS, dispatchers),
             episodeSkipButtons = emptyList(),
             artworkAccess = { packageName -> grantedPackages.add(packageName) },
             dispatchers = dispatchers
@@ -110,6 +115,14 @@ class PlaybackServiceTests {
 
         assertTrue(PlaybackService.SYSTEM_UI_PACKAGE in app.grantedPackages)
         controller.destroy()
+    }
+
+    @Test
+    fun `controllers get library search, which is what makes Media3 advertise search to the car`() {
+        val available = PlaybackService.availableSessionCommands()
+        assertTrue(available.contains(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH))
+        assertTrue(available.contains(SessionCommand.COMMAND_CODE_LIBRARY_GET_SEARCH_RESULT))
+        assertTrue(BocanCommands.all().all { available.contains(it) })
     }
 
     @Test
