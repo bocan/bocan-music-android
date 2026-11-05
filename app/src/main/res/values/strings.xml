@@ -93,6 +93,7 @@
   <string name="playback_error_unplayable">This item cannot be played. It may not have finished syncing yet.</string>
   <string name="playback_error_media_unavailable">Your synced music is not reachable right now. Check this phone\'s storage and try again.</string>
   <string name="playback_error_queue">Your queue could not be saved or restored, so it may start fresh next time.</string>
+  <string name="playback_error_voice_no_match">Nothing in your library matches that request.</string>
 
   <string name="sync_on_discovery_label">Sync when your Mac appears</string>
   <string name="sync_on_discovery_summary">Start syncing as soon as your paired Mac shows up on the network.</string>

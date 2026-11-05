@@ -63,6 +63,7 @@ import io.cloudcauldron.bocan.playback.SleepTimer
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.audio.WaveformSource
 import io.cloudcauldron.bocan.playback.browse.BrowseLabels
+import io.cloudcauldron.bocan.playback.browse.BrowseSearch
 import io.cloudcauldron.bocan.playback.browse.BrowseStyle
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.lyrics.LyricsFetcher
@@ -229,6 +230,17 @@ class AppGraph(val application: Application) {
         )
     }
 
+    /** The car's search bar and voice requests, over the same FTS index as the phone's search. */
+    private val browseSearch by lazy {
+        BrowseSearch(
+            searchDao = database.searchDao(),
+            browseDao = database.browseDao(),
+            style = browseStyle,
+            labels = browseLabels,
+            dispatchers = playbackDispatchers
+        )
+    }
+
     /** The notification and Auto skip buttons shown for an episode, localized here. */
     private val episodeSkipButtons: List<CommandButton> by lazy {
         listOf(
@@ -252,6 +264,7 @@ class AppGraph(val application: Application) {
             episodeRecorder,
             queuePersistence,
             mediaTree,
+            browseSearch,
             episodeSkipButtons,
             ArtworkReadGrants(application),
             playbackDispatchers

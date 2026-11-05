@@ -20,6 +20,9 @@ sealed class PlaybackError(message: String, cause: Throwable? = null) : Exceptio
     /** External storage is unmounted, so the media file could not be resolved. */
     data object MediaUnavailable : PlaybackError("external media storage is unavailable")
 
+    /** A voice request ("play X on Bòcan") matched nothing in the library; the queue is left alone. */
+    data class VoiceNoMatch(val query: String) : PlaybackError("voice query matched nothing")
+
     /** Reading or writing the persisted queue snapshot failed. */
     data class QueuePersistenceFailed(val reason: Throwable) : PlaybackError("queue persistence failed", reason)
 }

@@ -44,7 +44,8 @@ class ErrorMessagesTests {
         PlaybackError.UnknownMediaId("nonsense:1"),
         PlaybackError.ItemUnplayable("track:1"),
         PlaybackError.MediaUnavailable,
-        PlaybackError.QueuePersistenceFailed(RuntimeException("disk"))
+        PlaybackError.QueuePersistenceFailed(RuntimeException("disk")),
+        PlaybackError.VoiceNoMatch("nothing like this")
     )
 
     @Test

@@ -38,4 +38,5 @@ fun PlaybackError.userMessageRes(): Int = when (this) {
     is PlaybackError.ItemUnplayable -> R.string.playback_error_unplayable
     PlaybackError.MediaUnavailable -> R.string.playback_error_media_unavailable
     is PlaybackError.QueuePersistenceFailed -> R.string.playback_error_queue
+    is PlaybackError.VoiceNoMatch -> R.string.playback_error_voice_no_match
 }
