@@ -126,13 +126,21 @@ No new Gradle dependencies. Manual testing needs the Desktop Head Unit (DHU); th
 ## Acceptance criteria
 
 - [ ] Every artist and album in a 2,000-artist library is reachable in the car, none missing.
-- [ ] Artists and Albums open to letters; no car list exceeds `CAR_LIST_CAP`.
+      Device check (DHU), not done. Unit evidence only: `MediaTreeTests` shows every artist of a 30-artist library lands in exactly one bucket and a bucket serves all its members.
+- [x] Artists and Albums open to letters; no car list exceeds `CAR_LIST_CAP`.
+      Evidence: `MediaTreeTests` "artists open to only the non empty buckets in order", "albums open to buckets whose albums are a grid of covers", "a node over the car cap logs a warning and returns the cap" (commit `ab71599`).
 - [ ] The car's search bar returns artists, albums, songs, and shows in labelled sections.
+      Device check (DHU), not done. Unit evidence only: `BrowseSearchTests` (sections, group titles, ranking, cap) and `PlaybackServiceTests` (the library search command that makes Media3 advertise search).
 - [ ] Voice "play <artist> on Bòcan" plays that artist; "play Bòcan" plays Recently Played.
+      Device check (DHU), not done. Unit evidence only: `BrowseSearchTests` voice cases and `voiceQuery`.
 - [ ] The root renders as four tabs on the DHU; Albums and Podcasts render as grids with covers.
-- [ ] Recently Played lists the last 50 played tracks, newest first.
-- [ ] Phone browsing and playback are unchanged (the phone never reads this tree).
-- [ ] `./gradlew check test assembleDebug` and the serial `koverVerify` green; `/android-standards` clean; `/protocol-guard` reports no contract impact.
+      Device check (DHU), not done. Unit evidence only: `MediaTreeTests` root and style-hint cases, `BrowseStyleTests`.
+- [x] Recently Played lists the last 50 played tracks, newest first.
+      Evidence: `BrowseDaoTests` "recently played orders newest first and skips never played and not downloaded" (real Room database) and `MediaTreeTests` "recently played is the newest fifty plays".
+- [x] Phone browsing and playback are unchanged (the phone never reads this tree).
+      Evidence: the branch changes no phone screen or view model; in `:app` it touches only `AppGraph` car wiring, new strings, and one new `ErrorMessages` branch. The moved `downloadedTrackIds` query is pinned for both DAOs in `BrowseDaoTests`; all 578 unit tests pass.
+- [x] `./gradlew check test assembleDebug` and the serial `koverVerify` green; `/android-standards` clean; `/protocol-guard` reports no contract impact.
+      Evidence: on `a7aa924`, `check test assembleDebug` exit 0 and `koverVerify --no-parallel --rerun-tasks` exit 0 with 578 tests and 0 failures; the standards review's one should-fix landed as `a7aa924`; protocol-guard classified every change as implementation-only with no wire files touched. CI not yet run.
 
 ## Gotchas
 
