@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.1](https://github.com/bocan/bocan-music-android/compare/v0.4.0...v0.4.1) (2026-11-07)
+
+
+### Fixed
+
+* **build:** open jdk.internal.access to test JVMs for Robolectric 4.17 ([1e74ea6](https://github.com/bocan/bocan-music-android/commit/1e74ea6f1a79923a9517077831488d8611cd3fa3))
+* **deps:** update dependency androidx.compose:compose-bom to v2026.09.00 ([0cf41fb](https://github.com/bocan/bocan-music-android/commit/0cf41fb44e59b67063db0fbfb14212a746c2e5c1))
+* **deps:** update dependency androidx.core:core-ktx to v1.19.1 ([ae8865a](https://github.com/bocan/bocan-music-android/commit/ae8865a36b917f9bb7a19dc5a8f4d11198a9eff3))
+* **deps:** update dependency androidx.navigation:navigation-compose to v2.10.2 ([c867222](https://github.com/bocan/bocan-music-android/commit/c867222b932ec47ce16a058f062d0bd534b2d921))
+* **deps:** update dependency androidx.palette:palette-ktx to v1.1.0 ([613c4a0](https://github.com/bocan/bocan-music-android/commit/613c4a0959501b662be0d490499201879f66af62))
+* **deps:** update dependency com.github.triplet.gradle:play-publisher to v3.13.0 ([ebeac5f](https://github.com/bocan/bocan-music-android/commit/ebeac5fd73589c0e5398838555332b5bb1f5cf27))
+* **deps:** update glance to v1.2.0 ([c8a6328](https://github.com/bocan/bocan-music-android/commit/c8a63285d86857d02dbc58e25b15970f6b861015))
+* **deps:** update sqlite to v2.7.1 ([e2319be](https://github.com/bocan/bocan-music-android/commit/e2319be2bf2a6a20568e4c1814074e197928a1f3))
+
 ## [0.4.0](https://github.com/bocan/bocan-music-android/compare/v0.3.2...v0.4.0) (2026-09-07)
 
 
