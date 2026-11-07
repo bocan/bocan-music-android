@@ -16,7 +16,7 @@ initscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath("com.github.triplet.gradle:play-publisher:3.13.0")
+        classpath("com.github.triplet.gradle:play-publisher:4.1.1")
     }
 }
 
