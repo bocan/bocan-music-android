@@ -21,17 +21,17 @@ object CrawlRegistry {
         "equalizer" to EqualizerCrawl.table(c),
         "sync" to SyncCrawl.table(c),
         "first run" to FirstRunCrawl.table(c),
-        "empty library" to EmptyLibraryCrawl.table(c)
+        "empty library" to EmptyLibraryCrawl.table(c),
+        "pairing, then sync later" to PairingCrawl.syncLaterTable(c),
+        "pairing, then done" to PairingCrawl.doneTable(c)
     )
 
-    /** Real controls no table can reach yet, each with the reason and the slice that will. */
+    /**
+     * Real controls no table can reach, each with its reason: each needs the internet (which the
+     * suite never touches) or Android 17. Deferred in the phase 17 spec, 2026-11-11.
+     */
     val NOT_CRAWLED: Map<String, String> = mapOf(
-        E2ETags.Pairing.MAC_ROW to "needs a Mac advertising on the network: slice 6's loopback fake Mac",
-        E2ETags.Pairing.CODE to "the code step follows choosing a Mac: slice 6",
-        E2ETags.Pairing.DONE to "follows a successful pairing: slice 6",
-        E2ETags.Pairing.START_OVER to "follows a failed pairing with a real peer: slice 6",
-        E2ETags.Onboarding.DONE to "the welcome flow's first-sync page follows a pairing: slice 6",
-        E2ETags.Onboarding.SYNC_LATER to "the welcome flow's first-sync page follows a pairing: slice 6",
+        E2ETags.Pairing.DONE to "no host shows it: both leave the moment pairing succeeds",
         E2ETags.Common.LOCAL_NETWORK_ALLOW to "shown only on Android 17 with the local network permission denied; the suite runs on API 36",
         E2ETags.Scrobble.TOKEN_SAVE to "saving checks the token with the provider over the internet, which the suite never touches",
         E2ETags.Scrobble.DEAD_LETTER_RETRY to "needs a scrobble that failed past its retries, which needs a connected provider",

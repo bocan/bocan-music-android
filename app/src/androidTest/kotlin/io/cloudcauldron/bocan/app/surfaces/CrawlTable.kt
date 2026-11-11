@@ -39,6 +39,14 @@ sealed interface Action {
         override fun describe() = "type '$text' into"
     }
 
+    /**
+     * Type text the table cannot know when it is built, read when the step runs: the pairing
+     * code the fake Mac shows, which depends on nonces drawn during the crawl. [what] names it.
+     */
+    class TypeFrom(private val what: String, val text: () -> String) : Action {
+        override fun describe() = "type $what into"
+    }
+
     /** Empty a text field. */
     data object Clear : Action {
         override fun describe() = "clear"
@@ -109,6 +117,11 @@ sealed interface Postcondition {
 
     data class Text(val tag: String, val contains: String) : Postcondition {
         override fun describe() = "'$tag' reading '$contains'"
+    }
+
+    /** A text field holding no text: cleared for a fresh attempt. */
+    data class Empty(val tag: String) : Postcondition {
+        override fun describe() = "'$tag' empty"
     }
 
     data class Toggled(val tag: String, val on: Boolean) : Postcondition {

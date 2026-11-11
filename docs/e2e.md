@@ -14,7 +14,7 @@ landscape, and the settings and queue checked across a real process kill.
 ## Run it
 
 ```
-make end-to-end         # E2ESuite (journeys, gestures, widget and notification, audits, crawls in both orientations), then persistence
+make end-to-end         # E2ESuite (journeys, gestures, widget and notification, the fake Mac, audits, crawls in both orientations), then persistence
 make end-to-end-smoke   # SmokeSuite: one fixture journey, for a quick check
 make end-to-end-audit   # AuditSuite: only the on-device tag audits
 make end-to-end-crawl   # CrawlSuite: only the surface crawls (portrait and landscape) and the table coverage check
@@ -226,6 +226,38 @@ drives the launcher or System UI, and it never takes a screenshot of them:
 
 Repeat one is set before anything plays, so a 4 second fixture track loops and does not move
 the queue under the test.
+
+## Pairing and sync: the fake Mac
+
+`sync/FakeMac.kt` is the server half of `docs/design-spec/sync-protocol.md`, written from
+the document and not from the app's client code. It runs on MockWebServer on the loopback
+interface, inside the test process, and serves the debug build's fixture library. It is the
+only socket the suite opens, and it never touches any other interface or the internet.
+
+- **Identity and TLS.** It has its own P-256 certificate. It accepts any client certificate
+  while in pairing mode and, after pairing, only the paired phone's.
+- **Pairing.** It computes the code and checks the proof by itself. `shownCode` is the code
+  a person would read off the Mac's screen. `FakeMacVectorsTest` checks both against the
+  golden vectors that the Mac repo shares (`:core:sync`'s `pairing-vectors.json`, packed
+  into the test APK as an asset, never copied).
+- **Endpoints.** It serves every section 6 endpoint, with `ETag`, `If-Match`, an open
+  `Range`, and the error envelope. `slowFiles()` trickles every file a few bytes a second:
+  this is a slow Mac, not a dead one, so a test can act while a sync is mid-transfer.
+
+**Discovery.** Debug builds wrap mDNS in `DiscoveryOverride` (`app/src/debug/.../fixtures/`).
+While it holds an advert, discovery sees only that advert, and the app's own TXT parsing still
+runs on it. `FakeMacRule` starts the Mac and publishes its advert, and stops both after the
+test. The release twin passes mDNS through untouched.
+
+**Profile.** `FixtureProfile.Unpaired` is an unpaired install with an empty library, and the
+demo's seed already spent, so the only library that can appear is the one a sync brings.
+
+**Tests.** `PairingCrawl` and `LandscapePairingCrawl` run the welcome flow. They cover the
+Mac row, three wrong codes (the field clears each time, and no `pair/confirm` reaches the
+Mac), Start over, the right code, and then Sync later (mid-transfer) or Done (after the
+whole library has come over the wire). `HermeticSyncJourney` pairs from Settings, Sync. It
+checks both pins, the applied generation, every file's hash, a synced track playing, and
+lyrics fetched from the Mac. It also checks the progress notification and its Cancel action.
 
 ## Add a journey
 

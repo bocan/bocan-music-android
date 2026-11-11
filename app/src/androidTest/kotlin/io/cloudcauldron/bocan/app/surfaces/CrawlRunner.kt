@@ -99,6 +99,7 @@ class CrawlRunner(
             Action.Tap -> node.performClick()
             Action.LongPress -> node.performTouchInput { longClick() }
             is Action.Type -> node.performTextInput(action.text)
+            is Action.TypeFrom -> node.performTextInput(action.text())
             Action.Clear -> node.performTextClearance()
             Action.Submit -> node.performImeAction()
             is Action.Slide -> slide(node, action.fraction)
@@ -202,6 +203,8 @@ class CrawlRunner(
         is Postcondition.Text -> nodes(expect.tag, null).map(::textOf).let { texts ->
             texts.any { it.contains(expect.contains) } to "texts $texts"
         }
+        is Postcondition.Empty -> nodes(expect.tag, null).map { it.config.getOrNull(SemanticsProperties.EditableText)?.text }
+            .let { texts -> (texts.isNotEmpty() && texts.all { it.isNullOrEmpty() }) to "texts $texts" }
         is Postcondition.Toggled -> nodes(expect.tag, null).map { toggle(it) }.let { states ->
             states.contains(if (expect.on) ToggleableState.On else ToggleableState.Off) to "states $states"
         }
