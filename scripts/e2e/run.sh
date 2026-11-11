@@ -14,9 +14,11 @@ suite="${1:-E2ESuite}"
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$repo"
 
+# local.properties on a development Mac; ANDROID_HOME (or ANDROID_SDK_ROOT) on a CI runner.
 sdk="$(sed -n 's/^sdk.dir=//p' local.properties 2>/dev/null || true)"
+sdk="${sdk:-${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}}"
 if [ -z "$sdk" ]; then
-  echo "e2e: local.properties has no sdk.dir; run make doctor" >&2
+  echo "e2e: no Android SDK: local.properties has no sdk.dir and ANDROID_HOME is unset; run make doctor" >&2
   exit 2
 fi
 adb="$sdk/platform-tools/adb"
@@ -89,9 +91,12 @@ count() { # sum one attribute over every <testsuite> in the JUnit XML
 if [ -d "$out/junit" ]; then
   tests=$(count tests); failures=$(count failures); errors=$(count errors); skipped=$(count skipped)
   passed=$(( tests - failures - errors - skipped ))
-  echo "e2e: $suite on $serial in ${elapsed}s: $passed passed, $(( failures + errors )) failed, $skipped skipped"
+  summary="e2e: $suite on $serial in ${elapsed}s: $passed passed, $(( failures + errors )) failed, $skipped skipped"
 else
-  echo "e2e: $suite on $serial in ${elapsed}s: no JUnit results (see $out/gradle.log)"
+  summary="e2e: $suite on $serial in ${elapsed}s: no JUnit results (see $out/gradle.log)"
 fi
+echo "$summary"
+# The same line for tools: the nightly workflow quotes it in the issue it opens on failure.
+echo "$summary" > "$out/summary.txt"
 echo "e2e: report $out/report/index.html, screenshots $out/screenshots/, Gradle log $out/gradle.log"
 exit "$status"
