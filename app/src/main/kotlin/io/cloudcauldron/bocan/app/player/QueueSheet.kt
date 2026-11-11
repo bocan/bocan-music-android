@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.ArtworkImage
 import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.components.rememberListSheetState
 import io.cloudcauldron.bocan.app.e2e.E2ETags
 import kotlin.math.roundToInt
 
@@ -62,7 +63,7 @@ private val ROW_HEIGHT = 64.dp
 @Composable
 fun QueueSheet(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove: (Int) -> Unit, onClear: () -> Unit, onDismiss: () -> Unit) {
     var confirmClear by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberListSheetState(), dragHandle = { SheetDragHandle() }) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)

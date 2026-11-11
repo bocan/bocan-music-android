@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -45,8 +48,13 @@ fun SleepTimerSheet(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
-        Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
+    // Fully expanded: at the half-height stop a landscape phone hid the presets and the buttons.
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = { SheetDragHandle() }
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(16.dp)) {
             // Announce arming and fading once per state change; the countdown itself stays quiet.
             val announced = when (state) {
                 is SleepTimerState.Counting, SleepTimerState.WaitingForTrackEnd -> stringResource(R.string.sleep_timer_armed)

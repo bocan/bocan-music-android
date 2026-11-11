@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.components.rememberListSheetState
 import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.podcast.Chapter
 
@@ -28,7 +29,7 @@ import io.cloudcauldron.bocan.playback.podcast.Chapter
 @Composable
 fun ChaptersSheet(chapters: List<Chapter>, activeIndex: Int, onSeek: (Long) -> Unit, onDismiss: () -> Unit) {
     val playingNow = stringResource(R.string.chapter_playing_a11y)
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberListSheetState(), dragHandle = { SheetDragHandle() }) {
         LazyColumn(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
             itemsIndexed(chapters, key = { index, _ -> index }) { index, chapter ->
                 val active = index == activeIndex
