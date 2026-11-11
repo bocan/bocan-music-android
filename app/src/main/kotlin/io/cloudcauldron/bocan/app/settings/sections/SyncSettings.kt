@@ -10,14 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -41,6 +37,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.LocalNetworkPermissionNotice
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
 import io.cloudcauldron.bocan.app.sync.SyncStatusUiState
@@ -78,11 +75,7 @@ fun SyncSettingsScreen(uiState: SyncStatusUiState, callbacks: SyncSettingsCallba
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.sync_status_title)) },
-                navigationIcon = {
-                    IconButton(onClick = callbacks.onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                }
+                navigationIcon = { BackButton(callbacks.onBack) }
             )
         }
     ) { padding ->

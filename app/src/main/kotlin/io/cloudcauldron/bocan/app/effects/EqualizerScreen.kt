@@ -10,12 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -30,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.playback.audio.EqBands
 import io.cloudcauldron.bocan.playback.audio.EqState
 import io.cloudcauldron.bocan.playback.audio.ReplayGainMode
@@ -51,11 +48,7 @@ fun EqualizerScreen(viewModel: EqualizerViewModel, onBack: () -> Unit, modifier:
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.eq_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                }
+                navigationIcon = { BackButton(onBack) }
             )
         }
     ) { padding ->
