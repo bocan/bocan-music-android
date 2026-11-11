@@ -176,6 +176,8 @@ dependencies {
     androidTestImplementation(libs.kotlin.test.junit)
     // Same reason as the unit tests: Compose ui-test's transitive Espresso 3.5.0 breaks on Android 17.
     androidTestImplementation(libs.androidx.test.espresso.core)
+    // Stubs the browser intents the About links and show-notes links fire, so no test leaves the app.
+    androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestUtil(libs.androidx.test.services)
 }

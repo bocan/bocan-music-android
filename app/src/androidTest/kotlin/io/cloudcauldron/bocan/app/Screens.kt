@@ -5,6 +5,11 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasAnyChild
+import androidx.compose.ui.test.hasAnySibling
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasParent
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -47,13 +52,32 @@ class Ui(private val rule: ComposeTestRule) {
     }
 
     /**
-     * A repeated control: the node tagged [tag] whose TalkBack sentence starts with "[label], ",
-     * or, for rows without one (list items, chips, menu options), whose own text is [label].
+     * A repeated control picked by its label: first in the merged tree ([rowMatcher]); failing that
+     * in the unmerged tree ([unmergedRowMatcher]), for a tagged control merged into its row (the
+     * queue's drag handle) or hidden from TalkBack (the songs rail's letters). A row a lazy list
+     * has not composed yet is scrolled to: each scrollable container on screen is asked to bring it in.
      */
     fun awaitRow(tag: String, label: String, timeoutMs: Long = TIMEOUT_MS): SemanticsNodeInteraction {
-        val matcher = hasTestTag(tag) and (rowTitled(label) or hasText(label))
-        await("'$label' tagged '$tag'", timeoutMs) { rule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
-        return rule.onAllNodes(matcher)[0]
+        var found: SemanticsNodeInteraction? = null
+        await("'$label' tagged '$tag'", timeoutMs) {
+            found = findRow(rule, tag, label)
+            if (found == null) scrollAnyContainerTo(rowMatchers(tag, label).first())
+            found != null
+        }
+        return checkNotNull(found)
+    }
+
+    /** Ask every scrollable container on screen to scroll [matcher] into view; the ones that do not hold it say so and are skipped. */
+    private fun scrollAnyContainerTo(matcher: SemanticsMatcher) {
+        val containers = rule.onAllNodes(hasScrollToNodeAction())
+        repeat(containers.fetchSemanticsNodes().size) { index ->
+            try {
+                containers[index].performScrollToNode(matcher)
+                return
+            } catch (notHere: AssertionError) {
+                // performScrollToNode asserts when the container has no such child: try the next container.
+            }
+        }
     }
 
     /**
@@ -95,6 +119,37 @@ class Ui(private val rule: ComposeTestRule) {
         /** A row whose TalkBack sentence starts with "[title], ". */
         fun rowTitled(title: String) = SemanticsMatcher("row titled '$title'") { node ->
             node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().any { it.startsWith("$title, ") }
+        }
+
+        /**
+         * A repeated control in the merged tree, most specific first: the node tagged [tag] whose
+         * TalkBack sentence starts with "[label], " or, for rows without one (list items, chips, menu
+         * options), whose text or description is [label]; then a tagged node whose child carries the
+         * label (an episode row, whose sentence sits on its info block); then one inside a labelled
+         * node (a preset's delete icon); last, one beside it (an episode's overflow button). The
+         * order matters: every row in a list is a sibling of every other, so the sibling match is
+         * only tried when nothing nearer matched.
+         */
+        fun rowMatchers(tag: String, label: String): List<SemanticsMatcher> {
+            val labelled = rowTitled(label) or hasText(label) or hasContentDescription(label)
+            return listOf(labelled, hasAnyChild(labelled), hasParent(labelled), hasAnySibling(labelled)).map { hasTestTag(tag) and it }
+        }
+
+        /** The unmerged tree, where a row's label sits on the tagged node itself or on a sibling. */
+        fun unmergedRowMatchers(tag: String, label: String): List<SemanticsMatcher> =
+            listOf(hasText(label), hasAnySibling(hasText(label))).map { hasTestTag(tag) and it }
+
+        /** The first node the matchers above find, merged tree first; null when none is composed. */
+        fun findRow(rule: ComposeTestRule, tag: String, label: String): SemanticsNodeInteraction? {
+            rowMatchers(tag, label).forEach { matcher ->
+                if (rule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()) return rule.onAllNodes(matcher)[0]
+            }
+            unmergedRowMatchers(tag, label).forEach { matcher ->
+                if (rule.onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) {
+                    return rule.onAllNodes(matcher, useUnmergedTree = true)[0]
+                }
+            }
+            return null
         }
     }
 }

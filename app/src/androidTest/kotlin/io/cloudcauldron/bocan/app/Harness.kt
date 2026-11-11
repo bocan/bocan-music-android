@@ -80,7 +80,7 @@ abstract class E2ETest(private val profile: FixtureProfile, private val complete
         }
     }
 
-    protected companion object {
+    companion object {
         const val PLAYER_TIMEOUT_MS = 15_000L
         const val UI_TIMEOUT_MS = 10_000L
         private const val PNG_QUALITY = 100

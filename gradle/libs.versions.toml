@@ -92,6 +92,7 @@ androidx-test-orchestrator = { group = "androidx.test", name = "orchestrator", v
 androidx-test-services = { group = "androidx.test.services", name = "test-services", version.ref = "androidxTestServices" }
 androidx-test-services-storage = { group = "androidx.test.services", name = "storage", version.ref = "androidxTestServices" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+androidx-test-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espresso" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
