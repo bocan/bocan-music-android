@@ -15,7 +15,8 @@ import kotlin.test.assertTrue
  * proves the tags it uses exist. Each audit names the [Destination] routes it visits, so
  * `DestinationCoverageTest` can prove that, between them, the audits reach every route.
  */
-abstract class AuditTest(profile: FixtureProfile, completeOnboarding: Boolean = true) : E2ETest(profile, completeOnboarding) {
+abstract class AuditTest(profile: FixtureProfile, completeOnboarding: Boolean = true, keepInstall: Boolean = false) :
+    E2ETest(profile, completeOnboarding, keepInstall) {
     protected val audit: TagAudit by lazy { TagAudit(composeRule) }
     private val visited = mutableSetOf<KClass<out Destination>>()
 

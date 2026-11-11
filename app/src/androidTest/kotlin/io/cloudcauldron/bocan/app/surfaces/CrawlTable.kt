@@ -72,6 +72,14 @@ sealed interface Action {
     data object Back : Action {
         override fun describe() = "press back on"
     }
+
+    /**
+     * Touch nothing; only wait for the postcondition. For a screen already showing state the
+     * app restored (after a process kill): the check is the point, there is nothing to do first.
+     */
+    data object Look : Action {
+        override fun describe() = "look at"
+    }
 }
 
 enum class Direction { Left, Right, Up, Down }
