@@ -91,6 +91,7 @@ private fun ContinueShelf(items: List<ContinueUi>, onResume: (String) -> Unit) {
                     modifier = Modifier
                         .width(200.dp)
                         .padding(end = 12.dp)
+                        .testTag(E2ETags.Rows.CONTINUE)
                         .clickable { onResume(card.episodeId) }
                         .semantics(mergeDescendants = true) { contentDescription = cardDescription }
                 ) {
@@ -121,6 +122,7 @@ private fun ShowCell(show: ShowUi, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(8.dp)
+            .testTag(E2ETags.Rows.SHOW)
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = cellDescription }
     ) {

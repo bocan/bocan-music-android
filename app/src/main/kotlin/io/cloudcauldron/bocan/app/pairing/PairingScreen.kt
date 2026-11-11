@@ -20,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.LocalNetworkPermissionNotice
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.userMessageRes
 import io.cloudcauldron.bocan.sync.SyncError
 import io.cloudcauldron.bocan.sync.discovery.DiscoveredMac
@@ -96,6 +98,7 @@ private fun MacRow(mac: DiscoveredMac, onPair: (DiscoveredMac) -> Unit) {
         tonalElevation = 2.dp,
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(E2ETags.Pairing.MAC_ROW)
             .clickable { onPair(mac) }
             .semantics(mergeDescendants = true) { contentDescription = rowDescription }
     ) {
@@ -118,7 +121,7 @@ private fun CodeEntryContent(isError: Boolean, onSubmitCode: (String) -> Unit) {
         )
     }
     Spacer(Modifier.height(8.dp))
-    CodeEntryField(onCodeComplete = onSubmitCode, isError = isError)
+    CodeEntryField(onCodeComplete = onSubmitCode, isError = isError, modifier = Modifier.testTag(E2ETags.Pairing.CODE))
 }
 
 @Composable
@@ -135,7 +138,7 @@ private fun PairedContent(serverName: String, onStartOver: () -> Unit) {
     Text(stringResource(R.string.pairing_paired_title), style = MaterialTheme.typography.titleLarge)
     Text(stringResource(R.string.pairing_paired_message, serverName), style = MaterialTheme.typography.bodyLarge)
     Spacer(Modifier.height(8.dp))
-    Button(onClick = onStartOver) {
+    Button(onClick = onStartOver, modifier = Modifier.testTag(E2ETags.Pairing.DONE)) {
         Text(stringResource(R.string.pairing_done))
     }
 }
@@ -152,7 +155,7 @@ private fun FailedContent(error: SyncError, onSubmitCode: (String) -> Unit, onSt
         color = MaterialTheme.colorScheme.error
     )
     Spacer(Modifier.height(8.dp))
-    Button(onClick = onStartOver) {
+    Button(onClick = onStartOver, modifier = Modifier.testTag(E2ETags.Pairing.START_OVER)) {
         Text(stringResource(R.string.pairing_start_over))
     }
 }

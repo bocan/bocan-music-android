@@ -13,8 +13,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * A sort affordance: an icon button that opens a menu of [options], the current
@@ -23,13 +26,14 @@ import io.cloudcauldron.bocan.app.R
 @Composable
 fun <T> SortMenu(selected: T, options: List<SortOption<T>>, onSelect: (T) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { expanded = true }) {
+    IconButton(onClick = { expanded = true }, modifier = Modifier.testTag(E2ETags.Sort.OPEN)) {
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.Sort,
             contentDescription = stringResource(R.string.sort_menu_a11y)
         )
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        // Every option shares one tag; a test picks the option by its label, like a row.
         options.forEach { option ->
             DropdownMenuItem(
                 text = { Text(option.label) },
@@ -37,7 +41,8 @@ fun <T> SortMenu(selected: T, options: List<SortOption<T>>, onSelect: (T) -> Uni
                 onClick = {
                     onSelect(option.value)
                     expanded = false
-                }
+                },
+                modifier = Modifier.testTag(E2ETags.Sort.OPTION)
             )
         }
     }

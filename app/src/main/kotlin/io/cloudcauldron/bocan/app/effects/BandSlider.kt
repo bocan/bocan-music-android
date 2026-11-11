@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -20,6 +21,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.audio.EqBands
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -42,7 +44,9 @@ fun BandSlider(centerHz: Double, gainDb: Double, onGain: (Double) -> Unit, modif
                 onValueChange = { onGain(EqBands.snap(it.toDouble())) },
                 valueRange = EqBands.MIN_DB.toFloat()..EqBands.MAX_DB.toFloat(),
                 steps = GRID_STEPS,
+                // Every band shares one tag; a test picks the band by its spoken frequency (content description).
                 modifier = Modifier
+                    .testTag(E2ETags.Equalizer.BAND)
                     .graphicsLayer {
                         rotationZ = ROTATION_DEGREES
                         transformOrigin = TransformOrigin(0f, 0f)

@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -24,6 +25,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.SleepDuration
 import io.cloudcauldron.bocan.playback.SleepTimerState
 
@@ -42,7 +45,7 @@ fun SleepTimerSheet(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
         Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
             // Announce arming and fading once per state change; the countdown itself stays quiet.
             val announced = when (state) {
@@ -75,17 +78,20 @@ fun SleepTimerSheet(
                 )
                 SleepTimerState.Fading -> Text(stringResource(R.string.sleep_timer_fading))
                 SleepTimerState.Idle -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // The presets share one tag; a test picks one by its label.
                     PRESET_MINUTES.forEach { minutes ->
                         FilterChip(
                             selected = false,
                             onClick = { onStart(SleepDuration.Fixed(minutes * MINUTE_MS)) },
-                            label = { Text(pluralStringResource(R.plurals.sleep_timer_minutes, minutes, minutes)) }
+                            label = { Text(pluralStringResource(R.plurals.sleep_timer_minutes, minutes, minutes)) },
+                            modifier = Modifier.testTag(E2ETags.SleepTimer.PRESET)
                         )
                     }
                     FilterChip(
                         selected = false,
                         onClick = { onStart(SleepDuration.EndOfTrack) },
-                        label = { Text(stringResource(R.string.sleep_timer_end_of_track)) }
+                        label = { Text(stringResource(R.string.sleep_timer_end_of_track)) },
+                        modifier = Modifier.testTag(E2ETags.SleepTimer.END_OF_TRACK)
                     )
                 }
             }
@@ -97,10 +103,10 @@ fun SleepTimerSheet(
 private fun ArmedControls(label: String, onExtend: (Int) -> Unit, onCancel: () -> Unit) {
     Column {
         Text(label, modifier = Modifier.padding(bottom = 12.dp))
-        Button(onClick = { onExtend(EXTEND_MINUTES) }, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = { onExtend(EXTEND_MINUTES) }, modifier = Modifier.fillMaxWidth().testTag(E2ETags.SleepTimer.EXTEND)) {
             Text(pluralStringResource(R.plurals.sleep_timer_extend, EXTEND_MINUTES, EXTEND_MINUTES))
         }
-        OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag(E2ETags.SleepTimer.CANCEL)) {
             Text(stringResource(R.string.sleep_timer_cancel))
         }
     }

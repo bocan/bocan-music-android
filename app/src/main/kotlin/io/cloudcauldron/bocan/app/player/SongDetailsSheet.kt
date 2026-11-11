@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.SheetDragHandle
 import io.cloudcauldron.bocan.playback.session.AudioPipelineFormat
 import java.text.DateFormat
 import java.text.NumberFormat
@@ -46,7 +47,8 @@ fun SongDetailsSheet(state: SongDetailsUiState, onDismiss: () -> Unit) {
     // too short for it all still works. Skipping the half-height stop is the whole point.
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = { SheetDragHandle() }
     ) {
         Column(
             modifier = Modifier

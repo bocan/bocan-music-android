@@ -22,10 +22,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.sync.localNetworkAccessGranted
 
 /**
@@ -59,7 +61,10 @@ fun LocalNetworkPermissionNotice(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.error
         )
-        Button(onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK) }) {
+        Button(
+            onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK) },
+            modifier = Modifier.testTag(E2ETags.Common.LOCAL_NETWORK_ALLOW)
+        ) {
             Text(stringResource(R.string.local_network_allow))
         }
     }

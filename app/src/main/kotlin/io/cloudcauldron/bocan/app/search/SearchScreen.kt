@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.TrackRow
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.library.LibraryCallbacks
 
 /**
@@ -61,7 +63,7 @@ fun SearchScreen(viewModel: SearchViewModel, callbacks: LibraryCallbacks, modifi
             placeholder = { Text(stringResource(R.string.search_hint)) },
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { viewModel.onSubmit() }),
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag(E2ETags.Search.FIELD)
         )
         if (query.isBlank()) {
             RecentSearches(ui.recent, onTap = { query = it }, onClear = viewModel::clearRecent)
@@ -83,10 +85,10 @@ private fun RecentSearches(recent: List<String>, onTap: (String) -> Unit, onClea
         recent.forEach { term ->
             ListItem(
                 headlineContent = { Text(term) },
-                modifier = Modifier.fillMaxWidth().clickable { onTap(term) }
+                modifier = Modifier.fillMaxWidth().testTag(E2ETags.Search.RECENT_ROW).clickable { onTap(term) }
             )
         }
-        TextButton(onClick = onClear, modifier = Modifier.padding(4.dp)) {
+        TextButton(onClick = onClear, modifier = Modifier.padding(4.dp).testTag(E2ETags.Search.CLEAR_RECENT)) {
             Text(stringResource(R.string.search_clear_recent))
         }
     }
@@ -120,7 +122,7 @@ private fun SearchResultsList(ui: SearchUiState, callbacks: LibraryCallbacks) {
                 ListItem(
                     headlineContent = { Text(album.name) },
                     supportingContent = { Text(album.artist) },
-                    modifier = Modifier.fillMaxWidth().clickable { callbacks.openAlbum(album.id) }
+                    modifier = Modifier.fillMaxWidth().testTag(E2ETags.Search.ALBUM_ROW).clickable { callbacks.openAlbum(album.id) }
                 )
             }
         }
@@ -129,7 +131,7 @@ private fun SearchResultsList(ui: SearchUiState, callbacks: LibraryCallbacks) {
             items(ui.artists, key = { "ar${it.id}" }, contentType = { "artist" }) { artist ->
                 ListItem(
                     headlineContent = { Text(artist.name) },
-                    modifier = Modifier.fillMaxWidth().clickable { callbacks.openArtist(artist.id) }
+                    modifier = Modifier.fillMaxWidth().testTag(E2ETags.Search.ARTIST_ROW).clickable { callbacks.openArtist(artist.id) }
                 )
             }
         }

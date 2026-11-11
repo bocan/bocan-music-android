@@ -14,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * A centered empty or first-run state: an icon, a message, an optional action, and an
@@ -54,10 +56,10 @@ fun EmptyState(
             textAlign = TextAlign.Center
         )
         if (actionLabel != null && onAction != null) {
-            Button(onClick = onAction) { Text(actionLabel) }
+            Button(onClick = onAction, modifier = Modifier.testTag(E2ETags.EmptyState.ACTION)) { Text(actionLabel) }
         }
         if (secondaryLabel != null && onSecondary != null) {
-            TextButton(onClick = onSecondary) { Text(secondaryLabel) }
+            TextButton(onClick = onSecondary, modifier = Modifier.testTag(E2ETags.EmptyState.SECONDARY)) { Text(secondaryLabel) }
         }
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -40,6 +41,7 @@ import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.LocalNetworkPermissionNotice
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.sync.SyncStatusUiState
 import io.cloudcauldron.bocan.app.sync.SyncStatusViewModel
 import io.cloudcauldron.bocan.app.sync.displayedDownloadCounts
@@ -100,12 +102,12 @@ private fun UnpairedContent(uiState: SyncStatusUiState, onPair: () -> Unit, onRe
     Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.sync_not_paired), style = MaterialTheme.typography.bodyLarge)
         LocalNetworkPermissionNotice()
-        Button(onClick = onPair) {
+        Button(onClick = onPair, modifier = Modifier.testTag(E2ETags.Sync.PAIR)) {
             Text(stringResource(R.string.home_pair_action))
         }
         if (uiState.demoActive) {
             Text(stringResource(R.string.sync_demo_active), style = MaterialTheme.typography.bodyMedium)
-            TextButton(onClick = onRemoveDemo, enabled = !uiState.removingMedia) {
+            TextButton(onClick = onRemoveDemo, enabled = !uiState.removingMedia, modifier = Modifier.testTag(E2ETags.Sync.REMOVE_DEMO)) {
                 Text(stringResource(R.string.sync_demo_remove_action))
             }
         }
@@ -130,18 +132,21 @@ private fun PairedContent(uiState: SyncStatusUiState, callbacks: SyncSettingsCal
         label = stringResource(R.string.sync_on_discovery_label),
         summary = stringResource(R.string.sync_on_discovery_summary),
         checked = uiState.syncOnDiscovery,
-        onCheckedChange = callbacks.onSetSyncOnDiscovery
+        onCheckedChange = callbacks.onSetSyncOnDiscovery,
+        tag = E2ETags.Sync.ON_DISCOVERY
     )
     SettingsToggleRow(
         label = stringResource(R.string.sync_periodic_label),
         summary = stringResource(R.string.sync_periodic_summary),
         checked = uiState.periodicSync,
-        onCheckedChange = callbacks.onSetPeriodicSync
+        onCheckedChange = callbacks.onSetPeriodicSync,
+        tag = E2ETags.Sync.PERIODIC
     )
     SettingsToggleRow(
         label = stringResource(R.string.sync_charging_label),
         checked = uiState.chargingOnly,
         onCheckedChange = callbacks.onSetChargingOnly,
+        tag = E2ETags.Sync.CHARGING_ONLY,
         enabled = uiState.periodicSync
     )
     StorageBlock(uiState, onRemoveRequested = { confirmRemove = true })
@@ -177,7 +182,7 @@ private fun PairedMacBlock(uiState: SyncStatusUiState, onUnpairRequested: () -> 
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-    TextButton(onClick = onUnpairRequested) {
+    TextButton(onClick = onUnpairRequested, modifier = Modifier.testTag(E2ETags.Sync.UNPAIR)) {
         Text(stringResource(R.string.sync_unpair_action))
     }
 }
@@ -226,7 +231,8 @@ private fun StorageBlock(uiState: SyncStatusUiState, onRemoveRequested: () -> Un
         } else {
             OutlinedButton(
                 onClick = onRemoveRequested,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.testTag(E2ETags.Sync.REMOVE_MEDIA)
             ) {
                 Text(stringResource(R.string.sync_remove_media_action))
             }

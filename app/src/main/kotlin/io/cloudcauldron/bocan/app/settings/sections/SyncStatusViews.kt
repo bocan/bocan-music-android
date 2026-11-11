@@ -6,8 +6,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.sync.SyncStatusUiState
 import io.cloudcauldron.bocan.app.userMessageRes
 import io.cloudcauldron.bocan.sync.engine.ItemFailure
@@ -51,9 +54,11 @@ private const val KIND_ARTWORK = "artwork"
 internal fun SyncActionButton(state: SyncState, onSyncNow: () -> Unit, onCancel: () -> Unit) {
     val active = state is SyncState.CheckingManifest || state is SyncState.Transferring || state is SyncState.Applying
     if (active) {
-        OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.sync_cancel_action)) }
+        OutlinedButton(onClick = onCancel, modifier = Modifier.testTag(E2ETags.Sync.CANCEL)) {
+            Text(stringResource(R.string.sync_cancel_action))
+        }
     } else {
-        Button(onClick = onSyncNow) { Text(stringResource(R.string.sync_now_action)) }
+        Button(onClick = onSyncNow, modifier = Modifier.testTag(E2ETags.Sync.SYNC_NOW)) { Text(stringResource(R.string.sync_now_action)) }
     }
 }
 

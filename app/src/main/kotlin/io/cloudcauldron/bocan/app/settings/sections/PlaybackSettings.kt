@@ -20,6 +20,7 @@ import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.SettingsNavRow
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -56,13 +57,15 @@ fun PlaybackSettingsScreen(
                 label = stringResource(R.string.eq_open),
                 summary = stringResource(R.string.playback_eq_summary),
                 icon = Icons.Rounded.Equalizer,
-                onClick = onOpenEqualizer
+                onClick = onOpenEqualizer,
+                tag = E2ETags.PlaybackSettings.EQUALIZER
             )
             SettingsToggleRow(
                 label = stringResource(R.string.settings_resume_on_reconnect),
                 summary = stringResource(R.string.settings_resume_on_reconnect_summary),
                 checked = resume,
-                onCheckedChange = onSetResumeOnReconnect
+                onCheckedChange = onSetResumeOnReconnect,
+                tag = E2ETags.PlaybackSettings.RESUME_ON_RECONNECT
             )
         }
     }

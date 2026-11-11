@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.ReadableWidth
 import io.cloudcauldron.bocan.app.components.SettingsNavRow
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** The settings hub: one row per section, each opening its own screen. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,37 +45,43 @@ fun SettingsScreen(
                     label = stringResource(R.string.sync_status_title),
                     summary = stringResource(R.string.settings_section_sync_summary),
                     icon = Icons.Rounded.Sync,
-                    onClick = onOpenSync
+                    onClick = onOpenSync,
+                    tag = E2ETags.Settings.SYNC
                 )
                 SettingsNavRow(
                     label = stringResource(R.string.playback_settings_title),
                     summary = stringResource(R.string.settings_section_playback_summary),
                     icon = Icons.Rounded.Tune,
-                    onClick = onOpenPlayback
+                    onClick = onOpenPlayback,
+                    tag = E2ETags.Settings.PLAYBACK
                 )
                 SettingsNavRow(
                     label = stringResource(R.string.podcast_settings_title),
                     summary = stringResource(R.string.settings_section_podcasts_summary),
                     icon = Icons.Rounded.Podcasts,
-                    onClick = onOpenPodcasts
+                    onClick = onOpenPodcasts,
+                    tag = E2ETags.Settings.PODCASTS
                 )
                 SettingsNavRow(
                     label = stringResource(R.string.scrobble_title),
                     summary = stringResource(R.string.settings_section_scrobble_summary),
                     icon = Icons.Rounded.Radio,
-                    onClick = onOpenScrobbling
+                    onClick = onOpenScrobbling,
+                    tag = E2ETags.Settings.SCROBBLING
                 )
                 SettingsNavRow(
                     label = stringResource(R.string.appearance_title),
                     summary = stringResource(R.string.settings_section_appearance_summary),
                     icon = Icons.Rounded.Palette,
-                    onClick = onOpenAppearance
+                    onClick = onOpenAppearance,
+                    tag = E2ETags.Settings.APPEARANCE
                 )
                 SettingsNavRow(
                     label = stringResource(R.string.about_title),
                     summary = stringResource(R.string.settings_section_about_summary),
                     icon = Icons.Rounded.Info,
-                    onClick = onOpenAbout
+                    onClick = onOpenAbout,
+                    tag = E2ETags.Settings.ABOUT
                 )
             }
         }

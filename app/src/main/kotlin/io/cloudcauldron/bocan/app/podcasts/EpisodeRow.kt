@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -33,6 +34,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * One episode row: title, published date, duration, and a listening indicator (unplayed
@@ -56,6 +58,7 @@ fun EpisodeRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
+            .testTag(E2ETags.Rows.EPISODE)
             .clickable(onClick = onPlay)
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
@@ -122,22 +125,34 @@ private fun rowDescription(episode: EpisodeUi): String {
 @Composable
 private fun EpisodeMenu(onMarkPlayed: () -> Unit, onMarkUnplayed: () -> Unit, onShowNotes: () -> Unit) {
     var open by remember { mutableStateOf(false) }
-    IconButton(onClick = { open = true }) {
+    IconButton(onClick = { open = true }, modifier = Modifier.testTag(E2ETags.Rows.EPISODE_MENU)) {
         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
     }
     DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-        DropdownMenuItem(text = { Text(stringResource(R.string.episode_mark_played)) }, onClick = {
-            open = false
-            onMarkPlayed()
-        })
-        DropdownMenuItem(text = { Text(stringResource(R.string.episode_mark_unplayed)) }, onClick = {
-            open = false
-            onMarkUnplayed()
-        })
-        DropdownMenuItem(text = { Text(stringResource(R.string.episode_show_notes)) }, onClick = {
-            open = false
-            onShowNotes()
-        })
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.episode_mark_played)) },
+            onClick = {
+                open = false
+                onMarkPlayed()
+            },
+            modifier = Modifier.testTag(E2ETags.EpisodeMenu.MARK_PLAYED)
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.episode_mark_unplayed)) },
+            onClick = {
+                open = false
+                onMarkUnplayed()
+            },
+            modifier = Modifier.testTag(E2ETags.EpisodeMenu.MARK_UNPLAYED)
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.episode_show_notes)) },
+            onClick = {
+                open = false
+                onShowNotes()
+            },
+            modifier = Modifier.testTag(E2ETags.EpisodeMenu.SHOW_NOTES)
+        )
     }
 }
 

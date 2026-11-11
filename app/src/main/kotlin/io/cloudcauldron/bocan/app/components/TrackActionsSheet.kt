@@ -17,8 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.library.LibraryCallbacks
 import io.cloudcauldron.bocan.app.library.TrackUi
 
@@ -33,11 +35,12 @@ fun TrackActionsSheet(track: TrackUi, callbacks: LibraryCallbacks, onDismiss: ()
         block()
         onDismiss()
     }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
         Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
             SheetAction(
                 Icons.AutoMirrored.Rounded.PlaylistPlay,
                 R.string.action_play_next,
+                E2ETags.TrackActions.PLAY_NEXT,
                 dismissing {
                     callbacks.playNext(listOf(track.id))
                 }
@@ -45,21 +48,32 @@ fun TrackActionsSheet(track: TrackUi, callbacks: LibraryCallbacks, onDismiss: ()
             SheetAction(
                 Icons.AutoMirrored.Rounded.QueueMusic,
                 R.string.action_add_to_queue,
+                E2ETags.TrackActions.ADD_TO_QUEUE,
                 dismissing {
                     callbacks.addToQueue(listOf(track.id))
                 }
             )
-            SheetAction(Icons.Rounded.Album, R.string.action_go_to_album, dismissing { callbacks.openAlbum(track.albumId) })
-            SheetAction(Icons.Rounded.Person, R.string.action_go_to_artist, dismissing { callbacks.openArtist(track.albumArtistId) })
+            SheetAction(
+                Icons.Rounded.Album,
+                R.string.action_go_to_album,
+                E2ETags.TrackActions.GO_TO_ALBUM,
+                dismissing { callbacks.openAlbum(track.albumId) }
+            )
+            SheetAction(
+                Icons.Rounded.Person,
+                R.string.action_go_to_artist,
+                E2ETags.TrackActions.GO_TO_ARTIST,
+                dismissing { callbacks.openArtist(track.albumArtistId) }
+            )
         }
     }
 }
 
 @Composable
-private fun SheetAction(icon: ImageVector, labelRes: Int, onClick: () -> Unit) {
+private fun SheetAction(icon: ImageVector, labelRes: Int, tag: String, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(stringResource(labelRes)) },
         leadingContent = { Icon(icon, contentDescription = null) },
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+        modifier = Modifier.fillMaxWidth().testTag(tag).clickable(onClick = onClick)
     )
 }

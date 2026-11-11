@@ -13,12 +13,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * The seek bar. The thumb follows the player position (ticked from PlayerUiState) until
@@ -47,7 +49,7 @@ fun SeekBar(positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, modifier
                 onSeek((dragFraction * durationMs).toLong())
                 dragging = false
             },
-            modifier = Modifier.semantics {
+            modifier = Modifier.testTag(E2ETags.NowPlaying.SEEK).semantics {
                 contentDescription = sliderLabel
                 stateDescription = sliderState
             }

@@ -31,11 +31,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.text.HtmlCompat
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * Show notes rendered from sanitized HTML. The untrusted feed HTML is stripped of scripts,
@@ -49,7 +52,7 @@ fun ShowNotesSheet(title: String, descriptionHtml: String?, onDismiss: () -> Uni
     val context = LocalContext.current
     var pendingInsecureUrl by remember { mutableStateOf<String?>(null) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -105,8 +108,16 @@ private fun InsecureLinkDialog(url: String, onConfirm: () -> Unit, onDismiss: ()
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.show_notes_link_confirm_title)) },
         text = { Text(stringResource(R.string.show_notes_link_confirm_message, url)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_open)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+        confirmButton = {
+            TextButton(onClick = onConfirm, modifier = Modifier.testTag(E2ETags.ShowNotes.INSECURE_OPEN)) {
+                Text(stringResource(R.string.action_open))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag(E2ETags.ShowNotes.INSECURE_CANCEL)) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
     )
 }
 

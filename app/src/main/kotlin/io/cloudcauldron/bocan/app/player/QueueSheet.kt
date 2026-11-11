@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -44,6 +45,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.ArtworkImage
+import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import kotlin.math.roundToInt
 
 private val ROW_HEIGHT = 64.dp
@@ -58,7 +61,7 @@ private val ROW_HEIGHT = 64.dp
 @Composable
 fun QueueSheet(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove: (Int) -> Unit, onClear: () -> Unit, onDismiss: () -> Unit) {
     var confirmClear by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
@@ -73,7 +76,9 @@ fun QueueSheet(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove: (Int) 
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
             )
-            TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.queue_clear)) }
+            TextButton(onClick = { confirmClear = true }, modifier = Modifier.testTag(E2ETags.Queue.CLEAR)) {
+                Text(stringResource(R.string.queue_clear))
+            }
         }
         QueueList(state, onMove, onRemove)
     }
@@ -83,13 +88,18 @@ fun QueueSheet(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove: (Int) 
             onDismissRequest = { confirmClear = false },
             title = { Text(stringResource(R.string.queue_clear_confirm_title)) },
             confirmButton = {
-                TextButton(onClick = {
-                    onClear()
-                    confirmClear = false
-                }) { Text(stringResource(R.string.queue_clear)) }
+                TextButton(
+                    onClick = {
+                        onClear()
+                        confirmClear = false
+                    },
+                    modifier = Modifier.testTag(E2ETags.Queue.CLEAR_CONFIRM)
+                ) { Text(stringResource(R.string.queue_clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { confirmClear = false }, modifier = Modifier.testTag(E2ETags.Queue.CLEAR_CANCEL)) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         )
     }
@@ -193,6 +203,7 @@ private fun QueueRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(ROW_HEIGHT)
+            .testTag(E2ETags.Rows.QUEUE)
             .graphicsLayer { translationY = dragOffset }
             .background(background)
             .padding(horizontal = 16.dp)
@@ -216,6 +227,7 @@ private fun QueueRow(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .size(48.dp)
+                .testTag(E2ETags.Rows.QUEUE_HANDLE)
                 .padding(10.dp)
                 .pointerInput(item.mediaId) {
                     detectDragGesturesAfterLongPress(

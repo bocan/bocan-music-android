@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -18,6 +19,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.library.AlbumUi
 
 /** One album in the albums grid: square artwork, title, and artist (with year when known). */
@@ -28,6 +30,7 @@ fun AlbumCell(album: AlbumUi, onClick: () -> Unit, modifier: Modifier = Modifier
     val description = stringResource(R.string.album_cell_a11y, album.name, subtitle, songs)
     Column(
         modifier = modifier
+            .testTag(E2ETags.Rows.ALBUM)
             .clickable(onClick = onClick)
             .padding(8.dp)
             .semantics(mergeDescendants = true) { contentDescription = description }

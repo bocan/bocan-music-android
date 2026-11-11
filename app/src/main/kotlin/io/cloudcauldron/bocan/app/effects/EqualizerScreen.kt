@@ -22,11 +22,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.BackButton
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.audio.EqBands
 import io.cloudcauldron.bocan.playback.audio.EqState
 import io.cloudcauldron.bocan.playback.audio.ReplayGainMode
@@ -92,6 +94,7 @@ private fun MasterSwitch(enabled: Boolean, onToggle: (Boolean) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(E2ETags.Equalizer.MASTER)
             .toggleable(value = enabled, role = Role.Switch, onValueChange = onToggle)
             .padding(vertical = 8.dp)
     ) {
@@ -131,7 +134,8 @@ private fun BassBoost(bassBoostDb: Double, onBass: (Double) -> Unit) {
         value = bassBoostDb.toFloat(),
         onValueChange = { onBass(it.toDouble()) },
         range = EqState.BASS_MIN_DB.toFloat()..EqState.BASS_MAX_DB.toFloat(),
-        steps = BASS_STEPS
+        steps = BASS_STEPS,
+        tag = E2ETags.Equalizer.BASS_BOOST
     )
 }
 
@@ -144,9 +148,9 @@ private fun ReplayGainSection(state: EqState, onMode: (ReplayGainMode) -> Unit, 
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-        ReplayGainChip(R.string.eq_replaygain_off, state.replayGainMode == ReplayGainMode.Off) { onMode(ReplayGainMode.Off) }
-        ReplayGainChip(R.string.eq_replaygain_track, state.replayGainMode == ReplayGainMode.Track) { onMode(ReplayGainMode.Track) }
-        ReplayGainChip(R.string.eq_replaygain_album, state.replayGainMode == ReplayGainMode.Album) { onMode(ReplayGainMode.Album) }
+        ReplayGainMode.entries.forEach { mode ->
+            ReplayGainChip(mode, state.replayGainMode == mode) { onMode(mode) }
+        }
     }
     if (state.replayGainMode != ReplayGainMode.Off) {
         LabelledSlider(
@@ -155,14 +159,20 @@ private fun ReplayGainSection(state: EqState, onMode: (ReplayGainMode) -> Unit, 
             value = state.preampDb.toFloat(),
             onValueChange = { onPreamp(it.toDouble()) },
             range = EqState.PREAMP_MIN_DB.toFloat()..EqState.PREAMP_MAX_DB.toFloat(),
-            steps = PREAMP_STEPS
+            steps = PREAMP_STEPS,
+            tag = E2ETags.Equalizer.PREAMP
         )
     }
 }
 
 @Composable
-private fun ReplayGainChip(labelRes: Int, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(labelRes)) })
+private fun ReplayGainChip(mode: ReplayGainMode, selected: Boolean, onClick: () -> Unit) {
+    val (labelRes, tag) = when (mode) {
+        ReplayGainMode.Off -> R.string.eq_replaygain_off to E2ETags.Equalizer.REPLAYGAIN_OFF
+        ReplayGainMode.Track -> R.string.eq_replaygain_track to E2ETags.Equalizer.REPLAYGAIN_TRACK
+        ReplayGainMode.Album -> R.string.eq_replaygain_album to E2ETags.Equalizer.REPLAYGAIN_ALBUM
+    }
+    FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(labelRes)) }, modifier = Modifier.testTag(tag))
 }
 
 @Composable
@@ -171,6 +181,7 @@ private fun SkipSilenceToggle(enabled: Boolean, onToggle: (Boolean) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(E2ETags.Equalizer.SKIP_SILENCE)
             .toggleable(value = enabled, role = Role.Switch, onValueChange = onToggle)
             .padding(vertical = 8.dp)
     ) {
@@ -205,7 +216,8 @@ private fun FadeControl(fadeSeconds: Int, onFade: (Int) -> Unit) {
         value = fadeSeconds.toFloat(),
         onValueChange = { onFade(it.roundToInt()) },
         range = EqState.FADE_MIN_SECONDS.toFloat()..EqState.FADE_MAX_SECONDS.toFloat(),
-        steps = EqState.FADE_MAX_SECONDS - 1
+        steps = EqState.FADE_MAX_SECONDS - 1,
+        tag = E2ETags.Equalizer.FADE
     )
 }
 

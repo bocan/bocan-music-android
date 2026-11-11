@@ -22,9 +22,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.audio.EqPreset
 
 /**
@@ -47,15 +49,19 @@ fun PresetPicker(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
     ) {
+        // Every preset chip shares one tag (and every delete icon another); a test picks one by its label.
         presets.forEach { preset ->
             FilterChip(
                 selected = preset.id == activePresetId,
                 onClick = { onSelect(preset) },
                 label = { Text(presetDisplayName(preset)) },
-                trailingIcon = deleteIcon(preset, onDelete)
+                trailingIcon = deleteIcon(preset, onDelete),
+                modifier = Modifier.testTag(E2ETags.Equalizer.PRESET_OPTION)
             )
         }
-        TextButton(onClick = { showSave = true }) { Text(stringResource(R.string.eq_save_preset)) }
+        TextButton(onClick = { showSave = true }, modifier = Modifier.testTag(E2ETags.Equalizer.SAVE_PRESET)) {
+            Text(stringResource(R.string.eq_save_preset))
+        }
     }
 
     if (showSave) {
@@ -77,6 +83,7 @@ private fun deleteIcon(preset: EqPreset, onDelete: (String) -> Unit): (@Composab
             contentDescription = stringResource(R.string.eq_delete_preset),
             // Pad inside the clickable so the touch target reaches 48 dp.
             modifier = Modifier
+                .testTag(E2ETags.Equalizer.PRESET_DELETE)
                 .clickable { onDelete(preset.id) }
                 .padding(start = 4.dp)
                 .minimumInteractiveComponentSize()
@@ -95,15 +102,24 @@ private fun SavePresetDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit)
                 value = name,
                 onValueChange = { name = it },
                 singleLine = true,
-                label = { Text(stringResource(R.string.eq_preset_name_hint)) }
+                label = { Text(stringResource(R.string.eq_preset_name_hint)) },
+                modifier = Modifier.testTag(E2ETags.Equalizer.SAVE_NAME)
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) {
+            TextButton(
+                onClick = { onConfirm(name) },
+                enabled = name.isNotBlank(),
+                modifier = Modifier.testTag(E2ETags.Equalizer.SAVE_CONFIRM)
+            ) {
                 Text(stringResource(R.string.eq_save))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.eq_cancel)) } }
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag(E2ETags.Equalizer.SAVE_CANCEL)) {
+                Text(stringResource(R.string.eq_cancel))
+            }
+        }
     )
 }
 

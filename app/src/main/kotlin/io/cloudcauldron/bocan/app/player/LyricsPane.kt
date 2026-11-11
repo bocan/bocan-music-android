@@ -18,11 +18,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.lyrics.LyricLine
 import io.cloudcauldron.bocan.playback.lyrics.LyricsDoc
 import io.cloudcauldron.bocan.playback.lyrics.LyricsResult
@@ -77,6 +79,7 @@ private fun SyncedLyrics(lines: List<LyricLine>, activeIndex: Int, offsetMs: Lon
                 color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag(E2ETags.Rows.LYRIC_LINE)
                     .clickable { onSeekToLine(line.timeMs) }
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             )

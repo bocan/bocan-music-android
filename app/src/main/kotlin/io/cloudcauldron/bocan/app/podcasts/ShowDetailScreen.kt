@@ -23,12 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.ArtworkImage
 import io.cloudcauldron.bocan.app.components.BackButton
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** A show's detail: header (artwork, title, author, description) and its episodes newest-first. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +97,7 @@ private fun ShowHeader(header: ShowHeaderUi) {
                     text = stringResource(if (expanded) R.string.show_description_less else R.string.show_description_more),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 4.dp).clickable { expanded = !expanded }
+                    modifier = Modifier.padding(top = 4.dp).testTag(E2ETags.Show.DESCRIPTION_TOGGLE).clickable { expanded = !expanded }
                 )
             }
         }

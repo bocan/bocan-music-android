@@ -19,12 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.library.TrackUi
 
 /**
@@ -47,6 +49,7 @@ fun TrackRow(track: TrackUi, onClick: () -> Unit, onLongClick: () -> Unit, modif
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
+            .testTag(E2ETags.Rows.TRACK)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { contentDescription = description }
