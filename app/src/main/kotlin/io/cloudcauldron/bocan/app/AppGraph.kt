@@ -22,6 +22,7 @@ import io.cloudcauldron.bocan.app.demo.AndroidDemoAssets
 import io.cloudcauldron.bocan.app.demo.DemoLibrary
 import io.cloudcauldron.bocan.app.demo.DemoPreferences
 import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
+import io.cloudcauldron.bocan.app.fixtures.fixtureChaptersFetcher
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
 import io.cloudcauldron.bocan.app.library.GenreDetailViewModel
@@ -287,9 +288,13 @@ class AppGraph(val application: Application) {
 
     fun equalizerViewModel(): EqualizerViewModel = EqualizerViewModel(eqPreferences, playbackDispatchers)
 
-    // The bundled demo episode carries its chapters in the assets; everything else asks the Mac.
+    // The bundled demo episode carries its chapters in the assets, and in debug builds so does
+    // the end-to-end fixture (phase 17); everything else asks the Mac.
+    private val fixtureChapters = application.fixtureChaptersFetcher()
     private val chaptersFetcher = io.cloudcauldron.bocan.playback.podcast.ChaptersFetcher { episodeId ->
-        demoLibrary.chaptersJson(episodeId) ?: syncCoordinator.fetchChapters(episodeId)
+        demoLibrary.chaptersJson(episodeId)
+            ?: fixtureChapters?.fetch(episodeId)
+            ?: syncCoordinator.fetchChapters(episodeId)
     }
 
     val chaptersRepository: ChaptersRepository by lazy {

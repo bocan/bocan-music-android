@@ -1760,7 +1760,7 @@
       "title": "Night Shift Pilot",
       "publishedAt": "2026-09-20T22:00:00Z",
       "durationMs": 120000,
-      "descriptionHtml": "<p>Night Shift Pilot, a fixture episode.</p>",
+      "descriptionHtml": "<p>Night Shift Pilot, a fixture episode.</p><p><a href=\"https://example.invalid/night-shift\">Episode page</a> and <a href=\"http://example.invalid/night-shift-archive\">old archive</a>.</p>",
       "relPath": "Podcasts/Fixture/the-night-shift-radio/03 night-shift-pilot.mp3",
       "size": 482360,
       "sha256": "0526f0e83c9308f15e8b2411ad485ca7a0d3d3ce6e2a02126e8130b6cdf4a0e3",

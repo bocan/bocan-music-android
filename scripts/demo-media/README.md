@@ -48,6 +48,9 @@ clipped tracks), ReplayGain on all, covers on all but two tracks, synced lyrics 
 and unsynced on two, a manual and a smart playlist, a folder with a child playlist, and
 two shows with three 2 minute episodes at 32 kbps: one chaptered, and one in progress at
 40 percent (48 s, inside the app's resume window of 5 s from the start to 15 s from the end).
+The third episode's show notes carry one https and one http link, so the end-to-end crawl
+reaches the insecure-link confirmation; both point at `example.invalid`. Debug builds serve
+the chaptered episode's chapters from `fixture/chapters/` (`FixtureChapters.kt`).
 Every id is at or above 9001000001, one million past the demo. Asset paths are ASCII
 slugs; accents and symbols live in the tags and the manifest.
 
