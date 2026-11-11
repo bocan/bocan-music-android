@@ -26,6 +26,10 @@ out="build/e2e"
 
 rm -rf "$out"
 mkdir -p "$out"
+# Gradle leaves the last run's results in place when a build fails before the tests run;
+# clear them so the summary below can never report an earlier run as this one.
+rm -rf app/build/outputs/androidTest-results/connected app/build/reports/androidTests/connected \
+  app/build/outputs/connected_android_test_additional_output
 
 serial="$("$adb" devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')"
 booted_here=0
