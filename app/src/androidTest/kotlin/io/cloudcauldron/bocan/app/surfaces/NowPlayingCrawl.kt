@@ -145,6 +145,16 @@ class NowPlayingCrawl : CrawlTest(FixtureProfile.PairedLibrary) {
         private fun queue(c: CrawlContext): List<Step> {
             val (one, two, three) = listOf("First Light 1", "First Light 2", "First Light 3").map(c::track)
             return listOf(
+                // The shuffle steps left 2 and 3 in a random order, and moving the last row down is a
+                // no-op that the reorder check would pass. Replay the album so the queue is 1, 2, 3.
+                Step(E2ETags.NowPlaying.ALBUM, Tap, Navigated("album", E2ETags.Detail.PLAY)),
+                Step(
+                    E2ETags.Detail.PLAY,
+                    Tap,
+                    PlayerState(what = "the album queued in order") { state -> state.queue.map { it.mediaId } == listOf(one, two, three) }
+                ),
+                Step(E2ETags.MiniPlayer.PLAY_PAUSE, Tap, PlayerState(playing = false)),
+                Step(E2ETags.MiniPlayer.OPEN, Tap, PLAYER),
                 Step(E2ETags.NowPlaying.QUICK_QUEUE, Tap, Visible(E2ETags.Rows.QUEUE, "First Light 3")),
                 Step(
                     E2ETags.Rows.QUEUE_HANDLE,
