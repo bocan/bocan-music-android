@@ -49,6 +49,8 @@ class FixtureLibrary(
                 seedLibrary()
             }
             FixtureProfile.EmptyPaired -> pair()
+            // Nothing to seed: the harness spends the demo's seed, and a sync fills the library.
+            FixtureProfile.Unpaired -> Unit
         }
         log.info("fixture.seeded", mapOf("profile" to profile.name))
     }

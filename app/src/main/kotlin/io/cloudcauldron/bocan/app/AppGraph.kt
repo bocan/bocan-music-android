@@ -22,6 +22,7 @@ import io.cloudcauldron.bocan.app.demo.AndroidDemoAssets
 import io.cloudcauldron.bocan.app.demo.DemoLibrary
 import io.cloudcauldron.bocan.app.demo.DemoPreferences
 import io.cloudcauldron.bocan.app.effects.EqualizerViewModel
+import io.cloudcauldron.bocan.app.fixtures.discoveryBrowser
 import io.cloudcauldron.bocan.app.fixtures.fixtureChaptersFetcher
 import io.cloudcauldron.bocan.app.library.AlbumDetailViewModel
 import io.cloudcauldron.bocan.app.library.ArtistDetailViewModel
@@ -137,7 +138,8 @@ class AppGraph(val application: Application) {
 
     val trustStore: TrustStore by lazy { TrustStore(database.syncDao()) }
 
-    val macDiscovery: MacDiscovery by lazy { MacDiscovery.create(application, dispatchers) }
+    // The debug build lets the end-to-end suite's loopback fake Mac stand in for mDNS; release passes mDNS through.
+    val macDiscovery: MacDiscovery by lazy { MacDiscovery.create(application, dispatchers, ::discoveryBrowser) }
 
     val syncSettings: SyncSettings by lazy { SyncSettings(application) }
 
