@@ -11,7 +11,7 @@ import io.cloudcauldron.bocan.sync.SyncError
  */
 @StringRes
 fun SyncError.userMessageRes(): Int = when (this) {
-    SyncError.CodeMismatch -> R.string.pairing_code_mismatch
+    is SyncError.CodeMismatch -> R.string.pairing_code_mismatch
     SyncError.TooManyAttempts -> R.string.pairing_too_many_attempts
     SyncError.NotPaired -> R.string.sync_state_failed_not_paired
     SyncError.PairingExpired -> R.string.pairing_error_expired

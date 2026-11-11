@@ -19,7 +19,7 @@ class ErrorMessagesTests {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     private val syncErrors = listOf(
-        SyncError.CodeMismatch,
+        SyncError.CodeMismatch(attemptsLeft = 2),
         SyncError.TooManyAttempts,
         SyncError.NotPaired,
         SyncError.PairingExpired,
