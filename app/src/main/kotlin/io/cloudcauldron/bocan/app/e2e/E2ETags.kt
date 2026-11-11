@@ -59,6 +59,9 @@ object E2ETags {
 
         /** The songs tab's A to Z rail; every letter shares this tag and is picked by its text. */
         const val ALPHABET_LETTER = "library.alphabet.row.jump"
+
+        /** The whole rail, for a drag along it through every letter. */
+        const val ALPHABET_RAIL = "library.alphabet.rail"
     }
 
     /** The sort affordance on the library tabs; every option shares [OPTION] and is picked by its label. */

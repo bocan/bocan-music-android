@@ -3,6 +3,7 @@ package io.cloudcauldron.bocan.app.surfaces
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.fixtures.FixtureProfile
+import io.cloudcauldron.bocan.app.surfaces.Action.Swipe
 import io.cloudcauldron.bocan.app.surfaces.Action.Tap
 import io.cloudcauldron.bocan.app.surfaces.Postcondition.Holds
 import io.cloudcauldron.bocan.app.surfaces.Postcondition.Navigated
@@ -80,10 +81,13 @@ class LibraryCrawl : CrawlTest(FixtureProfile.PairedLibrary) {
             Step(E2ETags.Sort.OPTION, Tap, stored, row = label)
         )
 
-        // Songs are back in title order here, so "S" lands on the first S title.
+        // Songs are back in title order here. A drag down the whole rail ends past the last letter
+        // with songs, so the list lands on the first W title. "A" is the one letter every height
+        // shows, and has no songs, so a tap on it goes to the first letter that has some.
         private fun rail(c: CrawlContext) = listOf(
-            Step(E2ETags.Library.ALPHABET_LETTER, Tap, Visible(E2ETags.Rows.TRACK, "Signal 1"), row = "S"),
-            Step(E2ETags.Rows.TRACK, Tap, PlayerState(playing = true, mediaIdPrefix = c.track("Signal 1")), row = "Signal 1")
+            Step(E2ETags.Library.ALPHABET_RAIL, Swipe(Direction.Down), Visible(E2ETags.Rows.TRACK, "Wading 1")),
+            Step(E2ETags.Library.ALPHABET_LETTER, Tap, Visible(E2ETags.Rows.TRACK, "Breakwater 1"), row = "A"),
+            Step(E2ETags.Rows.TRACK, Tap, PlayerState(playing = true, mediaIdPrefix = c.track("Breakwater 1")), row = "Breakwater 1")
         )
 
         private fun shuffleAndChrome() = listOf(
