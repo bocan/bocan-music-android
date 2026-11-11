@@ -238,11 +238,20 @@ class NowPlayingViewModel(
         scope.launch { block() }
     }
 
-    /** The previous and next queue entries as neighbor display, null at the ends. */
+    /**
+     * The previous and next queue entries as neighbor display, null at the ends. Under repeat
+     * all the ends wrap, because the transport's next and previous (Media3's seek to the next or
+     * previous item) wrap there too: a swipe must reach exactly what the buttons reach. Repeat
+     * one does not wrap (Media3 navigates it as repeat off), and a lone item has no neighbor.
+     */
     private fun neighborsOf(player: PlayerUiState): Pair<NeighborDisplay?, NeighborDisplay?> {
         val index = player.queueIndex
         if (index < 0) return null to null
-        return player.queue.getOrNull(index - 1)?.toNeighbor() to player.queue.getOrNull(index + 1)?.toNeighbor()
+        val queue = player.queue
+        val wraps = player.repeatMode == RepeatMode.All && queue.size > 1
+        val previous = queue.getOrNull(index - 1) ?: queue.lastOrNull()?.takeIf { wraps }
+        val next = queue.getOrNull(index + 1) ?: queue.firstOrNull()?.takeIf { wraps }
+        return previous?.toNeighbor() to next?.toNeighbor()
     }
 
     private fun NowPlayingItem.toNeighbor() = NeighborDisplay(title = title, artist = artist.orEmpty(), artworkUri = artworkUri)
