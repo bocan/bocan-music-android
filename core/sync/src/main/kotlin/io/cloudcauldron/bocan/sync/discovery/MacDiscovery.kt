@@ -52,9 +52,16 @@ class MacDiscovery(
     companion object {
         const val SERVICE_TYPE = "_bocansync._tcp."
 
-        /** Wire discovery to the real NsdManager and multicast lock for [context]. */
-        fun create(context: Context, dispatchers: CoroutineDispatchers): MacDiscovery =
-            MacDiscovery(NsdServiceBrowserImpl(context), WifiMulticastLeaseImpl(context), dispatchers)
+        /**
+         * Wire discovery to the real NsdManager and multicast lock for [context]. [browser] may
+         * wrap the real mDNS browser; only the debug build's end-to-end override does, and the
+         * TXT parsing above still runs on whatever it emits.
+         */
+        fun create(
+            context: Context,
+            dispatchers: CoroutineDispatchers,
+            browser: (NsdServiceBrowser) -> NsdServiceBrowser = { it }
+        ): MacDiscovery = MacDiscovery(browser(NsdServiceBrowserImpl(context)), WifiMulticastLeaseImpl(context), dispatchers)
 
         private const val KEY_VERSION = "v"
         private const val KEY_FINGERPRINT = "fp"
