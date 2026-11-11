@@ -22,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,7 @@ import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
 import io.cloudcauldron.bocan.app.data.AppearanceSettings
 import io.cloudcauldron.bocan.app.data.ThemeMode
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -66,14 +68,16 @@ fun AppearanceSettingsScreen(settings: Flow<AppearanceSettings>, callbacks: Appe
                     label = stringResource(R.string.appearance_dynamic_label),
                     summary = stringResource(R.string.appearance_dynamic_summary),
                     checked = current.dynamicColor,
-                    onCheckedChange = callbacks.onSetDynamicColor
+                    onCheckedChange = callbacks.onSetDynamicColor,
+                    tag = E2ETags.Appearance.DYNAMIC_COLOR
                 )
             }
             SettingsToggleRow(
                 label = stringResource(R.string.appearance_pure_black_label),
                 summary = stringResource(R.string.appearance_pure_black_summary),
                 checked = current.pureBlack,
-                onCheckedChange = callbacks.onSetPureBlack
+                onCheckedChange = callbacks.onSetPureBlack,
+                tag = E2ETags.Appearance.PURE_BLACK
             )
         }
     }
@@ -95,6 +99,7 @@ private fun ThemeModeRow(mode: ThemeMode, selected: Boolean, onSelect: (ThemeMod
         modifier = Modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 48.dp)
+            .testTag(mode.tag())
             .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(mode) })
             .padding(horizontal = 16.dp)
     ) {
@@ -112,4 +117,10 @@ private fun ThemeMode.label(): Int = when (this) {
     ThemeMode.System -> R.string.appearance_theme_system
     ThemeMode.Light -> R.string.appearance_theme_light
     ThemeMode.Dark -> R.string.appearance_theme_dark
+}
+
+private fun ThemeMode.tag(): String = when (this) {
+    ThemeMode.System -> E2ETags.Appearance.THEME_SYSTEM
+    ThemeMode.Light -> E2ETags.Appearance.THEME_LIGHT
+    ThemeMode.Dark -> E2ETags.Appearance.THEME_DARK
 }

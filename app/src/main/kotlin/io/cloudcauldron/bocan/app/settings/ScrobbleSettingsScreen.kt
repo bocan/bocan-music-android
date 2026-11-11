@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.BackButton
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.scrobble.providers.ProviderId
 import kotlinx.coroutines.launch
 
@@ -97,6 +99,7 @@ private fun MasterRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(E2ETags.Scrobble.MASTER)
             .toggleable(value = enabled, role = Role.Switch, onValueChange = onToggle)
             .padding(vertical = 12.dp)
     ) {
@@ -122,26 +125,38 @@ private fun ProviderRow(provider: ScrobbleProviderRow, viewModel: ScrobbleSettin
     HorizontalDivider()
     ProviderHeader(provider, viewModel)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+        val disconnectTag = E2ETags.Scrobble.provider(provider.id, E2ETags.Scrobble.DISCONNECT)
+        val connectTag = E2ETags.Scrobble.provider(provider.id, E2ETags.Scrobble.CONNECT)
         if (provider.connected) {
-            OutlinedButton(onClick = { viewModel.disconnect(provider.id) }) { Text(stringResource(R.string.scrobble_disconnect)) }
+            OutlinedButton(onClick = { viewModel.disconnect(provider.id) }, modifier = Modifier.testTag(disconnectTag)) {
+                Text(stringResource(R.string.scrobble_disconnect))
+            }
         } else if (provider.id == ProviderId.LAST_FM) {
-            OutlinedButton(onClick = {
-                scope.launch {
-                    val url = viewModel.beginLastFmAuth()
-                    if (url != null) {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-                        awaitingLastFm = true
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        val url = viewModel.beginLastFmAuth()
+                        if (url != null) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                            awaitingLastFm = true
+                        }
                     }
-                }
-            }) { Text(stringResource(R.string.scrobble_connect)) }
+                },
+                modifier = Modifier.testTag(connectTag)
+            ) { Text(stringResource(R.string.scrobble_connect)) }
             if (awaitingLastFm) {
-                TextButton(onClick = {
-                    viewModel.finishLastFmAuth()
-                    awaitingLastFm = false
-                }) { Text(stringResource(R.string.scrobble_lastfm_finish)) }
+                TextButton(
+                    onClick = {
+                        viewModel.finishLastFmAuth()
+                        awaitingLastFm = false
+                    },
+                    modifier = Modifier.testTag(E2ETags.Scrobble.provider(provider.id, E2ETags.Scrobble.FINISH_LAST_FM))
+                ) { Text(stringResource(R.string.scrobble_lastfm_finish)) }
             }
         } else {
-            OutlinedButton(onClick = { showTokenDialog = true }) { Text(stringResource(R.string.scrobble_connect)) }
+            OutlinedButton(onClick = { showTokenDialog = true }, modifier = Modifier.testTag(connectTag)) {
+                Text(stringResource(R.string.scrobble_connect))
+            }
         }
     }
 
@@ -177,7 +192,9 @@ private fun ProviderHeader(provider: ScrobbleProviderRow, viewModel: ScrobbleSet
             Switch(
                 checked = provider.enabled,
                 onCheckedChange = { viewModel.setProviderEnabled(provider.id, it) },
-                modifier = Modifier.semantics { contentDescription = switchLabel }
+                modifier = Modifier
+                    .testTag(E2ETags.Scrobble.provider(provider.id, E2ETags.Scrobble.ENABLED))
+                    .semantics { contentDescription = switchLabel }
             )
         }
     }
@@ -191,8 +208,12 @@ private fun DeadLetterItem(row: DeadLetterRow, viewModel: ScrobbleSettingsViewMo
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f)
         )
-        TextButton(onClick = { viewModel.retryDeadLettered(row.id) }) { Text(stringResource(R.string.scrobble_retry)) }
-        TextButton(onClick = { viewModel.discardDeadLettered(row.id) }) { Text(stringResource(R.string.scrobble_discard)) }
+        TextButton(onClick = { viewModel.retryDeadLettered(row.id) }, modifier = Modifier.testTag(E2ETags.Scrobble.DEAD_LETTER_RETRY)) {
+            Text(stringResource(R.string.scrobble_retry))
+        }
+        TextButton(onClick = { viewModel.discardDeadLettered(row.id) }, modifier = Modifier.testTag(E2ETags.Scrobble.DEAD_LETTER_DISCARD)) {
+            Text(stringResource(R.string.scrobble_discard))
+        }
     }
 }
 
@@ -210,15 +231,23 @@ private fun TokenDialog(providerName: String, onConfirm: (String) -> Unit, onDis
                     onValueChange = { token = it },
                     singleLine = true,
                     label = { Text(stringResource(R.string.scrobble_token_hint)) },
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp).testTag(E2ETags.Scrobble.TOKEN_FIELD)
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(token) }, enabled = token.isNotBlank()) {
+            TextButton(
+                onClick = { onConfirm(token) },
+                enabled = token.isNotBlank(),
+                modifier = Modifier.testTag(E2ETags.Scrobble.TOKEN_SAVE)
+            ) {
                 Text(stringResource(R.string.scrobble_save))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.scrobble_cancel)) } }
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag(E2ETags.Scrobble.TOKEN_CANCEL)) {
+                Text(stringResource(R.string.scrobble_cancel))
+            }
+        }
     )
 }

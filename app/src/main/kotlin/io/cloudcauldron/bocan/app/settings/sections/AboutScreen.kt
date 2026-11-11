@@ -23,6 +23,7 @@ import io.cloudcauldron.bocan.app.BuildConfig
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.SettingsNavRow
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * About: version, the privacy explainer (what syncs and what never leaves this
@@ -59,17 +60,20 @@ fun AboutScreen(onShowTour: () -> Unit, onBack: () -> Unit, modifier: Modifier =
             SettingsNavRow(
                 label = stringResource(R.string.about_site_label),
                 summary = SITE_URL,
-                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, SITE_URL.toUri())) }
+                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, SITE_URL.toUri())) },
+                tag = E2ETags.About.SITE
             )
             SettingsNavRow(
                 label = stringResource(R.string.about_site_android_label),
                 summary = SITE_URL_ANDROID,
-                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, SITE_URL_ANDROID.toUri())) }
+                onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, SITE_URL_ANDROID.toUri())) },
+                tag = E2ETags.About.SITE_ANDROID
             )
             SettingsNavRow(
                 label = stringResource(R.string.about_tour_label),
                 summary = stringResource(R.string.about_tour_summary),
-                onClick = onShowTour
+                onClick = onShowTour,
+                tag = E2ETags.About.TOUR
             )
             SectionHeading(stringResource(R.string.about_licenses_title))
             LICENSES.forEach { entry -> LicenseRow(entry) }

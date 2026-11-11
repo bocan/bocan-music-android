@@ -9,6 +9,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -18,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import kotlin.math.abs
 
-/** A labelled horizontal slider whose current value is announced as its state description. */
+/** A labelled horizontal slider whose current value is announced as its state description. [tag] is its end-to-end tag. */
 @Composable
 internal fun LabelledSlider(
     label: String,
@@ -26,7 +27,8 @@ internal fun LabelledSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     range: ClosedFloatingPointRange<Float>,
-    steps: Int
+    steps: Int,
+    tag: String
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -38,7 +40,7 @@ internal fun LabelledSlider(
             onValueChange = onValueChange,
             valueRange = range,
             steps = steps,
-            modifier = Modifier.semantics {
+            modifier = Modifier.testTag(tag).semantics {
                 contentDescription = label
                 stateDescription = valueText
             }

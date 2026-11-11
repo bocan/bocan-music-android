@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -26,6 +27,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 private const val MIN_SPEED = 0.5f
 private const val MAX_SPEED = 2.0f
@@ -36,7 +39,7 @@ private const val NORMAL_SPEED = 1.0f
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpeedSheet(speed: Float, onSpeed: (Float) -> Unit, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)
@@ -47,7 +50,10 @@ fun SpeedSheet(speed: Float, onSpeed: (Float) -> Unit, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier = Modifier.padding(vertical = 16.dp)
             ) {
-                FilledIconButton(onClick = { onSpeed((speed - STEP).coerceIn(MIN_SPEED, MAX_SPEED)) }) {
+                FilledIconButton(
+                    onClick = { onSpeed((speed - STEP).coerceIn(MIN_SPEED, MAX_SPEED)) },
+                    modifier = Modifier.testTag(E2ETags.Speed.SLOWER)
+                ) {
                     Icon(Icons.Rounded.Remove, contentDescription = stringResource(R.string.speed_slower))
                 }
                 val speedText = stringResource(R.string.speed_value, speed)
@@ -59,11 +65,16 @@ fun SpeedSheet(speed: Float, onSpeed: (Float) -> Unit, onDismiss: () -> Unit) {
                         contentDescription = speedText
                     }
                 )
-                FilledIconButton(onClick = { onSpeed((speed + STEP).coerceIn(MIN_SPEED, MAX_SPEED)) }) {
+                FilledIconButton(
+                    onClick = { onSpeed((speed + STEP).coerceIn(MIN_SPEED, MAX_SPEED)) },
+                    modifier = Modifier.testTag(E2ETags.Speed.FASTER)
+                ) {
                     Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.speed_faster))
                 }
             }
-            TextButton(onClick = { onSpeed(NORMAL_SPEED) }) { Text(stringResource(R.string.speed_reset)) }
+            TextButton(onClick = { onSpeed(NORMAL_SPEED) }, modifier = Modifier.testTag(E2ETags.Speed.RESET)) {
+                Text(stringResource(R.string.speed_reset))
+            }
         }
     }
 }

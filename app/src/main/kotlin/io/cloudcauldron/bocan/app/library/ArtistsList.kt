@@ -8,9 +8,11 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** Artists with derived album and song counts; tapping opens the artist detail. */
 @Composable
@@ -22,7 +24,7 @@ fun ArtistsList(artists: List<ArtistUi>, onOpen: (Long) -> Unit, modifier: Modif
             ListItem(
                 headlineContent = { Text(artist.name) },
                 supportingContent = { Text(stringResource(R.string.counts_joined, albums, songs)) },
-                modifier = Modifier.fillMaxWidth().clickable { onOpen(artist.id) }
+                modifier = Modifier.fillMaxWidth().testTag(E2ETags.Rows.ARTIST).clickable { onOpen(artist.id) }
             )
         }
     }

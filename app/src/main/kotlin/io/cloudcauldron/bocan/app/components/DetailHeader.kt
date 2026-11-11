@@ -18,9 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** Large square artwork for a detail header. */
 @Composable
@@ -42,7 +44,7 @@ fun DetailArtwork(artworkHash: String?, modifier: Modifier = Modifier) {
 @Composable
 fun ShuffleAllAction(trackIds: List<Long>, onShuffle: (List<Long>) -> Unit) {
     if (trackIds.isEmpty()) return
-    IconButton(onClick = { onShuffle(trackIds) }) {
+    IconButton(onClick = { onShuffle(trackIds) }, modifier = Modifier.testTag(E2ETags.Detail.SHUFFLE_ALL)) {
         Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.action_shuffle_all))
     }
 }
@@ -50,7 +52,7 @@ fun ShuffleAllAction(trackIds: List<Long>, onShuffle: (List<Long>) -> Unit) {
 /** A shuffle-all top-bar action that carries no id list; the caller resolves them on demand. */
 @Composable
 fun ShuffleAllButton(onShuffle: () -> Unit) {
-    IconButton(onClick = onShuffle) {
+    IconButton(onClick = onShuffle, modifier = Modifier.testTag(E2ETags.Library.SHUFFLE_ALL)) {
         Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.action_shuffle_all))
     }
 }
@@ -63,11 +65,11 @@ fun PlayShuffleRow(onPlay: () -> Unit, onShuffle: () -> Unit, modifier: Modifier
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)
     ) {
-        Button(onClick = onPlay, modifier = Modifier.weight(1f)) {
+        Button(onClick = onPlay, modifier = Modifier.weight(1f).testTag(E2ETags.Detail.PLAY)) {
             Icon(Icons.Rounded.PlayArrow, contentDescription = null)
             Text(stringResource(R.string.action_play), modifier = Modifier.padding(start = 6.dp))
         }
-        OutlinedButton(onClick = onShuffle, modifier = Modifier.weight(1f)) {
+        OutlinedButton(onClick = onShuffle, modifier = Modifier.weight(1f).testTag(E2ETags.Detail.SHUFFLE)) {
             Icon(Icons.Rounded.Shuffle, contentDescription = null)
             Text(stringResource(R.string.action_shuffle), modifier = Modifier.padding(start = 6.dp))
         }

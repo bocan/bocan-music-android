@@ -16,19 +16,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
  * A settings toggle where the whole row is one Switch-role target: TalkBack
  * announces label, summary, and state as a single sentence, and the touch target
- * is the full row, never the 32 dp thumb.
+ * is the full row, never the 32 dp thumb. [tag] is the row's stable end-to-end tag
+ * (an `E2ETags` constant); it is required so a new setting cannot ship without one.
  */
 @Composable
 fun SettingsToggleRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    tag: String,
     modifier: Modifier = Modifier,
     summary: String? = null,
     enabled: Boolean = true
@@ -38,6 +41,7 @@ fun SettingsToggleRow(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MIN_ROW_HEIGHT)
+            .testTag(tag)
             .toggleable(value = checked, role = Role.Switch, enabled = enabled, onValueChange = onCheckedChange)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
@@ -52,9 +56,16 @@ fun SettingsToggleRow(
     }
 }
 
-/** A navigation row for the settings hub: icon, label, optional summary, chevron-free. */
+/** A navigation row for the settings hub: icon, label, optional summary, chevron-free. [tag] as for [SettingsToggleRow]. */
 @Composable
-fun SettingsNavRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, summary: String? = null, icon: ImageVector? = null) {
+fun SettingsNavRow(
+    label: String,
+    onClick: () -> Unit,
+    tag: String,
+    modifier: Modifier = Modifier,
+    summary: String? = null,
+    icon: ImageVector? = null
+) {
     ListItem(
         headlineContent = { Text(label) },
         supportingContent = summary?.let { { Text(it) } },
@@ -62,6 +73,7 @@ fun SettingsNavRow(label: String, onClick: () -> Unit, modifier: Modifier = Modi
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MIN_ROW_HEIGHT)
+            .testTag(tag)
             .clickable(onClick = onClick)
     )
 }

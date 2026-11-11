@@ -16,9 +16,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.components.TrackList
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import kotlinx.coroutines.launch
 
 /**
@@ -60,7 +62,9 @@ fun SongsList(songs: List<TrackUi>, callbacks: LibraryCallbacks, modifier: Modif
                     text = letter.toString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
+                    // Hidden from TalkBack (cleared above) but still in the test tree; every letter shares one tag.
                     modifier = Modifier
+                        .testTag(E2ETags.Library.ALPHABET_LETTER)
                         .clickable {
                             firstIndexByLetter[letter]?.let { index -> scope.launch { listState.scrollToItem(index) } }
                         }

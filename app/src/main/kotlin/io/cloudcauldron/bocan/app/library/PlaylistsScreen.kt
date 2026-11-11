@@ -19,9 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import io.cloudcauldron.bocan.app.components.ArtworkImage
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.persistence.entities.PlaylistEntity
 import io.cloudcauldron.bocan.persistence.model.PlaylistKind
 
@@ -46,7 +48,11 @@ fun PlaylistsScreen(playlists: List<PlaylistEntity>, onOpen: (Long) -> Unit, mod
                 ListItem(
                     headlineContent = { Text(playlist.name) },
                     leadingContent = { PlaylistLeading(playlist) },
-                    modifier = Modifier.fillMaxWidth().clickable { onOpen(playlist.id) }.padding(start = indent)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(E2ETags.Rows.PLAYLIST)
+                        .clickable { onOpen(playlist.id) }
+                        .padding(start = indent)
                 )
             }
         }

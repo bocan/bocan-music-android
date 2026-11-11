@@ -19,10 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.BackButton
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.settings.PodcastSettingsViewModel
 
 /** Podcast defaults: playback speed and the skip-back and skip-forward intervals. */
@@ -50,7 +52,8 @@ fun PodcastSettingsScreen(viewModel: PodcastSettingsViewModel, onBack: () -> Uni
                     FilterChip(
                         selected = ui.defaultSpeed == preset,
                         onClick = { viewModel.setDefaultSpeed(preset) },
-                        label = { Text(stringResource(R.string.speed_value, preset.toFloat())) }
+                        label = { Text(stringResource(R.string.speed_value, preset.toFloat())) },
+                        modifier = Modifier.testTag(E2ETags.PodcastSettings.SPEED_OPTION)
                     )
                 }
             }
@@ -59,7 +62,8 @@ fun PodcastSettingsScreen(viewModel: PodcastSettingsViewModel, onBack: () -> Uni
                     FilterChip(
                         selected = ui.skipBackSeconds == preset,
                         onClick = { viewModel.setSkipBackSeconds(preset) },
-                        label = { Text(stringResource(R.string.podcast_settings_seconds, preset)) }
+                        label = { Text(stringResource(R.string.podcast_settings_seconds, preset)) },
+                        modifier = Modifier.testTag(E2ETags.PodcastSettings.SKIP_BACK_OPTION)
                     )
                 }
             }
@@ -68,7 +72,8 @@ fun PodcastSettingsScreen(viewModel: PodcastSettingsViewModel, onBack: () -> Uni
                     FilterChip(
                         selected = ui.skipForwardSeconds == preset,
                         onClick = { viewModel.setSkipForwardSeconds(preset) },
-                        label = { Text(stringResource(R.string.podcast_settings_seconds, preset)) }
+                        label = { Text(stringResource(R.string.podcast_settings_seconds, preset)) },
+                        modifier = Modifier.testTag(E2ETags.PodcastSettings.SKIP_FORWARD_OPTION)
                     )
                 }
             }

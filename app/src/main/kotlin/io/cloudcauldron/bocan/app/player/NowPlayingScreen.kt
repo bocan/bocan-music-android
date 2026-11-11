@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.podcasts.ChaptersSheet
 import io.cloudcauldron.bocan.playback.SleepTimerState
 import io.cloudcauldron.bocan.playback.audio.WaveformSource
@@ -242,7 +244,7 @@ private fun TopRow(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        IconButton(onClick = onBack) {
+        IconButton(onClick = onBack, modifier = Modifier.testTag(E2ETags.NowPlaying.COLLAPSE)) {
             Icon(Icons.Rounded.ExpandMore, contentDescription = stringResource(R.string.action_back))
         }
         Spacer(Modifier.weight(1f))
@@ -253,40 +255,43 @@ private fun TopRow(
                 tint = MaterialTheme.colorScheme.primary
             )
         }
-        IconButton(onClick = {
-            onOverflow()
-            menuOpen = true
-        }) {
+        IconButton(
+            onClick = {
+                onOverflow()
+                menuOpen = true
+            },
+            modifier = Modifier.testTag(E2ETags.NowPlaying.OVERFLOW)
+        ) {
             Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            OverflowItem(Icons.Rounded.Bedtime, R.string.sleep_timer_title) {
+            OverflowItem(Icons.Rounded.Bedtime, R.string.sleep_timer_title, E2ETags.NowPlaying.MENU_SLEEP) {
                 menuOpen = false
                 onSleep()
             }
-            OverflowItem(Icons.Rounded.Speed, R.string.speed_title) {
+            OverflowItem(Icons.Rounded.Speed, R.string.speed_title, E2ETags.NowPlaying.MENU_SPEED) {
                 menuOpen = false
                 onSpeed()
             }
-            OverflowItem(Icons.Rounded.Equalizer, R.string.eq_title) {
+            OverflowItem(Icons.Rounded.Equalizer, R.string.eq_title, E2ETags.NowPlaying.MENU_EQUALIZER) {
                 menuOpen = false
                 onEqualizer()
             }
-            OverflowItem(Icons.Rounded.Lyrics, R.string.lyrics_toggle) {
+            OverflowItem(Icons.Rounded.Lyrics, R.string.lyrics_toggle, E2ETags.NowPlaying.MENU_LYRICS) {
                 menuOpen = false
                 onToggleLyrics()
             }
-            OverflowItem(Icons.Rounded.Info, R.string.song_details_title) {
+            OverflowItem(Icons.Rounded.Info, R.string.song_details_title, E2ETags.NowPlaying.MENU_DETAILS) {
                 menuOpen = false
                 onSongDetails()
             }
             if (hasChapters) {
-                OverflowItem(Icons.AutoMirrored.Rounded.List, R.string.chapters_title) {
+                OverflowItem(Icons.AutoMirrored.Rounded.List, R.string.chapters_title, E2ETags.NowPlaying.MENU_CHAPTERS) {
                     menuOpen = false
                     onChapters()
                 }
             }
-            OverflowItem(Icons.AutoMirrored.Rounded.QueueMusic, R.string.queue_title) {
+            OverflowItem(Icons.AutoMirrored.Rounded.QueueMusic, R.string.queue_title, E2ETags.NowPlaying.MENU_QUEUE) {
                 menuOpen = false
                 onQueue()
             }
@@ -341,34 +346,35 @@ private fun QuickActionsRow(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onSpeed) {
+        IconButton(onClick = onSpeed, modifier = Modifier.testTag(E2ETags.NowPlaying.QUICK_SPEED)) {
             Icon(Icons.Rounded.Speed, contentDescription = stringResource(R.string.speed_title))
         }
-        IconButton(onClick = onEqualizer) {
+        IconButton(onClick = onEqualizer, modifier = Modifier.testTag(E2ETags.NowPlaying.QUICK_EQUALIZER)) {
             Icon(Icons.Rounded.Equalizer, contentDescription = stringResource(R.string.eq_title))
         }
-        IconButton(onClick = onToggleLyrics) {
+        IconButton(onClick = onToggleLyrics, modifier = Modifier.testTag(E2ETags.NowPlaying.QUICK_LYRICS)) {
             Icon(
                 Icons.Rounded.Lyrics,
                 contentDescription = stringResource(R.string.lyrics_toggle),
                 tint = if (lyricsActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
             )
         }
-        IconButton(onClick = onSongDetails) {
+        IconButton(onClick = onSongDetails, modifier = Modifier.testTag(E2ETags.NowPlaying.QUICK_DETAILS)) {
             Icon(Icons.Rounded.Info, contentDescription = stringResource(R.string.song_details_title))
         }
-        IconButton(onClick = onQueue) {
+        IconButton(onClick = onQueue, modifier = Modifier.testTag(E2ETags.NowPlaying.QUICK_QUEUE)) {
             Icon(Icons.AutoMirrored.Rounded.QueueMusic, contentDescription = stringResource(R.string.queue_title))
         }
     }
 }
 
 @Composable
-private fun OverflowItem(icon: androidx.compose.ui.graphics.vector.ImageVector, labelRes: Int, onClick: () -> Unit) {
+private fun OverflowItem(icon: androidx.compose.ui.graphics.vector.ImageVector, labelRes: Int, tag: String, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(stringResource(labelRes)) },
         leadingIcon = { Icon(icon, contentDescription = null) },
-        onClick = onClick
+        onClick = onClick,
+        modifier = Modifier.testTag(tag)
     )
 }
 
@@ -394,6 +400,7 @@ private fun ArtworkStrip(
         modifier = modifier
             .fillMaxWidth()
             .clipToBounds()
+            .testTag(E2ETags.NowPlaying.GESTURES)
             .playerGestures(gesture, reducedMotion, actions, labels)
     ) {
         if (!reducedMotion) {
@@ -486,13 +493,13 @@ private fun CurrentCard(ui: NowPlayingUiState, onOpenArtist: () -> Unit, onOpenA
             text = ui.artist,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = onOpenArtist).padding(top = 4.dp)
+            modifier = Modifier.testTag(E2ETags.NowPlaying.ARTIST).clickable(onClick = onOpenArtist).padding(top = 4.dp)
         )
         Text(
             text = ui.album,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.clickable(onClick = onOpenAlbum)
+            modifier = Modifier.testTag(E2ETags.NowPlaying.ALBUM).clickable(onClick = onOpenAlbum)
         )
         ui.podcast.chapterTitle?.let { chapter ->
             Text(

@@ -19,6 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
  * A folder browser derived from track relPaths in memory (never from SQL). Tapping a
@@ -42,14 +44,14 @@ fun FoldersScreen(items: List<FolderTree.Item>, callbacks: LibraryCallbacks, mod
                     is FolderTree.Entry.Folder -> ListItem(
                         headlineContent = { Text(entry.name) },
                         leadingContent = { Icon(Icons.Rounded.Folder, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth().clickable { path = entry.segments }
+                        modifier = Modifier.fillMaxWidth().testTag(E2ETags.Rows.FOLDER).clickable { path = entry.segments }
                     )
                     is FolderTree.Entry.Track -> {
                         val playIndex = trackIdsHere.indexOf(entry.trackId)
                         ListItem(
                             headlineContent = { Text(entry.name) },
                             leadingContent = { Icon(Icons.AutoMirrored.Rounded.InsertDriveFile, contentDescription = null) },
-                            modifier = Modifier.fillMaxWidth().clickable {
+                            modifier = Modifier.fillMaxWidth().testTag(E2ETags.Rows.FOLDER_TRACK).clickable {
                                 callbacks.playContext(trackIdsHere, playIndex.coerceAtLeast(0))
                             }
                         )

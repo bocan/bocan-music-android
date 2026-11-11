@@ -8,6 +8,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** The list of genres; tapping opens the genre detail. */
 @Composable
@@ -16,7 +18,7 @@ fun GenresList(genres: List<String>, onOpen: (String) -> Unit, modifier: Modifie
         items(genres, key = { it }, contentType = { "genre" }) { genre ->
             ListItem(
                 headlineContent = { Text(genre) },
-                modifier = Modifier.fillMaxWidth().clickable { onOpen(genre) }
+                modifier = Modifier.fillMaxWidth().testTag(E2ETags.Rows.GENRE).clickable { onOpen(genre) }
             )
         }
     }
