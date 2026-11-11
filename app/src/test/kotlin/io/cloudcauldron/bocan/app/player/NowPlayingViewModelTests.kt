@@ -115,6 +115,33 @@ class NowPlayingViewModelTests {
     }
 
     @Test
+    fun `under repeat all the ends wrap, as the transport's next and previous do`() = runTest {
+        val items = arrayOf(item("track:1", "One", null), item("track:2", "Two", null), item("track:3", "Three", null))
+        val transport = FakePlaybackTransport(queueState(2, *items).copy(repeatMode = RepeatMode.All))
+        val vm = viewModel(transport)
+        val last = vm.state.first { it.hasItem }
+        assertEquals("Two", last.previous?.title)
+        assertEquals("One", last.next?.title)
+        transport.emit(queueState(0, *items).copy(repeatMode = RepeatMode.All))
+        val first = vm.state.first { it.hasItem && it.title == "One" }
+        assertEquals("Three", first.previous?.title)
+        assertEquals("Two", first.next?.title)
+        vm.dispose()
+    }
+
+    @Test
+    fun `repeat one and a single item never wrap`() = runTest {
+        val items = arrayOf(item("track:1", "One", null), item("track:2", "Two", null))
+        val transport = FakePlaybackTransport(queueState(1, *items).copy(repeatMode = RepeatMode.One))
+        val vm = viewModel(transport)
+        assertNull(vm.state.first { it.hasItem }.next)
+        transport.emit(queueState(0, item("track:1", "One", null)).copy(repeatMode = RepeatMode.All))
+        val single = vm.state.first { it.hasItem && it.previous == null && it.next == null }
+        assertEquals("One", single.title)
+        vm.dispose()
+    }
+
+    @Test
     fun `a queue mutation re-warms both neighbors through Coil`() = runTest {
         val warmed = mutableListOf<String?>()
         val transport = FakePlaybackTransport(
