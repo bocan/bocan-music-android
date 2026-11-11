@@ -6,6 +6,7 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -32,9 +33,26 @@ class Ui(private val rule: ComposeTestRule) {
         awaitTag(tag).performClick()
     }
 
+    /** Wait until at least one node carries [tag]: a repeated control such as a row. */
+    fun awaitAny(tag: String, timeoutMs: Long = TIMEOUT_MS) {
+        await("any control '$tag'", timeoutMs) {
+            rule.onAllNodes(hasTestTag(tag), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     fun awaitRow(title: String, timeoutMs: Long = TIMEOUT_MS): SemanticsNodeInteraction {
         val matcher = rowTitled(title)
         await("row '$title'", timeoutMs) { rule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
+        return rule.onAllNodes(matcher)[0]
+    }
+
+    /**
+     * A repeated control: the node tagged [tag] whose TalkBack sentence starts with "[label], ",
+     * or, for rows without one (list items, chips, menu options), whose own text is [label].
+     */
+    fun awaitRow(tag: String, label: String, timeoutMs: Long = TIMEOUT_MS): SemanticsNodeInteraction {
+        val matcher = hasTestTag(tag) and (rowTitled(label) or hasText(label))
+        await("'$label' tagged '$tag'", timeoutMs) { rule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
         return rule.onAllNodes(matcher)[0]
     }
 
