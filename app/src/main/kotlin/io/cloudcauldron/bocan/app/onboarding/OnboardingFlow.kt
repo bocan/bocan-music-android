@@ -27,9 +27,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.pairing.PairingScreen
 import io.cloudcauldron.bocan.app.pairing.PairingViewModel
 import io.cloudcauldron.bocan.app.settings.sections.statusLine
@@ -96,8 +98,10 @@ private fun WelcomePage(onGetStarted: () -> Unit, onSkip: () -> Unit) {
     OnboardingPage(
         title = stringResource(R.string.onboarding_welcome_title),
         primaryLabel = stringResource(R.string.onboarding_get_started),
+        primaryTag = E2ETags.Onboarding.GET_STARTED,
         onPrimary = onGetStarted,
         secondaryLabel = stringResource(R.string.onboarding_skip),
+        secondaryTag = E2ETags.Onboarding.SKIP,
         onSecondary = onSkip
     ) {
         Text(stringResource(R.string.onboarding_welcome_body), style = MaterialTheme.typography.bodyLarge)
@@ -115,7 +119,7 @@ private fun PairPage(pairingViewModelFactory: () -> PairingViewModel, onPaired: 
     Column(modifier = Modifier.fillMaxSize()) {
         PairingScreen(viewModel, modifier = Modifier.weight(1f))
         Row(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onSkip) {
+            TextButton(onClick = onSkip, modifier = Modifier.testTag(E2ETags.Onboarding.PAIR_SKIP)) {
                 Text(stringResource(R.string.onboarding_skip))
             }
         }
@@ -128,8 +132,10 @@ private fun FirstSyncPage(syncState: StateFlow<SyncState>, onDone: () -> Unit, o
     OnboardingPage(
         title = stringResource(R.string.onboarding_sync_title),
         primaryLabel = stringResource(R.string.onboarding_done),
+        primaryTag = E2ETags.Onboarding.DONE,
         onPrimary = onDone,
         secondaryLabel = stringResource(R.string.onboarding_sync_later),
+        secondaryTag = E2ETags.Onboarding.SYNC_LATER,
         onSecondary = onCancelAndLater
     ) {
         Text(stringResource(R.string.onboarding_sync_body), style = MaterialTheme.typography.bodyLarge)
@@ -149,8 +155,10 @@ private fun FirstSyncPage(syncState: StateFlow<SyncState>, onDone: () -> Unit, o
 private fun OnboardingPage(
     title: String,
     primaryLabel: String,
+    primaryTag: String,
     onPrimary: () -> Unit,
     secondaryLabel: String,
+    secondaryTag: String,
     onSecondary: () -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -169,10 +177,10 @@ private fun OnboardingPage(
             content()
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = onPrimary, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onPrimary, modifier = Modifier.fillMaxWidth().testTag(primaryTag)) {
                 Text(primaryLabel)
             }
-            OutlinedButton(onClick = onSecondary, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onSecondary, modifier = Modifier.fillMaxWidth().testTag(secondaryTag)) {
                 Text(secondaryLabel)
             }
         }

@@ -25,12 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.queue.PlayerUiState
 
 /**
@@ -51,6 +53,7 @@ fun MiniPlayerBar(state: PlayerUiState, onPlayPause: () -> Unit, onTap: () -> Un
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag(E2ETags.MiniPlayer.OPEN)
                     .clickable(onClick = onTap)
                     .padding(horizontal = 8.dp, vertical = 6.dp)
             ) {
@@ -58,7 +61,7 @@ fun MiniPlayerBar(state: PlayerUiState, onPlayPause: () -> Unit, onTap: () -> Un
                 // the same way Now Playing does, so the bar shows the playing track's art.
                 UriArtwork(
                     uri = current.artworkUri,
-                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp))
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)).testTag(E2ETags.MiniPlayer.ARTWORK)
                 )
                 Spacer(Modifier.width(10.dp))
                 // One TalkBack sentence for the whole bar; the play button keeps its own.
@@ -84,7 +87,7 @@ fun MiniPlayerBar(state: PlayerUiState, onPlayPause: () -> Unit, onTap: () -> Un
                         )
                     }
                 }
-                IconButton(onClick = onPlayPause) {
+                IconButton(onClick = onPlayPause, modifier = Modifier.testTag(E2ETags.MiniPlayer.PLAY_PAUSE)) {
                     if (state.isPlaying) {
                         Icon(Icons.Rounded.Pause, contentDescription = stringResource(R.string.action_pause))
                     } else {
