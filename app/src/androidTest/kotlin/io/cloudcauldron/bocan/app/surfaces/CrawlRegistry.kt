@@ -31,7 +31,6 @@ object CrawlRegistry {
      * suite never touches) or Android 17. Deferred in the phase 17 spec, 2026-11-11.
      */
     val NOT_CRAWLED: Map<String, String> = mapOf(
-        E2ETags.Pairing.DONE to "no host shows it: both leave the moment pairing succeeds",
         E2ETags.Common.LOCAL_NETWORK_ALLOW to "shown only on Android 17 with the local network permission denied; the suite runs on API 36",
         E2ETags.Scrobble.TOKEN_SAVE to "saving checks the token with the provider over the internet, which the suite never touches",
         E2ETags.Scrobble.DEAD_LETTER_RETRY to "needs a scrobble that failed past its retries, which needs a connected provider",

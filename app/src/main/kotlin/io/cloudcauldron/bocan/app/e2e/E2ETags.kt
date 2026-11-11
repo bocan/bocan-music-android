@@ -215,7 +215,6 @@ object E2ETags {
     object Pairing {
         const val MAC_ROW = "pairing.mac.row.pair"
         const val CODE = "pairing.code"
-        const val DONE = "pairing.done"
         const val START_OVER = "pairing.startOver"
     }
 

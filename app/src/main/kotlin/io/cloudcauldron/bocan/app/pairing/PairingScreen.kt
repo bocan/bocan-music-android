@@ -69,7 +69,7 @@ fun PairingScreen(
             PairingState.Discovering -> DiscoveryContent(uiState.pairableMacs, onPair)
             is PairingState.AwaitingCode -> CodeEntryContent(isError = false, onSubmitCode = onSubmitCode)
             is PairingState.Confirming -> BusyContent(stringResource(R.string.pairing_confirming))
-            is PairingState.Paired -> PairedContent(pairing.serverName, onStartOver)
+            is PairingState.Paired -> PairedContent(pairing.serverName)
             is PairingState.Failed -> FailedContent(pairing.error, onSubmitCode, onStartOver)
         }
     }
@@ -134,14 +134,14 @@ private fun BusyContent(message: String) {
     }
 }
 
+/**
+ * Shown only while the host leaves: onboarding moves on to the first sync and the standalone
+ * route to the library the moment pairing succeeds, so this view carries no control of its own.
+ */
 @Composable
-private fun PairedContent(serverName: String, onStartOver: () -> Unit) {
+private fun PairedContent(serverName: String) {
     Text(stringResource(R.string.pairing_paired_title), style = MaterialTheme.typography.titleLarge)
     Text(stringResource(R.string.pairing_paired_message, serverName), style = MaterialTheme.typography.bodyLarge)
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = onStartOver, modifier = Modifier.testTag(E2ETags.Pairing.DONE)) {
-        Text(stringResource(R.string.pairing_done))
-    }
 }
 
 @Composable
