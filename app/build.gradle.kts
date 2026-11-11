@@ -55,6 +55,14 @@ android {
         versionName = appVersionName
         versionCode = versionCodeOf(appVersionName)
 
+        // End-to-end suite (phase 17). The Orchestrator runs each test in its own
+        // instrumentation and clears the app's data between them, so every journey starts
+        // from a clean install. Screenshots go through the Test Storage service, which
+        // survives that clearing and is pulled to the host by connectedDebugAndroidTest.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        testInstrumentationRunnerArguments["useTestStorageService"] = "true"
+
         buildConfigField("String", "LASTFM_API_KEY", "\"${secret("BOCAN_LASTFM_API_KEY")}\"")
         buildConfigField("String", "LASTFM_SHARED_SECRET", "\"${secret("BOCAN_LASTFM_SHARED_SECRET")}\"")
     }
@@ -99,6 +107,8 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        animationsDisabled = true
     }
 
     lint {
@@ -154,4 +164,18 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
     // Host SQLite natives for the in-memory database a view model test wires up.
     testImplementation(libs.sqlite.bundled.jvm)
+
+    // End-to-end suite on an emulator (phase 17): make end-to-end.
+    androidTestImplementation(composeBom)
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.services.storage)
+    androidTestImplementation(libs.kotlin.test.junit)
+    // Same reason as the unit tests: Compose ui-test's transitive Espresso 3.5.0 breaks on Android 17.
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestUtil(libs.androidx.test.orchestrator)
+    androidTestUtil(libs.androidx.test.services)
 }

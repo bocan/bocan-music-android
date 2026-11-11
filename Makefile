@@ -24,7 +24,7 @@ EMULATOR := $(SDK_DIR)/emulator/emulator
 
 APP_ID   := io.cloudcauldron.bocan.android
 ACTIVITY := io.cloudcauldron.bocan.app.MainActivity
-AVD      ?= bocan-api33
+AVD      ?= bocan-api36
 APK      := app/build/outputs/apk/debug/app-debug.apk
 
 # `make test m=:core:sync` scopes tests to one module.
@@ -98,7 +98,7 @@ devices: ## List connected devices and emulators
 # ---------------------------------------------------------------- emulator --
 
 .PHONY: emulator
-emulator: ## Boot the AVD (default bocan-api33) with a window
+emulator: ## Boot the AVD (default bocan-api36) with a window
 	$(EMULATOR) -avd $(AVD) -no-boot-anim -no-audio &
 
 .PHONY: emulator-headless
@@ -108,6 +108,24 @@ emulator-headless: ## Boot the AVD without a window (CI-style)
 .PHONY: emulator-kill
 emulator-kill: ## Shut down the running emulator
 	$(ADB) emu kill
+
+.PHONY: emulator-wait
+emulator-wait: ## Wait until the attached emulator has finished booting
+	scripts/e2e/wait-for-boot.sh
+
+# ------------------------------------------------------------- end-to-end --
+
+.PHONY: end-to-end
+end-to-end: ## Full E2E suite on the attached device, else a headless bocan-api36 (docs/e2e.md)
+	E2E_AVD=$(AVD) scripts/e2e/run.sh E2ESuite
+
+.PHONY: end-to-end-smoke
+end-to-end-smoke: ## The E2E smoke subset (one fixture journey)
+	E2E_AVD=$(AVD) scripts/e2e/run.sh SmokeSuite
+
+.PHONY: end-to-end-report
+end-to-end-report: ## Open the last E2E HTML report
+	open build/e2e/report/index.html
 
 # ----------------------------------------------------------------- repo ----
 
