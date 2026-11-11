@@ -17,10 +17,14 @@ import io.cloudcauldron.bocan.sync.identity.Fingerprints
 import io.cloudcauldron.bocan.sync.net.TrustStore
 import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -88,6 +92,25 @@ class SyncEngineTests {
         engine.syncNow()
         assertTrue(engine.state.value is SyncState.Done)
         assertEquals(0, backend.count("/v1/manifest"))
+    }
+
+    @Test
+    fun `cancelling the caller of syncNow stops the run before the call returns`() = runBlocking {
+        pair(generation = 0)
+        val t1 = backend.track(1, "A/Album/01.flac")
+        backend.publish(manifest(generation = 3, tracks = listOf(t1)))
+        backend.trickle("/v1/file/track/1")
+        val engine = engine()
+
+        // How Cancel and Sync later stop a sync: they cancel the coroutine waiting in syncNow.
+        val caller = launch(Dispatchers.IO) { engine.syncNow() }
+        withTimeout(10_000) { engine.state.first { it is SyncState.Transferring } }
+        caller.cancelAndJoin()
+
+        // The run itself stopped, not only the wait on it. Before, the run went on with no owner
+        // (and with the run lock open), so a cancelled sync kept downloading.
+        assertEquals(SyncState.Idle, engine.state.value)
+        assertFalse(mediaLayout.trackFile("A/Album/01.flac").isFile)
     }
 
     @Test
@@ -255,6 +278,7 @@ class SyncEngineTests {
         private val requests = ConcurrentLinkedQueue<String>()
         private val stallOnce = HashSet<String>()
         private val staleOnce = HashSet<String>()
+        private val trickle = HashSet<String>()
 
         @Volatile private var manifestJson: String = ""
 
@@ -325,6 +349,11 @@ class SyncEngineTests {
             staleOnce.add(path)
         }
 
+        /** Serve [path] a little at a time, a slow Mac: the transfer stays live without tripping a read timeout. */
+        fun trickle(path: String) {
+            trickle.add(path)
+        }
+
         override fun dispatch(request: RecordedRequest): MockResponse {
             val path = request.url.encodedPath
             requests.add(path)
@@ -339,6 +368,8 @@ class SyncEngineTests {
         private fun serveFile(path: String, request: RecordedRequest): MockResponse = when {
             stallOnce.remove(path) -> MockResponse.Builder().onResponseStart(SocketEffect.Stall).build()
             staleOnce.remove(path) -> MockResponse.Builder().code(412).build()
+            path in trickle -> MockResponse.Builder().code(200).throttleBody(TRICKLE_BYTES, 1, TimeUnit.SECONDS)
+                .body(Buffer().write(files.getValue(path))).build()
             else -> serveBytes(files.getValue(path), request.headers["Range"])
         }
 
@@ -358,6 +389,7 @@ class SyncEngineTests {
 
     private companion object {
         const val SERVER_ID = "server-1"
+        const val TRICKLE_BYTES = 1_000L
         val FIXED_NOW: Instant = Instant.parse("2026-07-10T12:00:00Z")
     }
 }
