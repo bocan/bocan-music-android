@@ -39,6 +39,11 @@ jobs:
       - name: Lint, test, and build
         run: ./gradlew check test assembleDebug -x koverVerify -x koverCachedVerify
 
+      # Phase 17: a control that ships without an end-to-end test tag fails here, with no
+      # device. The on-device TagCoverageAudit is the full check (make end-to-end).
+      - name: Tag audit (source)
+        run: make tag-audit
+
       # The versionCode derivation lives in buildSrc and never decreases across a Play
       # upload, so its formula is unit tested and enforced on every push.
       - name: Verify versionCode derivation
