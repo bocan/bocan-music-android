@@ -16,7 +16,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up JDK 21
+      # JDK 25 runs Gradle (gradle/gradle-daemon-jvm.properties) and is the jvmToolchain
+      # for every module. sourceCompatibility/targetCompatibility stay at 21 on purpose.
+      - name: Set up JDK 25
         uses: actions/setup-java@v6
         with:
           distribution: temurin

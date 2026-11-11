@@ -3,10 +3,11 @@
 # `make help` lists everything. `make ci` runs exactly what GitHub Actions runs.
 #
 # Guard rails: if JAVA_HOME points at a JDK that no longer exists (a common
-# leftover in shell profiles), fall back to the Homebrew JDK 21 or the PATH
-# java so gradlew never dies on a stale variable.
+# leftover in shell profiles), fall back to the Homebrew JDK 25 or the PATH
+# java so gradlew never dies on a stale variable. Gradle then runs its daemon
+# on JDK 25 regardless (gradle/gradle-daemon-jvm.properties).
 
-BREW_JDK := /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+BREW_JDK := /opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home
 
 ifeq ($(wildcard $(JAVA_HOME)/bin/java),)
   ifneq ($(wildcard $(BREW_JDK)/bin/java),)
