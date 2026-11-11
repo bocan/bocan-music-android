@@ -14,7 +14,7 @@ landscape, and the settings and queue checked across a real process kill.
 ## Run it
 
 ```
-make end-to-end         # E2ESuite (journeys, gestures, audits, crawls in both orientations), then persistence
+make end-to-end         # E2ESuite (journeys, gestures, widget and notification, audits, crawls in both orientations), then persistence
 make end-to-end-smoke   # SmokeSuite: one fixture journey, for a quick check
 make end-to-end-audit   # AuditSuite: only the on-device tag audits
 make end-to-end-crawl   # CrawlSuite: only the surface crawls (portrait and landscape) and the table coverage check
@@ -205,6 +205,27 @@ check outside Gradle, after the suite, as two plain `am instrument` runs around 
 Both phases skip unless `run.sh` passes `-e e2ePersistence true`. A new setting must join
 `StoredState.read` and the write table by hand: nothing detects a setting left out of both.
 Once it is in `StoredState.read`, the write phase fails until the table changes it.
+
+## Widget and notification
+
+`system/SystemSurfaceTests.kt` checks what the app shows outside its own window. It never
+drives the launcher or System UI, and it never takes a screenshot of them:
+
+- **The widget.** Glance renders through the launcher, so the test reads the state store the
+  widget renders from (`WidgetStateStore`). It must follow play, pause, Next, a track with no
+  cover, an episode, and a cleared queue.
+- **The media notification.** The test finds the app's posted notification that carries a
+  media session token, and reads that session with a platform `MediaController`, which is
+  how System UI reads it. It checks the title, artist, album, length (the decoded length,
+  the same as the app's seek bar), the play state, the cover, and that the notification goes
+  away when the queue is cleared.
+- **The artwork grant.** System UI loads the cover from this app's provider in its own
+  process, so it needs a read grant on the artwork Uri. The test asks the activity manager
+  whether System UI's uid may read the Uri the session publishes, and, as a control, that
+  the shell's uid may not.
+
+Repeat one is set before anything plays, so a 4 second fixture track loops and does not move
+the queue under the test.
 
 ## Add a journey
 
