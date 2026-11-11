@@ -11,11 +11,14 @@ import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
 
 /** The paired-side ping and manifest surface, plus how to reach and stream the server. */
@@ -82,6 +85,12 @@ class SyncEngine(
         activeJob = job
         try {
             job.join()
+        } catch (cancelled: CancellationException) {
+            // The caller gave up (Cancel, Sync later): stop the run too, and let it finish
+            // unwinding before the lock opens. Without this the run went on with no owner and
+            // the lock open, so a cancelled sync kept downloading beside the next one.
+            withContext(NonCancellable) { job.cancelAndJoin() }
+            throw cancelled
         } finally {
             activeJob = null
             runLock.unlock()
