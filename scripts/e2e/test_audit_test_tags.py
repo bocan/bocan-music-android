@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import unittest
 from pathlib import Path
 
 _SPEC = importlib.util.spec_from_file_location("audit_test_tags", Path(__file__).with_name("audit-test-tags.py"))
 audit = importlib.util.module_from_spec(_SPEC)
+# Register the module before running it: @dataclass looks its module up in sys.modules, and on
+# Python 3.14 (the CI runner's) an unregistered module fails the import with an AttributeError.
+sys.modules[_SPEC.name] = audit
 _SPEC.loader.exec_module(audit)
 
 SOURCE = Path("Screen.kt")
