@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -114,16 +115,12 @@ private fun QueueList(state: QueueUiState, onMove: (Int, Int) -> Unit, onRemove:
 
     LazyColumn {
         itemsIndexed(state.items, key = { _, item -> item.mediaId + item.index }) { index, item ->
-            val dismissState = rememberSwipeToDismissBoxState(
-                confirmValueChange = { value ->
-                    if (value != SwipeToDismissBoxValue.Settled) {
-                        onRemove(index)
-                        true
-                    } else {
-                        false
-                    }
-                }
-            )
+            val dismissState = rememberSwipeToDismissBoxState()
+            // Remove once the row has settled dismissed. Removing inside confirmValueChange ran it
+            // more than once for one swipe, so a single swipe removed this row and the one after it.
+            LaunchedEffect(dismissState.currentValue) {
+                if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) onRemove(index)
+            }
             SwipeToDismissBox(
                 state = dismissState,
                 backgroundContent = { Box(Modifier.fillMaxWidth().height(ROW_HEIGHT)) }
