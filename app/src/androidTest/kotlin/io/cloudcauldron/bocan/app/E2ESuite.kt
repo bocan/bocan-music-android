@@ -4,11 +4,13 @@ import io.cloudcauldron.bocan.app.gestures.NowPlayingGestureTests
 import io.cloudcauldron.bocan.app.journeys.FirstRunJourney
 import io.cloudcauldron.bocan.app.journeys.LibraryPlayJourney
 import io.cloudcauldron.bocan.app.journeys.PodcastResumeJourney
+import io.cloudcauldron.bocan.app.system.SystemSurfaceTests
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 
 /**
- * Everything `make end-to-end` runs: the journeys, the gesture tests, the tag audits
+ * Everything `make end-to-end` runs: the journeys, the gesture tests, the widget and
+ * notification checks, the tag audits
  * ([AuditSuite]), and the surface crawls ([CrawlSuite]). A new journey joins this list; a new
  * audit or crawl joins its own suite.
  */
@@ -18,6 +20,7 @@ import org.junit.runners.Suite
     LibraryPlayJourney::class,
     PodcastResumeJourney::class,
     NowPlayingGestureTests::class,
+    SystemSurfaceTests::class,
     AuditSuite::class,
     CrawlSuite::class
 )
