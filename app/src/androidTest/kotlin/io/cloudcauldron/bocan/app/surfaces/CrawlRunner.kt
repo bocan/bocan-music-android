@@ -63,7 +63,12 @@ class CrawlRunner(
                 verify(crawl, index, step, toggleBefore)
             } catch (failure: AssertionError) {
                 // A picture of the screen at the failing step, for a person; the assertion still decides.
-                screenshot("${crawl.replace(' ', '-')}-step-${index + 1}-failed")
+                // Taking it must never hide the failure (no Test Storage service under a bare am instrument).
+                try {
+                    screenshot("${crawl.replace(' ', '-')}-step-${index + 1}-failed")
+                } catch (noPicture: Exception) {
+                    failure.addSuppressed(noPicture)
+                }
                 throw failure
             }
         }
@@ -72,6 +77,7 @@ class CrawlRunner(
 
     private fun act(step: Step) {
         when (val action = step.action) {
+            Action.Look -> Unit
             Action.Back -> {
                 rule.waitForIdle()
                 Espresso.pressBack()
@@ -110,7 +116,7 @@ class CrawlRunner(
                 moveBy(androidx.compose.ui.geometry.Offset(0f, height * ROW_HEIGHTS_PER_HANDLE * action.rows))
                 up()
             }
-            Action.Back, is Action.TapLink -> error("handled in act")
+            Action.Back, Action.Look, is Action.TapLink -> error("handled in act")
         }
     }
 

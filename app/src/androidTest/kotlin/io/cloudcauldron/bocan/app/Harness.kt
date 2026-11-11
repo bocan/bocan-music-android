@@ -35,13 +35,18 @@ import org.junit.rules.RuleChain
  * every test starts in a fresh process on a cleared install. The fixture rule checks that
  * and fails at once if it is not so, rather than seeding on top of an old library.
  */
-abstract class E2ETest(private val profile: FixtureProfile, private val completeOnboarding: Boolean = true) {
+abstract class E2ETest(
+    private val profile: FixtureProfile,
+    private val completeOnboarding: Boolean = true,
+    /** Start on the data a previous run left, seeding nothing: only the persistence read phase, after a process kill. */
+    keepInstall: Boolean = false
+) {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @get:Rule
     val rules: RuleChain = RuleChain
         .outerRule(GrantPermissionRule.grant(*runtimePermissions()))
-        .around(FixtureRule(profile, completeOnboarding))
+        .around(if (keepInstall) KeptInstallRule() else FixtureRule(profile, completeOnboarding))
         .around(composeRule)
 
     protected val app: BocanApplication get() = ApplicationProvider.getApplicationContext()
@@ -114,6 +119,19 @@ abstract class E2ETest(private val profile: FixtureProfile, private val complete
             arrayOf(android.Manifest.permission.POST_NOTIFICATIONS)
         } else {
             emptyArray()
+        }
+    }
+}
+
+/**
+ * The opposite of [FixtureRule], for the persistence read phase: the install must already hold
+ * a library (the write phase's), and nothing is seeded or changed before the activity launches.
+ */
+class KeptInstallRule : ExternalResource() {
+    override fun before() = runBlocking {
+        val graph = ApplicationProvider.getApplicationContext<BocanApplication>().appGraph
+        check(graph.database.syncDao().allTracks().isNotEmpty()) {
+            "the install is empty: the persistence read phase runs on the write phase's data, through scripts/e2e/run.sh"
         }
     }
 }

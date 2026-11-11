@@ -18,7 +18,8 @@ import org.junit.Before
  * reason it is not crawled. Intents that leave the app (browser links) are stubbed, so a
  * crawl never opens another app and never reaches the network.
  */
-abstract class CrawlTest(profile: FixtureProfile, completeOnboarding: Boolean = true) : AuditTest(profile, completeOnboarding) {
+abstract class CrawlTest(profile: FixtureProfile, completeOnboarding: Boolean = true, keepInstall: Boolean = false) :
+    AuditTest(profile, completeOnboarding, keepInstall) {
     protected val ctx: CrawlContext by lazy { CrawlContext(app) }
     private val runner by lazy { CrawlRunner(composeRule, ui, audit, player = { player }, screenshot = { screenshot(it) }) }
 

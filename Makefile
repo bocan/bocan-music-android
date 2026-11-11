@@ -136,6 +136,10 @@ end-to-end-audit: ## Only the on-device tag audits (every control on every scree
 end-to-end-crawl: ## Only the surface crawl tables and their coverage check
 	E2E_AVD=$(AVD) scripts/e2e/run.sh CrawlSuite
 
+.PHONY: end-to-end-persistence
+end-to-end-persistence: ## Only the settings and queue persistence check across a process kill
+	E2E_AVD=$(AVD) scripts/e2e/run.sh Persistence
+
 .PHONY: end-to-end-report
 end-to-end-report: ## Open the last E2E HTML report
 	open build/e2e/report/index.html

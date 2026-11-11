@@ -195,7 +195,8 @@ class AppGraph(val application: Application) {
         EpisodeProgressRecorder(database.episodeStateDao(), database.podcastDao(), playbackDispatchers, playbackLog)
     }
 
-    private val queuePersistence by lazy {
+    // Internal, not private: the end-to-end persistence phase waits for the queue file before the kill.
+    internal val queuePersistence by lazy {
         QueuePersistence(File(application.filesDir, PLAYBACK_DIR), playbackDispatchers, playbackLog)
     }
 
