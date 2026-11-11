@@ -4,7 +4,7 @@ Every phase assumes these. Re-read once, then obey without being asked. This is 
 
 ## Language and platform
 
-- Kotlin 2.x, JVM toolchain 21. No Java sources. Every module declares `kotlin { jvmToolchain(21) }` so Gradle provisions a JDK 21 toolchain for compilation and the build is reproducible regardless of the machine's `JAVA_HOME`. `compileOptions` source and target compatibility stay at 21 to match.
+- Kotlin 2.x, JVM toolchain 25. No Java sources. Every module declares `kotlin { jvmToolchain(25) }` so Gradle provisions a JDK 25 toolchain for compilation and unit tests, and the build is reproducible regardless of the machine's `JAVA_HOME`. `gradle/gradle-daemon-jvm.properties` pins the Gradle daemon to JDK 25 as well, because `buildSrc` and the detekt rules compile to Java 25 bytecode and load into the daemon. Android `compileOptions` source and target compatibility stay at 21 on purpose: `compileSdk` decides the device APIs, and Java 25 class files give the dex output nothing.
 - `minSdk 29` (Android 10), `targetSdk` = latest stable, `compileSdk` = latest stable.
 - Jetpack Compose with Material 3 for all UI. No XML layouts (XML is allowed only where the platform demands it: manifests, widget metadata, `strings.xml`, drawable resources).
 - Coroutines and Flow everywhere. No RxJava, no LiveData, no AsyncTask.
