@@ -19,7 +19,6 @@
   <string name="pairing_confirming">Pairing…</string>
   <string name="pairing_paired_title">Paired</string>
   <string name="pairing_paired_message">Paired with %1$s.</string>
-  <string name="pairing_done">Done</string>
 
   <!-- Failure copy. The mismatch warning is verbatim from the sync protocol. -->
   <string name="pairing_code_mismatch">This code does not match. Someone may be interfering with your network, or you tapped the wrong Mac.</string>
