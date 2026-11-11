@@ -530,4 +530,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--fixture"]:
+        # Phase 17: the end-to-end fixture library, written to the debug asset root.
+        from fixture import generate_fixture
+
+        sys.exit(generate_fixture())
+    if sys.argv[1:]:
+        raise SystemExit("usage: generate.py [--fixture]")
     sys.exit(main())
