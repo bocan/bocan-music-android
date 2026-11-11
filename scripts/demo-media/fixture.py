@@ -110,6 +110,15 @@ EPISODES = [
     (1, "Night Shift Pilot", "2026-09-20T22:00:00Z", False, "unplayed", 0.0),
 ]
 EPISODE_CHAPTERS = [(0.0, "Opening"), (40.0, "The middle"), (80.0, "Closing")]
+# Show notes links for the end-to-end crawl: a secure one opens at once, an insecure one is
+# confirmed first (ShowNotesLinks). example.invalid never resolves, and the tests stub the
+# browser intent anyway, so nothing reaches the network.
+LINKED_NOTES = {
+    "Night Shift Pilot": (
+        '<p><a href="https://example.invalid/night-shift">Episode page</a> and '
+        '<a href="http://example.invalid/night-shift-archive">old archive</a>.</p>'
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -365,7 +374,7 @@ def generate_fixture() -> None:
                 "title": title,
                 "publishedAt": published,
                 "durationMs": duration,
-                "descriptionHtml": f"<p>{title}, a fixture episode.</p>",
+                "descriptionHtml": f"<p>{title}, a fixture episode.</p>" + LINKED_NOTES.get(title, ""),
                 "relPath": rel_path,
                 "size": final.stat().st_size,
                 "sha256": sha256_of(final),
