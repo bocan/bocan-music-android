@@ -4,14 +4,15 @@ import android.text.Spanned
 import android.text.style.ClickableSpan
 import android.view.View
 import android.widget.TextView
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -27,6 +28,7 @@ import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.toSize
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
@@ -122,15 +124,43 @@ class CrawlRunner(
     private fun control(step: Step): SemanticsNodeInteraction =
         if (step.row == null) ui.awaitTag(step.tag) else ui.awaitRow(step.tag, step.row)
 
-    /** Scroll a control into view when it is composed but off screen. */
+    /**
+     * Scroll a control fully into view when it is off screen or only partly on it. A touch lands
+     * on the control's centre, so a control clipped by its scrolling parent (a button half under
+     * a top bar, which is common in landscape) would take the tap somewhere else. A control with
+     * no scrolling parent (in a sheet, say) is touched where it is.
+     *
+     * `performScrollTo` moves only the nearest scrolling parent, so a control in a sideways row
+     * inside a scrolling page (the equalizer's presets) would come into its row's view and stay
+     * below the page's fold. Each scrolling ancestor is therefore asked in turn, innermost first,
+     * to bring the next one in.
+     */
     private fun onScreen(node: SemanticsNodeInteraction): SemanticsNodeInteraction {
-        try {
-            node.assertIsDisplayed()
-        } catch (offScreen: AssertionError) {
-            node.performScrollTo()
-        }
+        scrollIntoView(node.fetchSemanticsNode())
         return node
     }
+
+    private fun scrollIntoView(node: SemanticsNode) {
+        if (!clipped(node)) return
+        var current: SemanticsNode? = node
+        while (current != null) {
+            try {
+                rule.onNode(withId(current.id), useUnmergedTree = true).performScrollTo()
+            } catch (noScrollParent: AssertionError) {
+                // Nothing scrolls it: touch it where it is, and let the postcondition judge.
+                break
+            }
+            current = generateSequence(current.parent) { it.parent }.firstOrNull { SemanticsActions.ScrollBy in it.config }
+        }
+    }
+
+    private fun clipped(node: SemanticsNode): Boolean {
+        val whole = Rect(node.positionInWindow, node.size.toSize())
+        val shown = node.boundsInWindow
+        return shown.width < whole.width - CLIP_TOLERANCE_PX || shown.height < whole.height - CLIP_TOLERANCE_PX
+    }
+
+    private fun withId(id: Int) = SemanticsMatcher("semantics node $id") { it.id == id }
 
     private fun verify(crawl: String, index: Int, step: Step, toggleBefore: ToggleableState?) {
         var found = "nothing checked yet"
@@ -149,7 +179,16 @@ class CrawlRunner(
     }
 
     private fun evaluate(step: Step, toggleBefore: ToggleableState?): Pair<Boolean, String> = when (val expect = step.expect) {
-        is Postcondition.Visible -> displayed(nodes(expect.tag, expect.row))
+        // A row may sit past the fold of its list (search results in landscape, a chip at the end of
+        // a sideways row): scroll to it as a person would, composing it first if a lazy list has
+        // not. A control without a row label must be on screen as it is.
+        is Postcondition.Visible -> nodes(expect.tag, expect.row).let { found ->
+            displayed(found).also { (shown, _) ->
+                if (!shown && expect.row != null) {
+                    if (found.isEmpty()) ui.reveal(Ui.rowMatchers(expect.tag, expect.row).first()) else scrollIntoView(found.first())
+                }
+            }
+        }
         is Postcondition.Navigated -> displayed(nodes(expect.markerTag, null))
         is Postcondition.Gone -> nodes(expect.tag, expect.row).let { it.isEmpty() to "${it.size} node(s) still there" }
         is Postcondition.Shows -> rule.onAllNodes(hasText(expect.text, substring = true), useUnmergedTree = true)
@@ -226,6 +265,7 @@ class CrawlRunner(
 
     companion object {
         private const val LONG_PRESS_MS = 800L
+        private const val CLIP_TOLERANCE_PX = 1f
 
         // The queue's drag handle is a 48 dp target in a 64 dp row.
         private const val ROW_HEIGHTS_PER_HANDLE = 64f / 48f

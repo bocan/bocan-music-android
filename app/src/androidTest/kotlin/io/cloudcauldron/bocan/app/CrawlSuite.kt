@@ -4,6 +4,9 @@ import io.cloudcauldron.bocan.app.surfaces.DetailCrawl
 import io.cloudcauldron.bocan.app.surfaces.EmptyLibraryCrawl
 import io.cloudcauldron.bocan.app.surfaces.EqualizerCrawl
 import io.cloudcauldron.bocan.app.surfaces.FirstRunCrawl
+import io.cloudcauldron.bocan.app.surfaces.LandscapeCrawl
+import io.cloudcauldron.bocan.app.surfaces.LandscapeEmptyLibraryCrawl
+import io.cloudcauldron.bocan.app.surfaces.LandscapeFirstRunCrawl
 import io.cloudcauldron.bocan.app.surfaces.LibraryCrawl
 import io.cloudcauldron.bocan.app.surfaces.NowPlayingCrawl
 import io.cloudcauldron.bocan.app.surfaces.PodcastPlayerCrawl
@@ -15,7 +18,10 @@ import io.cloudcauldron.bocan.app.surfaces.TableCoverageTest
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 
-/** The surface crawls and the table coverage check alone (`make end-to-end-crawl`); `E2ESuite` runs them too. */
+/**
+ * The surface crawls, the same tables again in landscape, and the table coverage check alone
+ * (`make end-to-end-crawl`); `E2ESuite` runs them too.
+ */
 @RunWith(Suite::class)
 @Suite.SuiteClasses(
     TableCoverageTest::class,
@@ -29,6 +35,9 @@ import org.junit.runners.Suite
     EqualizerCrawl::class,
     SyncCrawl::class,
     FirstRunCrawl::class,
-    EmptyLibraryCrawl::class
+    EmptyLibraryCrawl::class,
+    LandscapeCrawl::class,
+    LandscapeFirstRunCrawl::class,
+    LandscapeEmptyLibraryCrawl::class
 )
 class CrawlSuite

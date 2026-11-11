@@ -1,5 +1,7 @@
 package io.cloudcauldron.bocan.app
 
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -65,6 +67,19 @@ abstract class E2ETest(private val profile: FixtureProfile, private val complete
         } catch (timeout: ComposeTimeoutException) {
             throw AssertionError("never reached: $what within $timeoutMs ms", timeout)
         }
+    }
+
+    /**
+     * Turn the app to landscape, the way rotating a phone does: the activity is recreated in the
+     * new configuration (navigation rail, side-by-side Now Playing). App-local, so the next
+     * test's fresh process starts in the device's own orientation again.
+     */
+    protected fun rotateToLandscape() {
+        composeRule.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+        awaitState("the activity recreated in landscape", UI_TIMEOUT_MS) {
+            composeRule.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        }
+        composeRule.waitForIdle()
     }
 
     /**
