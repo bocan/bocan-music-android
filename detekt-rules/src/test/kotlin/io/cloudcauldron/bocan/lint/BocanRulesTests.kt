@@ -1,6 +1,6 @@
 package io.cloudcauldron.bocan.lint
 
-import io.gitlab.arturbosch.detekt.test.lint
+import dev.detekt.test.lint
 import kotlin.test.assertEquals
 import org.junit.Test
 

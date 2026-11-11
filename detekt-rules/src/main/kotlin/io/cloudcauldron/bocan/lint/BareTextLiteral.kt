@@ -1,12 +1,9 @@
 package io.cloudcauldron.bocan.lint
 
-import io.gitlab.arturbosch.detekt.api.CodeSmell
-import io.gitlab.arturbosch.detekt.api.Config
-import io.gitlab.arturbosch.detekt.api.Debt
-import io.gitlab.arturbosch.detekt.api.Entity
-import io.gitlab.arturbosch.detekt.api.Issue
-import io.gitlab.arturbosch.detekt.api.Rule
-import io.gitlab.arturbosch.detekt.api.Severity
+import dev.detekt.api.Config
+import dev.detekt.api.Entity
+import dev.detekt.api.Finding
+import dev.detekt.api.Rule
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 
@@ -15,14 +12,11 @@ import org.jetbrains.kotlin.psi.KtStringTemplateExpression
  * composable: user-facing copy lives in strings.xml, never inline (the
  * no_bare_user_facing_literal rule shared with the Mac repo).
  */
-class BareTextLiteral(config: Config = Config.empty) : Rule(config) {
-    override val issue = Issue(
-        id = javaClass.simpleName,
-        severity = Severity.Maintainability,
-        description = "Text() must render a string resource, not an inline literal or template.",
-        debt = Debt.TEN_MINS
-    )
-
+class BareTextLiteral(config: Config = Config.empty) :
+    Rule(
+        config,
+        description = "Text() must render a string resource, not an inline literal or template."
+    ) {
     override fun visitCallExpression(expression: KtCallExpression) {
         super.visitCallExpression(expression)
         if (expression.calleeExpression?.text != "Text") return
@@ -32,8 +26,7 @@ class BareTextLiteral(config: Config = Config.empty) : Rule(config) {
         } ?: return
         if (textArgument.getArgumentExpression() is KtStringTemplateExpression) {
             report(
-                CodeSmell(
-                    issue,
+                Finding(
                     Entity.from(expression),
                     "Inline text in a Text() composable; move the copy to strings.xml and use stringResource."
                 )

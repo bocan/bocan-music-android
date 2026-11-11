@@ -2,7 +2,7 @@ config:
   validation: true
   # The bocan ruleset ships from :detekt-rules; keep validation quiet where the
   # plugin jar is absent (the rules module itself).
-  excludes: 'bocan.*'
+  excludes: ['bocan.*']
 
 bocan:
   UserVisibleStringConcatenation:
