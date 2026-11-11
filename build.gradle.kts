@@ -13,13 +13,13 @@ plugins {
 
 subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    apply(plugin = "io.gitlab.arturbosch.detekt")
+    apply(plugin = "dev.detekt")
 
     extensions.configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
         android.set(true)
     }
 
-    extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+    extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig = true
         config.setFrom(rootProject.files("detekt.yml"))
     }
