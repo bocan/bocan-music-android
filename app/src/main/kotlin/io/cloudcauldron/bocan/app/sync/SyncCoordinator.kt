@@ -119,6 +119,10 @@ class SyncCoordinator(
         // left Cancel doing nothing for up to the whole discovery window.
         pendingLaunch?.cancel()
         cached?.second?.cancel()
+        // A cancel is the person's answer for now: the paired Mac coming into view must not
+        // start the sync again a moment later, as it did when discovery first saw the Mac after
+        // a Cancel or a Sync later.
+        triggers.snooze()
     }
 
     override suspend fun runScheduledSync() {

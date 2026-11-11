@@ -57,6 +57,21 @@ class SyncTriggersTests {
     }
 
     @Test
+    fun `a cancelled sync is not restarted by the paired mac appearing`() = runTest {
+        val subject = triggers()
+
+        // The person cancelled (Cancel, Sync later) before discovery first saw the paired Mac.
+        subject.snooze()
+        subject.onDiscovery(listOf(mac()))
+        assertEquals(0, triggers)
+        assertEquals("the endpoint still updates", "https://127.0.0.1:8443/", endpoint.value.toString())
+
+        clock = clock.plus(Duration.ofMinutes(16))
+        subject.onDiscovery(listOf(mac()))
+        assertEquals(1, triggers)
+    }
+
+    @Test
     fun `the debounce lifts after the window elapses`() = runTest {
         val subject = triggers()
 

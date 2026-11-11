@@ -32,7 +32,9 @@ class SyncTriggers(
     private val clock: () -> Instant = Instant::now
 ) {
     private val log = AppLog.forCategory(LogCategory.Sync)
-    private var lastTrigger: Instant? = null
+
+    // Written by snooze() on the caller's thread, read on the discovery collection.
+    @Volatile private var lastTrigger: Instant? = null
 
     /**
      * Collect discovery forever (until the surrounding scope is cancelled). A failing
@@ -68,6 +70,16 @@ class SyncTriggers(
             log.info("sync.triggerVisible", mapOf("server" to mac.serviceName))
             onPairedVisible()
         }
+    }
+
+    /**
+     * Hold the trigger for one debounce window from now: the person just cancelled a sync
+     * (Cancel, Sync later), and the paired Mac appearing must not start it again behind them.
+     * Sync now and the periodic worker are not affected.
+     */
+    fun snooze() {
+        lastTrigger = clock()
+        log.info("sync.triggerSnoozed", emptyMap())
     }
 
     private fun debounced(): Boolean {
