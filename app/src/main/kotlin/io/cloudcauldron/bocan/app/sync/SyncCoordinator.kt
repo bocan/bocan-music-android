@@ -31,7 +31,9 @@ import io.cloudcauldron.bocan.sync.net.TrustStore
 import io.cloudcauldron.bocan.sync.service.SyncForegroundService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,6 +64,10 @@ class SyncCoordinator(
     private val log = AppLog.forCategory(LogCategory.Sync)
     private val appScope = CoroutineScope(SupervisorJob() + dispatchers.default)
     private val endpoint = MutableStateFlow<HttpUrl?>(null)
+
+    /** The latest [launchSync], so [cancelSync] can stop one still waiting for discovery. */
+    @Volatile
+    private var pendingLaunch: Job? = null
     private val trustStore = TrustStore(database.syncDao())
     private val applier = SyncApplier(database)
     private val mediaLayout = MediaLayout(context)
@@ -94,18 +100,27 @@ class SyncCoordinator(
     }
 
     override fun launchSync(force: Boolean) {
-        appScope.launch {
+        pendingLaunch = appScope.launch {
             if (trustStore.current() == null) return@launch
             // Hold a non-terminal state so the foreground service stays alive while
             // discovery locates the Mac, then sync. Without the wait, a Sync Now issued
             // before the endpoint resolves fails at once with ServerUnreachable.
             syncStateFlow.value = SyncState.CheckingManifest
-            awaitEndpoint()
+            try {
+                awaitEndpoint()
+            } catch (cancelled: CancellationException) {
+                // Cancel pressed while discovery was still looking for the Mac.
+                syncStateFlow.value = SyncState.Idle
+                throw cancelled
+            }
             engine()?.syncNow(force)
         }
     }
 
     override fun cancelSync() {
+        // A sync still waiting for discovery has no engine run yet; cancelling only the engine
+        // left Cancel doing nothing for up to the whole discovery window.
+        pendingLaunch?.cancel()
         cached?.second?.cancel()
     }
 
