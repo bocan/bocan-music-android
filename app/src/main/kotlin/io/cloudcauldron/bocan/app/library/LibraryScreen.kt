@@ -135,7 +135,8 @@ private fun LibraryTabContent(tab: LibraryTab, viewModel: LibraryViewModel, call
             // Collected only on this tab so the 10k+ TrackUi list is not held while browsing
             // albums, artists, or genres.
             val songs by viewModel.songs.collectAsState()
-            ReadableWidth { m -> SongsList(songs, callbacks, m) }
+            val sort by viewModel.trackSort.collectAsState()
+            ReadableWidth { m -> SongsList(songs, sort, callbacks, m) }
         }
         LibraryTab.Genres -> {
             val genres by viewModel.genres.collectAsState()
