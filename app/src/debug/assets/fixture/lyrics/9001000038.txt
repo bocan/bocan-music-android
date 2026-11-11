@@ -1,0 +1,3 @@
+Hover 1
+Unsynced fixture lyrics.
+No timestamps on these lines.

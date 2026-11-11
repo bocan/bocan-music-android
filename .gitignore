@@ -10,3 +10,6 @@ play-service-account*.json
 dist/
 captures/
 .kotlin/
+# Scratch output of the demo podcast's `say` step; only podcast-voice.mp3 is committed.
+scripts/demo-media/*.aiff
+__pycache__/

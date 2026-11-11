@@ -1,0 +1,17 @@
+{
+  "version": "1.2.0",
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "title": "Opening"
+    },
+    {
+      "startTime": 40.0,
+      "title": "The middle"
+    },
+    {
+      "startTime": 80.0,
+      "title": "Closing"
+    }
+  ]
+}

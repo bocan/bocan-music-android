@@ -30,6 +30,27 @@ It wipes `app/src/main/assets/demo/` and writes:
 | `lyrics/<trackId>.lrc` | Synced lyrics, one per track |
 | `chapters/demo-episode-1.json` | Podcasting 2.0 chapters for the episode |
 
+## The end-to-end fixture (`--fixture`)
+
+```
+python3 scripts/demo-media/generate.py --fixture
+```
+
+Phase 17's fixture library for the emulator suite. The table lives in `fixture.py`;
+the output goes to `app/src/debug/assets/fixture/`, so debug builds carry it and
+release builds never do. Same tools as the demo, same tree shape, and a deterministic
+result: a fixed `generatedAt` and bit-exact ffmpeg output, so a rerun with unchanged
+tables changes no bytes.
+
+48 tracks of 4 seconds of near-silence (64 kbps mono) across 14 artists and 18 albums
+in 4 genres, with a two-disc album, a CUE clip pair (one 8 second source file and two
+clipped tracks), ReplayGain on all, covers on all but two tracks, synced lyrics on four
+and unsynced on two, a manual and a smart playlist, a folder with a child playlist, and
+two shows with three 2 minute episodes at 32 kbps: one chaptered, and one in progress at
+40 percent (48 s, inside the app's resume window of 5 s from the start to 15 s from the end).
+Every id is at or above 9001000001, one million past the demo. Asset paths are ASCII
+slugs; accents and symbols live in the tags and the manifest.
+
 ## The spoken episode
 
 The episode audio is `podcast-voice.mp3`, checked in next to this file. It was spoken
