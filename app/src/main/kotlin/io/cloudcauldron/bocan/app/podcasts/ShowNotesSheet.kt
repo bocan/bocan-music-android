@@ -38,6 +38,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.text.HtmlCompat
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.SheetDragHandle
+import io.cloudcauldron.bocan.app.components.rememberListSheetState
 import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
@@ -52,7 +53,7 @@ fun ShowNotesSheet(title: String, descriptionHtml: String?, onDismiss: () -> Uni
     val context = LocalContext.current
     var pendingInsecureUrl by remember { mutableStateOf<String?>(null) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { SheetDragHandle() }) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberListSheetState(), dragHandle = { SheetDragHandle() }) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
