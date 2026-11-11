@@ -8,15 +8,17 @@ database and the media root before the app starts.
 Slice 1 provides the fixture, the harness, the runner, and three journeys. Slice 2 puts
 a stable tag on every control and adds the audits that keep it so. Slice 3 adds a crawl
 table per screen that acts on every control and checks what it did, and the nightly
-workflow. Gestures, rotation, and persistence (slice 4) build on all three.
+workflow. Slice 4 adds the Now Playing gesture tests, every crawl table again in
+landscape, and the settings and queue checked across a real process kill.
 
 ## Run it
 
 ```
-make end-to-end         # E2ESuite: the journeys, the tag audits, and the surface crawls
+make end-to-end         # E2ESuite (journeys, gestures, audits, crawls in both orientations), then persistence
 make end-to-end-smoke   # SmokeSuite: one fixture journey, for a quick check
 make end-to-end-audit   # AuditSuite: only the on-device tag audits
-make end-to-end-crawl   # CrawlSuite: only the surface crawls and the table coverage check
+make end-to-end-crawl   # CrawlSuite: only the surface crawls (portrait and landscape) and the table coverage check
+make end-to-end-persistence  # only the settings and queue across a process kill
 make end-to-end-report  # open the last HTML report
 make tag-audit          # the source-level tag audit: no device, seconds (also in make lint and CI)
 ```
@@ -53,6 +55,7 @@ Everything lands in `build/e2e/`:
 | `junit/*.xml` | JUnit XML, the same results for tools |
 | `screenshots/*.png` | One PNG per `screenshot(name)` call, named `<Class>-<name>.png`, and one per failed crawl step (`<Class>-<crawl>-step-<n>-failed.png`), for a person to look at; never a pass or fail |
 | `summary.txt` | The summary line alone, for tools (the nightly workflow quotes it) |
+| `persistence-*.log` | The raw `am instrument` output of each persistence phase |
 | `gradle.log` | The full Gradle output |
 | `emulator.log` | The emulator's output, when the script booted it |
 
@@ -150,11 +153,58 @@ from the app's string resources and the fixture manifest, never typed into the t
 Tap, long press, swipe, and reorder bring the control on screen first; slides, typing,
 and submits go through semantics actions, as TalkBack does, and never scroll.
 
+Tap, long press, swipe, and reorder scroll every scrolling parent in turn until the control
+is wholly on screen (a control half under a top bar takes a tap elsewhere; a chip in a
+sideways row inside a scrolling page needs both scrolled). A `Visible` check on a row may
+scroll its list to it, as a person would. `Look` touches nothing and only waits for its
+postcondition, for state the app restored on its own.
+
+`surfaces/LandscapeCrawls.kt` runs every table again, unchanged, after turning the activity
+to landscape (the navigation rail carries the bottom bar's tags). A table that passes in
+portrait and fails in landscape usually means something the user cannot reach there: the
+first landscape runs found the A to Z rail cut off at K, an album opening on its cover with
+Play below the fold, and sheets opening at a half-height stop that showed one row.
+
 Two checks keep the tables complete. `CrawlTest.finishCrawl` fails on any tag seen on
 screen during a crawl that no table steps on; `TableCoverageTest` fails on any `E2ETags`
 constant that no table steps on and `CrawlRegistry` does not explain, and on any
 `CrawlRegistry` entry a table does step on. Every crawl also runs the tag audit before
 each step.
+
+## Gestures
+
+`gestures/NowPlayingGestureTests.kt` swipes the Now Playing surface with a real finger. Every
+distance and speed comes from `PlayerGestureThresholds` and the surface's measured size: a
+slow drag past the commit distance (only the distance can commit it), a short fling past the
+fling velocity (only the speed can), and drags short of both that must snap back. It also
+covers both queue ends, repeat one and repeat all at the ends (a swipe reaches exactly what
+Next and Previous reach), two quick flings, the four TalkBack actions, and motion: the block
+follows the finger with animations on and stays put under reduced motion.
+
+Reduced motion is the system animator scale. `MotionSetting` sets it in each test and puts the
+device's own value back afterwards: the nightly's emulator runs with animations off, a
+developer's usually with them on, and a test must not depend on either. A flaky swipe is a
+wrong distance or speed, never a reason to retry.
+
+## Persistence
+
+A test runs inside the app's own process, so no test can kill the app and watch it start
+again, and the Orchestrator wipes the app's data between tests. `run.sh` therefore runs the
+check outside Gradle, after the suite, as two plain `am instrument` runs around a kill:
+
+1. `PersistenceWritePhase` on a cleared install changes every setting a person can change
+   through its screen (sorts, last tab, a recent search, every settings section, the whole
+   equalizer with a saved preset) and leaves a queue paused on its second track. It fails if
+   any setting is still at its default (that setting's persistence would go untested), then
+   records what it left in the app's files (`StoredState`).
+2. `am force-stop` kills the process and the playback service.
+3. `PersistenceReadPhase` starts a new process on the same data, seeds nothing, and checks
+   every stored value against the record, the queue restored paused at the same index, and
+   the screens showing the restored state.
+
+Both phases skip unless `run.sh` passes `-e e2ePersistence true`. A new setting must join
+`StoredState.read` and the write table by hand: nothing detects a setting left out of both.
+Once it is in `StoredState.read`, the write phase fails until the table changes it.
 
 ## Add a journey
 
