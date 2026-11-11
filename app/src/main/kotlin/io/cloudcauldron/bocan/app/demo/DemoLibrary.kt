@@ -256,7 +256,8 @@ class DemoLibrary(
 
 private fun List<TrackEntity>.isAllDemo(): Boolean = isNotEmpty() && all { it.relPath.startsWith(DemoLibrary.REL_PATH_PREFIX) }
 
-private fun Manifest.artworkHashes(): Set<String> = buildSet {
+/** Every cover a manifest references, deduplicated; the demo and the debug fixture both copy these. */
+internal fun Manifest.artworkHashes(): Set<String> = buildSet {
     tracks.forEach { track -> track.artworkHash?.let(::add) }
     playlists.forEach { playlist -> playlist.artworkHash?.let(::add) }
     podcasts.forEach { podcast -> podcast.artworkHash?.let(::add) }
