@@ -111,6 +111,13 @@ android {
         animationsDisabled = true
     }
 
+    // The fake Mac (phase 17 slice 6) checks its own pairing code against the golden vectors
+    // shared byte for byte with the Mac repo. They ship in the test APK only, read from
+    // :core:sync's fixtures, never copied.
+    sourceSets.named("androidTest") {
+        assets.directories.add("../core/sync/src/test/resources/fixtures")
+    }
+
     lint {
         fatal += listOf("NewApi", "MissingPermission")
         // The Auto MediaBrowserService is the Media3 MediaLibraryService declared in
@@ -178,6 +185,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     // Stubs the browser intents the About links and show-notes links fire, so no test leaves the app.
     androidTestImplementation(libs.androidx.test.espresso.intents)
+    // The loopback fake Mac (slice 6): mutual TLS on 127.0.0.1 inside the test process, never the network.
+    androidTestImplementation(libs.okhttp.tls)
+    androidTestImplementation(libs.okhttp.mockwebserver3)
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestUtil(libs.androidx.test.services)
 }

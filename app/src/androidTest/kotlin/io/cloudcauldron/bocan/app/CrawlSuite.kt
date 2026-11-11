@@ -7,8 +7,10 @@ import io.cloudcauldron.bocan.app.surfaces.FirstRunCrawl
 import io.cloudcauldron.bocan.app.surfaces.LandscapeCrawl
 import io.cloudcauldron.bocan.app.surfaces.LandscapeEmptyLibraryCrawl
 import io.cloudcauldron.bocan.app.surfaces.LandscapeFirstRunCrawl
+import io.cloudcauldron.bocan.app.surfaces.LandscapePairingCrawl
 import io.cloudcauldron.bocan.app.surfaces.LibraryCrawl
 import io.cloudcauldron.bocan.app.surfaces.NowPlayingCrawl
+import io.cloudcauldron.bocan.app.surfaces.PairingCrawl
 import io.cloudcauldron.bocan.app.surfaces.PodcastPlayerCrawl
 import io.cloudcauldron.bocan.app.surfaces.PodcastsCrawl
 import io.cloudcauldron.bocan.app.surfaces.SearchCrawl
@@ -36,8 +38,10 @@ import org.junit.runners.Suite
     SyncCrawl::class,
     FirstRunCrawl::class,
     EmptyLibraryCrawl::class,
+    PairingCrawl::class,
     LandscapeCrawl::class,
     LandscapeFirstRunCrawl::class,
+    LandscapePairingCrawl::class,
     LandscapeEmptyLibraryCrawl::class
 )
 class CrawlSuite

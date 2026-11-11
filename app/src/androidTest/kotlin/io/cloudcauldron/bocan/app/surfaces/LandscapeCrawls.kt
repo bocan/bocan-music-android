@@ -1,7 +1,9 @@
 package io.cloudcauldron.bocan.app.surfaces
 
 import io.cloudcauldron.bocan.app.fixtures.FixtureProfile
+import io.cloudcauldron.bocan.app.sync.FakeMacRule
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 /**
@@ -56,6 +58,28 @@ class LandscapeFirstRunCrawl : CrawlTest(FixtureProfile.UnpairedDemo, completeOn
     @Test
     fun firstRun() {
         crawl("first run (landscape)", FirstRunCrawl.table(ctx))
+        finishCrawl()
+    }
+}
+
+/** Pairing with the loopback fake Mac and the first-sync page in landscape, both ways off that page. */
+class LandscapePairingCrawl : CrawlTest(FixtureProfile.Unpaired, completeOnboarding = false) {
+    @get:Rule
+    val fakeMac = FakeMacRule()
+
+    @Before
+    fun landscape() = rotateToLandscape()
+
+    @Test
+    fun pairingThenSyncLater() {
+        fakeMac.mac.slowFiles()
+        crawl("pairing, then sync later (landscape)", PairingCrawl.syncLaterTable(ctx))
+        finishCrawl()
+    }
+
+    @Test
+    fun pairingThenDone() {
+        crawl("pairing, then done (landscape)", PairingCrawl.doneTable(ctx))
         finishCrawl()
     }
 }
