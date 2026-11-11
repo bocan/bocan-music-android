@@ -61,14 +61,14 @@ class Ui(private val rule: ComposeTestRule) {
         var found: SemanticsNodeInteraction? = null
         await("'$label' tagged '$tag'", timeoutMs) {
             found = findRow(rule, tag, label)
-            if (found == null) scrollAnyContainerTo(rowMatchers(tag, label).first())
+            if (found == null) reveal(rowMatchers(tag, label).first())
             found != null
         }
         return checkNotNull(found)
     }
 
     /** Ask every scrollable container on screen to scroll [matcher] into view; the ones that do not hold it say so and are skipped. */
-    private fun scrollAnyContainerTo(matcher: SemanticsMatcher) {
+    fun reveal(matcher: SemanticsMatcher) {
         val containers = rule.onAllNodes(hasScrollToNodeAction())
         repeat(containers.fetchSemanticsNodes().size) { index ->
             try {
@@ -76,6 +76,8 @@ class Ui(private val rule: ComposeTestRule) {
                 return
             } catch (notHere: AssertionError) {
                 // performScrollToNode asserts when the container has no such child: try the next container.
+            } catch (empty: IllegalArgumentException) {
+                // An empty lazy list (no recent searches yet) refuses any scroll: try the next container.
             }
         }
     }
