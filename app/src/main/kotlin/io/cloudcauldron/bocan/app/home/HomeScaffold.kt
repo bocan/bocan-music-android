@@ -21,6 +21,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -57,6 +58,11 @@ fun HomeScaffold(appGraph: AppGraph, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val player = appGraph.playerViewModel
     val playerState by player.state.collectAsState()
+    // Connect to the playback session as soon as the shell shows. Binding starts the service on
+    // a cold start, and the service restores the saved queue paused, so the mini player comes
+    // back holding what was playing. Without this nothing connected until the first play
+    // action, which replaced the saved queue before it could be restored.
+    LaunchedEffect(player) { player.connect() }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val pendingMessage = stringResource(R.string.track_pending_toast)
