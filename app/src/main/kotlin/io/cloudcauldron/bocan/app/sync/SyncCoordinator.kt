@@ -99,23 +99,20 @@ class SyncCoordinator(
         applyWorkerSchedule()
     }
 
-    override fun launchSync(force: Boolean) {
-        pendingLaunch = appScope.launch {
-            if (trustStore.current() == null) return@launch
-            // Hold a non-terminal state so the foreground service stays alive while
-            // discovery locates the Mac, then sync. Without the wait, a Sync Now issued
-            // before the endpoint resolves fails at once with ServerUnreachable.
-            syncStateFlow.value = SyncState.CheckingManifest
-            try {
-                awaitEndpoint()
-            } catch (cancelled: CancellationException) {
-                // Cancel pressed while discovery was still looking for the Mac.
-                syncStateFlow.value = SyncState.Idle
-                throw cancelled
-            }
-            engine()?.syncNow(force)
+    override fun launchSync(force: Boolean): Job = appScope.launch {
+        if (trustStore.current() == null) return@launch
+        // Show progress while discovery locates the Mac, then sync. Without the wait, a
+        // Sync Now issued before the endpoint resolves fails at once with ServerUnreachable.
+        syncStateFlow.value = SyncState.CheckingManifest
+        try {
+            awaitEndpoint()
+        } catch (cancelled: CancellationException) {
+            // Cancel pressed while discovery was still looking for the Mac.
+            syncStateFlow.value = SyncState.Idle
+            throw cancelled
         }
-    }
+        engine()?.syncNow(force)
+    }.also { pendingLaunch = it }
 
     override fun cancelSync() {
         // A sync still waiting for discovery has no engine run yet; cancelling only the engine

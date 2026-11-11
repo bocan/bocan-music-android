@@ -12,10 +12,12 @@ import io.cloudcauldron.bocan.sync.SyncHost
 import io.cloudcauldron.bocan.sync.engine.SyncState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 /**
  * Keeps a sync alive while the user is away from the app, showing determinate
@@ -38,8 +40,12 @@ class SyncForegroundService : Service() {
 
     // Held for the duration of a sync so a large transfer with the screen off is not stalled
     // by CPU suspend or Wi-Fi power save (which surfaced as intermittent "Mac not reachable").
-    // Released in onDestroy, which every stop path (terminal state, cancel, timeout) reaches.
+    // Released in onDestroy, which every stop path (the last run ending, cancel, timeout) reaches.
     private val locks by lazy { SyncLocks(this) }
+
+    // Main thread only: every start and every run's end is handled on the main thread.
+    private var runs = 0
+    private var progress: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -60,23 +66,29 @@ class SyncForegroundService : Service() {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
         )
         locks.acquire()
-        observeState()
+        if (progress == null) progress = observeProgress()
+        // The service lives exactly as long as the runs it launched. It once stopped on the first
+        // terminal state it saw, which was the Idle still current when it started: every sync ran
+        // without its notification, its Cancel action, its locks, or a foreground service.
+        runs++
         host.launchSync(intent?.getBooleanExtra(EXTRA_FORCE, false) ?: false)
+            .invokeOnCompletion { scope.launch { onRunEnded() } }
         return START_NOT_STICKY
     }
 
-    private fun observeState() {
-        host.syncState
-            .onEach { state ->
-                if (state.isTerminal) {
-                    log.debug("sync.service.stopping", mapOf("state" to state::class.simpleName))
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                    stopSelf()
-                } else {
-                    notifications.notifyUpdate(state, cancelIntent())
-                }
-            }
-            .launchIn(scope)
+    /** Mirror each in-flight state into the notification; terminal states are the runs' business. */
+    private fun observeProgress(): Job = host.syncState
+        .onEach { state -> if (!state.isTerminal) notifications.notifyUpdate(state, cancelIntent()) }
+        .launchIn(scope)
+
+    private fun onRunEnded() {
+        runs--
+        if (runs > 0) return
+        log.debug("sync.service.stopping", mapOf("state" to host.syncState.value::class.simpleName))
+        progress?.cancel()
+        progress = null
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onTimeout(startId: Int) {

@@ -1,6 +1,7 @@
 package io.cloudcauldron.bocan.sync
 
 import io.cloudcauldron.bocan.sync.engine.SyncState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -16,8 +17,13 @@ interface SyncHost {
     /** The live sync state, mirrored from the engine, for the progress notification. */
     val syncState: StateFlow<SyncState>
 
-    /** Start a sync in the application scope and return immediately. */
-    fun launchSync(force: Boolean)
+    /**
+     * Start a sync in the application scope and return its run at once. The run completes when
+     * this sync has ended, or at once when it coalesced into a run already under way. The
+     * foreground service stays up until every run it launched has completed; it cannot judge
+     * that from [syncState], which still reads Idle for a moment after a launch.
+     */
+    fun launchSync(force: Boolean): Job
 
     /** Cooperatively stop the current sync (Cancel action, or a foreground-service timeout). */
     fun cancelSync()

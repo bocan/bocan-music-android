@@ -9,6 +9,7 @@ import io.cloudcauldron.bocan.playback.PlaybackComponents
 import io.cloudcauldron.bocan.playback.PlaybackHost
 import io.cloudcauldron.bocan.sync.SyncHost
 import io.cloudcauldron.bocan.sync.engine.SyncState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 
@@ -51,7 +52,7 @@ class BocanApplication :
 
     override val syncState: StateFlow<SyncState> get() = appGraph.syncCoordinator.syncState
 
-    override fun launchSync(force: Boolean) = appGraph.syncCoordinator.launchSync(force)
+    override fun launchSync(force: Boolean): Job = appGraph.syncCoordinator.launchSync(force)
 
     override fun cancelSync() = appGraph.syncCoordinator.cancelSync()
 
