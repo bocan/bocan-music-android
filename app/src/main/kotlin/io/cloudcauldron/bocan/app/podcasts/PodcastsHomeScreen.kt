@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.ArtworkImage
 import io.cloudcauldron.bocan.app.components.EmptyState
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** The Podcasts home: a continue-listening shelf then the subscribed-shows grid with unplayed badges. */
 @Composable
@@ -61,7 +63,7 @@ fun PodcastsHomeScreen(
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
         contentPadding = PaddingValues(12.dp),
-        modifier = rootModifier.fillMaxSize()
+        modifier = rootModifier.fillMaxSize().testTag(E2ETags.Podcasts.SHOWS_GRID)
     ) {
         if (ui.continueListening.isNotEmpty()) {
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {

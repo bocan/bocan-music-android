@@ -4,9 +4,12 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /** The scrollable secondary tab row across the six library views. */
 @Composable
@@ -16,10 +19,20 @@ fun LibraryTabRow(selected: LibraryTab, onSelect: (LibraryTab) -> Unit) {
             Tab(
                 selected = tab == selected,
                 onClick = { onSelect(tab) },
-                text = { Text(stringResource(tabLabel(tab))) }
+                text = { Text(stringResource(tabLabel(tab))) },
+                modifier = Modifier.testTag(tabTag(tab))
             )
         }
     }
+}
+
+private fun tabTag(tab: LibraryTab): String = when (tab) {
+    LibraryTab.Artists -> E2ETags.Library.TAB_ARTISTS
+    LibraryTab.Albums -> E2ETags.Library.TAB_ALBUMS
+    LibraryTab.Songs -> E2ETags.Library.TAB_SONGS
+    LibraryTab.Genres -> E2ETags.Library.TAB_GENRES
+    LibraryTab.Playlists -> E2ETags.Library.TAB_PLAYLISTS
+    LibraryTab.Folders -> E2ETags.Library.TAB_FOLDERS
 }
 
 private fun tabLabel(tab: LibraryTab): Int = when (tab) {

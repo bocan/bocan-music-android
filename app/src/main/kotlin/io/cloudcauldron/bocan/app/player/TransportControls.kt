@@ -30,11 +30,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.playback.queue.RepeatMode
 
 /**
@@ -68,6 +70,7 @@ fun TransportControls(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .clip(CircleShape)
+                .testTag(E2ETags.NowPlaying.SHUFFLE)
                 .combinedClickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -84,17 +87,17 @@ fun TransportControls(
                 modifier = Modifier.size(28.dp)
             )
         }
-        IconButton(onClick = onPrevious) {
+        IconButton(onClick = onPrevious, modifier = Modifier.testTag(E2ETags.NowPlaying.PREVIOUS)) {
             Icon(Icons.Rounded.SkipPrevious, contentDescription = stringResource(R.string.action_previous))
         }
-        FilledIconButton(onClick = onPlayPause, modifier = Modifier.size(64.dp)) {
+        FilledIconButton(onClick = onPlayPause, modifier = Modifier.size(64.dp).testTag(E2ETags.NowPlaying.PLAY_PAUSE)) {
             if (isPlaying) {
                 Icon(Icons.Rounded.Pause, contentDescription = stringResource(R.string.action_pause))
             } else {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.action_play))
             }
         }
-        IconButton(onClick = onNext) {
+        IconButton(onClick = onNext, modifier = Modifier.testTag(E2ETags.NowPlaying.NEXT)) {
             Icon(Icons.Rounded.SkipNext, contentDescription = stringResource(R.string.action_next))
         }
         val repeatActive = repeatMode != RepeatMode.Off
@@ -105,7 +108,8 @@ fun TransportControls(
                 RepeatMode.One -> R.string.repeat_state_one
             }
         )
-        IconButton(onClick = onCycleRepeat, modifier = Modifier.semantics { stateDescription = repeatState }) {
+        val repeatModifier = Modifier.testTag(E2ETags.NowPlaying.REPEAT).semantics { stateDescription = repeatState }
+        IconButton(onClick = onCycleRepeat, modifier = repeatModifier) {
             Icon(
                 imageVector = if (repeatMode == RepeatMode.One) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                 contentDescription = stringResource(R.string.action_repeat),
@@ -136,19 +140,21 @@ fun PodcastTransportControls(
     ) {
         AssistChip(
             onClick = onCycleSpeed,
-            label = { Text(stringResource(R.string.speed_value, speed)) }
+            label = { Text(stringResource(R.string.speed_value, speed)) },
+            modifier = Modifier.testTag(E2ETags.NowPlaying.SPEED)
         )
-        IconButton(onClick = onSkipBack) {
+        IconButton(onClick = onSkipBack, modifier = Modifier.testTag(E2ETags.NowPlaying.SKIP_BACK)) {
             Icon(Icons.Rounded.Replay10, contentDescription = stringResource(R.string.action_skip_back))
         }
-        FilledIconButton(onClick = onPlayPause, modifier = Modifier.size(64.dp)) {
+        // The same tag as the music row's play button: only one transport row is ever on screen.
+        FilledIconButton(onClick = onPlayPause, modifier = Modifier.size(64.dp).testTag(E2ETags.NowPlaying.PLAY_PAUSE)) {
             if (isPlaying) {
                 Icon(Icons.Rounded.Pause, contentDescription = stringResource(R.string.action_pause))
             } else {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.action_play))
             }
         }
-        IconButton(onClick = onSkipForward) {
+        IconButton(onClick = onSkipForward, modifier = Modifier.testTag(E2ETags.NowPlaying.SKIP_FORWARD)) {
             Icon(Icons.Rounded.Forward30, contentDescription = stringResource(R.string.action_skip_forward))
         }
     }

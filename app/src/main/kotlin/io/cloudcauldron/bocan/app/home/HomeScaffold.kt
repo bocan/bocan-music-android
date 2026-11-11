@@ -28,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -37,6 +38,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.cloudcauldron.bocan.app.AppGraph
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.e2e.E2ETags
 import io.cloudcauldron.bocan.app.library.LibraryCallbacks
 import io.cloudcauldron.bocan.app.navigation.BocanNavHost
 import io.cloudcauldron.bocan.app.navigation.Destination
@@ -139,7 +141,8 @@ private fun HomeNavRail(navController: NavHostController) {
                     }
                 },
                 icon = { Icon(bottomIcon(destination), contentDescription = null) },
-                label = { Text(stringResource(bottomLabel(destination))) }
+                label = { Text(stringResource(bottomLabel(destination))) },
+                modifier = Modifier.testTag(bottomTag(destination))
             )
         }
     }
@@ -162,10 +165,19 @@ private fun HomeBottomBar(navController: NavHostController) {
                     }
                 },
                 icon = { Icon(bottomIcon(destination), contentDescription = null) },
-                label = { Text(stringResource(bottomLabel(destination))) }
+                label = { Text(stringResource(bottomLabel(destination))) },
+                modifier = Modifier.testTag(bottomTag(destination))
             )
         }
     }
+}
+
+/** The bar and the rail share one tag per destination; only one of them is ever on screen. */
+private fun bottomTag(destination: Destination): String = when (destination) {
+    Destination.Podcasts -> E2ETags.Nav.PODCASTS
+    Destination.Search -> E2ETags.Nav.SEARCH
+    Destination.Settings -> E2ETags.Nav.SETTINGS
+    else -> E2ETags.Nav.LIBRARY
 }
 
 private fun bottomIcon(destination: Destination): ImageVector = when (destination) {
