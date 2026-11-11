@@ -5,17 +5,23 @@ asserts what each step does. It is phase 17 (`docs/design-spec/phase-17-end-to-e
 No Mac and no network are involved: a fixture library is loaded straight into the
 database and the media root before the app starts.
 
-Slice 1 (this document's current scope) provides the fixture, the harness, the runner,
-and three journeys. The tag audit (slice 2), the per-screen crawl tables (slice 3), and
-gestures, rotation, and persistence (slice 4) build on it.
+Slice 1 provides the fixture, the harness, the runner, and three journeys. Slice 2 puts
+a stable tag on every control and adds the audits that keep it so. The per-screen crawl
+tables (slice 3) and gestures, rotation, and persistence (slice 4) build on both.
 
 ## Run it
 
 ```
-make end-to-end         # E2ESuite: every journey
+make end-to-end         # E2ESuite: every journey and every tag audit
 make end-to-end-smoke   # SmokeSuite: one fixture journey, for a quick check
+make end-to-end-audit   # AuditSuite: only the on-device tag audits
 make end-to-end-report  # open the last HTML report
+make tag-audit          # the source-level tag audit: no device, seconds (also in make lint and CI)
 ```
+
+To run one class or one test, pass it to the script relative to the app package:
+`scripts/e2e/run.sh audits.TagCoverageAudit` or
+`scripts/e2e/run.sh "audits.TagCoverageAudit#podcastsShowsAndThePodcastPlayer"`.
 
 `scripts/e2e/run.sh` picks the device:
 
@@ -72,10 +78,45 @@ The script's last lines summarise: suite, device, time, passed, failed, skipped.
 - **Tags are stable strings.** Add a constant to `E2ETags` (`surface.control`) and apply
   it with `Modifier.testTag(...)`. Never derive a tag from a label, a title, or an index.
 - **Rows by content description.** The merged TalkBack sentence that the standards
-  require is the row's identity in tests too.
+  require is the row's identity in tests too. Repeated controls share one
+  `surface.row.control` tag; `Ui.awaitRow(tag, label)` picks one by its TalkBack sentence
+  or, for rows without one (list items, chips, menu options), its label.
 - **Ids and titles come from the fixture manifest** (`E2ETest.fixture`,
   `trackMediaId(title)`, `episodeMediaId(title)`), not from numbers typed into a test.
 - **Every step asserts what it did.** "Did not crash" is never the check.
+
+## Adding a control
+
+Every control a user can tap, long-press, toggle, slide, or type into carries a tag. A
+control without one fails two checks:
+
+- `make tag-audit` (`scripts/e2e/audit-test-tags.py`, run by `make lint` and CI) scans
+  the sources: each `.clickable`, `.combinedClickable`, `.toggleable`, or `.selectable`
+  needs a `testTag` in the same modifier chain, and each Material control call (`Button`,
+  `IconButton`, `FilterChip`, `DropdownMenuItem`, `Slider`, `TextField`, ...) needs one
+  among its arguments. A control whose own handler is `null` (the visual `Switch` inside a
+  toggle row) is skipped. It is a heuristic: for a call site it misreads, put
+  `// e2e-audit: ignore (reason)` on that line.
+- `TagCoverageAudit` and its siblings (`app/src/androidTest/.../audits/`) are the
+  contract. They walk every route in `Destination.kt` and every sheet, menu, and dialog
+  reachable without a Mac, and fail on any node in the semantics tree with a click,
+  long-click, set-progress, or text-input action and no tag. The failure lists every gap
+  with its role, label, text, and bounds. `DestinationCoverageTest` fails when a new
+  route is added and no audit visits it.
+
+So, for a new control:
+
+1. Add a constant to `E2ETags` and apply it: `Modifier.testTag(E2ETags.X.Y)`. Settings
+   rows (`SettingsToggleRow`, `SettingsNavRow`) and `LabelledSlider` take a required
+   `tag` argument instead. A bottom sheet passes `dragHandle = { SheetDragHandle() }`.
+2. If it is on a new screen or sheet, add a step to the matching audit so the crawl
+   reaches it, and add a new route to that audit's route set.
+3. Slice 3 adds the second half: a row in that screen's crawl table with a postcondition.
+
+Only a node Material builds and gives no modifier for may go untagged, through an entry
+in `audits/TagAllowlist.kt` with its reason. Entries match by structure, never by a label,
+and each is anchored to a node the app did tag. Today there are two: the bottom sheet's
+drag handle wrapper and its scrim.
 
 ## Add a journey
 
@@ -95,3 +136,6 @@ The script's last lines summarise: suite, device, time, passed, failed, skipped.
 - Look at the screenshots taken before the failing step.
 - `FixtureRule` failing with "the install is not clean" means the Orchestrator did not
   run: use `make end-to-end`, not a bare `connectedAndroidTest` without it.
+- A tag audit failure lists each untagged node as
+  `screen: [OnClick] Button, description=[], text=[Reset to normal], bounds=...`. Find the
+  control by its text and screen, and tag it (see "Adding a control").

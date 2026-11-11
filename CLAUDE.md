@@ -25,6 +25,7 @@ Three repo skills in `.claude/skills/` encode the workflow; prefer them over imp
 - Conventional Commits, scope = module: `feat(playback): ...`, `fix(sync): ...`. One logical change per commit.
 - Never use em dashes or en dashes in code comments, commit messages, markdown, or UI strings. Use commas, colons, parentheses, or plain hyphens.
 - All user-facing strings live in `strings.xml` resources. No hardcoded literals in composables.
+- Every control a user can tap, long-press, toggle, slide, or type into ships with a stable end-to-end tag: a constant in `E2ETags` applied with `Modifier.testTag(...)`, and (from phase 17 slice 3) a row in its screen's crawl table. `make tag-audit` (in `make lint` and CI) and the on-device `TagCoverageAudit` fail without it. See `docs/e2e.md`, "Adding a control".
 
 ## Commands
 
@@ -36,5 +37,7 @@ Once phase 00 lands, everyday commands go through Gradle:
 | Unit tests, all modules | `./gradlew test` |
 | Single module tests | `./gradlew :core:sync:test` |
 | Lint (ktlint + detekt + Android lint) | `./gradlew check` |
+| Source tag audit (no device) | `make tag-audit` |
+| End-to-end suite (emulator) | `make end-to-end` |
 | Coverage | `./gradlew koverHtmlReport` |
 | Install on device | `./gradlew installDebug` |
