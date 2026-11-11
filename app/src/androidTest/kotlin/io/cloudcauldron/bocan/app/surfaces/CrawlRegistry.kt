@@ -37,8 +37,7 @@ object CrawlRegistry {
         E2ETags.Scrobble.DEAD_LETTER_RETRY to "needs a scrobble that failed past its retries, which needs a connected provider",
         E2ETags.Scrobble.DEAD_LETTER_DISCARD to "needs a scrobble that failed past its retries, which needs a connected provider",
         E2ETags.Scrobble.provider(ProviderId.LAST_FM, E2ETags.Scrobble.CONNECT) to
-            "starts a browser sign-in with Last.fm over the internet",
-        E2ETags.NowPlaying.GESTURES to "the four swipes and the snap-back are slice 4's threshold-driven tests"
+            "starts a browser sign-in with Last.fm over the internet"
     )
 
     /** Tags on things that are not controls: containers and pictures used as markers and scroll targets. */

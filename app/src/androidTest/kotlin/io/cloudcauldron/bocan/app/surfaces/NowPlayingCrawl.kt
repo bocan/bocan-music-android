@@ -44,7 +44,7 @@ class NowPlayingCrawl : CrawlTest(FixtureProfile.PairedLibrary) {
         private const val SEEK_TOLERANCE_MS = 400L
         private const val FIFTEEN_MINUTES_MS = 15 * 60_000L
 
-        fun table(c: CrawlContext): List<Step> = open(c) + transport(c) + sheets(c) + lyricsAndLinks() + queue(c)
+        fun table(c: CrawlContext): List<Step> = open(c) + transport(c) + gestures() + sheets(c) + lyricsAndLinks() + queue(c)
 
         private fun open(c: CrawlContext) = listOf(
             Step(E2ETags.Library.TAB_ALBUMS, Tap, Visible(E2ETags.Library.ALBUMS_GRID)),
@@ -67,6 +67,18 @@ class NowPlayingCrawl : CrawlTest(FixtureProfile.PairedLibrary) {
                 Slide(HALF),
                 PlayerState(what = "halfway through the track") { abs(it.positionMs - it.durationMs / 2) <= SEEK_TOLERANCE_MS }
             )
+        )
+
+        // A plain full-length swipe each way; the thresholds, flings, snap-backs, ends, and reduced
+        // motion are gestures/NowPlayingGestureTests. Positions, not titles: the shuffle steps above
+        // leave the upcoming order random.
+        private fun gestures() = listOf(
+            Step(E2ETags.NowPlaying.GESTURES, Swipe(Direction.Left), PlayerState(what = "on the second item") { it.queueIndex == 1 }),
+            Step(E2ETags.NowPlaying.GESTURES, Swipe(Direction.Right), PlayerState(what = "back on the first item") { it.queueIndex == 0 }),
+            Step(E2ETags.NowPlaying.GESTURES, Swipe(Direction.Up), Visible(E2ETags.Common.SHEET_HANDLE)),
+            Step(CrawlTags.SYSTEM_BACK, Back, Gone(E2ETags.Common.SHEET_HANDLE)),
+            Step(E2ETags.NowPlaying.GESTURES, Swipe(Direction.Down), Visible(E2ETags.MiniPlayer.OPEN)),
+            Step(E2ETags.MiniPlayer.OPEN, Tap, PLAYER)
         )
 
         private fun sheets(c: CrawlContext): List<Step> {
