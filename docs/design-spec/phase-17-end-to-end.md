@@ -97,6 +97,17 @@ Six slices, each one branch and one PR, in order. Slices 1 to 4 are the delivera
 
 The nightly workflow (`e2e.yml`) lands with slice 3: `workflow_dispatch` plus a nightly cron, a Linux runner with KVM, `reactivecircus/android-emulator-runner` at API 36, `make end-to-end`, screenshots and XML uploaded as artifacts, failures opened as an issue with the summary. It is never a required check.
 
+**Slice 3 notes (2026-11-11).** Landed on `feat/e2e-slice-3-crawls`, stacked on slice 2. Facts the next slices rely on:
+- Eleven crawl classes in `surfaces/` (library, detail screens, search, podcasts, podcast player, now playing, settings, equalizer, sync, first run, empty library), each one test running one table through `CrawlRunner`, which audits tags before every step. `CrawlRegistry` lists them all; `TableCoverageTest` is the static coverage check and `CrawlTest.finishCrawl` the runtime one. `CrawlSuite` and `make end-to-end-crawl` run them alone; `E2ESuite` runs journeys, `AuditSuite`, and `CrawlSuite`.
+- Fixture chapters: debug builds serve `fixture-episode-*` chapters from `assets/fixture/chapters/` through `Context.fixtureChaptersFetcher()` (debug source set; the release source set's twin returns null), wired after the demo's source in `AppGraph`. Night Shift Pilot's show notes carry an https and an http link on `example.invalid`.
+- External intents are stubbed with Espresso-Intents (`androidx.test.espresso:espresso-intents`, the catalog's Espresso version); `IntentSent` checks them. No crawl leaves the app or touches the network.
+- Touch actions (tap, long press, swipe, reorder) scroll the control on screen first; slides, typing, and submits use semantics actions and never scroll. Scrolling a rotated EQ band slider into view in its horizontal row left the app never idle, so the crawl hung.
+- `Ui.awaitRow` scrolls lazy lists to a row not yet composed and tries matchers most specific first (own label, then a child's, the parent's, a sibling's): an episode row's sentence sits on its info block, and every list row is a sibling of every other.
+- A failed step leaves `<Class>-<crawl>-step-<n>-failed.png`; `run.sh` writes `build/e2e/summary.txt` and finds the SDK through `ANDROID_HOME` on a runner.
+- The crawls found two app bugs, fixed in this slice: one swipe on a queue row removed that row and the next (the removal ran inside `confirmValueChange`, which fires more than once per swipe); and Cancel did nothing while Sync now waited up to 20 s for discovery (only the engine run was cancelled, not the pending launch).
+- Not crawled, each with its reason in `CrawlRegistry.NOT_CRAWLED`: the pairing code, Mac row, done and start over, and the welcome flow's first-sync page (slice 6's fake Mac); the Android 17 local network notice (API 36 suite); the scrobble token save, Last.fm sign-in, and dead-letter rows (the internet); the Now Playing gesture surface (slice 4).
+- `E2ESuite` passed 25 of 25 twice in a row on `bocan-api36`, about 155 s each.
+
 ## Definitions and contracts
 
 ```kotlin
@@ -117,9 +128,11 @@ object E2ETags {
 }
 
 // app/src/androidTest/kotlin/.../surfaces/CrawlTable.kt
-data class Step(val tag: String, val action: Action, val expect: Postcondition)
-sealed interface Action { data object Tap; data object LongPress; data class Type(val text: String); data class Slide(val fraction: Float); data class Swipe(val direction: Direction) }
-sealed interface Postcondition { data class Visible(val tag: String); data class Text(val tag: String, val contains: String); data class Toggled(val tag: String, val on: Boolean); data class Navigated(val screen: String); data class PlayerState(val playing: Boolean?, val mediaIdPrefix: String?); data class SheetDismissed(val tag: String) }
+data class Step(val tag: String, val action: Action, val expect: Postcondition, val row: String? = null, val timeoutMs: Long = 10_000)
+sealed interface Action { Tap; LongPress; Type(text); Clear; Submit; Slide(fraction); Swipe(direction); Reorder(rows); TapLink(text); Back }
+sealed interface Postcondition { Visible(tag, row?); Gone(tag, row?); Navigated(screen, markerTag); Shows(text); Text(tag, contains);
+    Toggled(tag, on); Flipped; Selected(tag, row?); PlayerState(playing?, mediaIdPrefix?, what, check?); Holds(what, check); IntentSent(action, uri) }
+// Gone replaces SheetDismissed; Navigated names a marker tag only that screen has; Holds reads stored state (DataStore, the database).
 ```
 
 Rules:
@@ -159,17 +172,19 @@ The phase is the test plan. What must be true of the suite itself:
 
 - [x] `make end-to-end` runs the full suite on an attached emulator and writes screenshots and a summary to `build/e2e/`; `make end-to-end-smoke` runs the subset.
       Evidence (2026-11-11, slice 1, `bocan-api36` on the dev Mac): a cold run booted the AVD headless and ran E2ESuite; after the mini player tag fix, four consecutive `make end-to-end` runs passed 3 of 3 (about 15 s each) with no manual reset, writing `report/`, `junit/`, 5 screenshots, and the summary line; `make end-to-end-smoke` passed 1 of 1. The suite holds only the three slice 1 journeys so far.
-- [ ] The fixture library loads without a Mac and every surface has content: all six library tabs, both playlist kinds and the folder, genres, two shows, chapters, lyrics of both kinds, the paired sync screen.
-      Partly, not ticked: `FixtureLibraryTests` proves the rows (48 tracks, 18 albums, 14 artists, all three playlist kinds, 2 shows, the in-progress episode, 4 synced and 2 unsynced lyrics) and the journeys use albums and a show on the emulator. Fixture chapters are not served yet, and no test visits every surface; both are slice 3.
+- [x] The fixture library loads without a Mac and every surface has content: all six library tabs, both playlist kinds and the folder, genres, two shows, chapters, lyrics of both kinds, the paired sync screen.
+      Evidence (2026-11-11, slice 3, `bocan-api36`): `FixtureLibraryTests` proves the rows; on the emulator `LibraryCrawl` shows content on all six tabs and the unsynced lyrics of Heather 1, `DetailCrawl` plays Fixture Mix (manual), Loved Fixture Tracks (smart), and Folder Child (inside Fixture Folder) and opens the Folk genre, `PodcastsCrawl` opens both shows, `PodcastPlayerCrawl` seeks by the fixture episode's chapters, `NowPlayingCrawl` seeks by a synced lyrics line, and `SyncCrawl` drives the paired sync screen.
 - [x] Every actionable node on every screen carries a tag; the audit proves it and fails otherwise.
       Evidence (2026-11-11, slice 2, `bocan-api36`): `make end-to-end-audit` passed 8 of 8 (`DestinationCoverageTest` plus the three audit classes, every route in `Destination.kt` visited); `make tag-audit` reports no finding. Negative run: with the tag removed from the speed sheet's Reset button, `make tag-audit` failed naming `SpeedSheet.kt:75` and `TagCoverageAudit#nowPlayingItsSheetsAndTheEqualizer` failed with `speed sheet: [OnClick] Button, text=[Reset to normal]`; the tag was restored. States only a Mac or rarer data reach are covered by the source audit alone (see the slice 2 notes).
 - [ ] Every tag is exercised by a crawl table with a postcondition; the coverage check proves it and fails otherwise.
+      Partly, not ticked: the coverage check exists in both halves and fails when it should (negative run, 2026-11-11: with the Speed Reset row removed, `TableCoverageTest` failed naming `speed.reset`; the row was restored), and every reachable tag has a row. Twelve tags wait in `CrawlRegistry.NOT_CRAWLED`: the gesture surface (slice 4), the pairing and first-sync controls (slice 6's fake Mac), and controls that need the internet or Android 17. The box ticks when slices 4 and 6 empty that list or defer it with a dated note.
 - [ ] All four Now Playing swipes and the snap-back are tested with thresholds read from the gesture code; reduced motion is tested.
 - [ ] Every setting survives a process kill; the queue restores paused at the same index.
 - [ ] Every screen renders in landscape and its reduced table passes.
 - [ ] The nightly workflow runs the same target on a Linux emulator and uploads artifacts; it is not a required PR check.
-- [ ] `docs/e2e.md` explains how to run it, how to add a control (tag plus table row), and how to read a failure; `CLAUDE.md` carries the tag rule.
-      Partly, not ticked: running, reading a failure, adding a control's tag, and the `CLAUDE.md` rule are in (slice 2); the table-row half of "adding a control" waits for the crawl tables (slice 3).
+      Partly, not ticked: `.github/workflows/e2e.yml` is written (slice 3) but has not run; a scheduled or dispatched workflow runs only once it is on `main`. Tick with the first green run's link.
+- [x] `docs/e2e.md` explains how to run it, how to add a control (tag plus table row), and how to read a failure; `CLAUDE.md` carries the tag rule.
+      Evidence (2026-11-11, slice 3): `docs/e2e.md` has "Run it" (with the nightly), "Adding a control" (tag, audit step, table row), "Crawl tables", and "Read a failure" (audit and crawl failures); `CLAUDE.md` carries the tag and table-row rule.
 - [ ] Slices 5 and 6 are either done or explicitly deferred with a dated note here.
 
 ## Gotchas
@@ -180,7 +195,7 @@ The phase is the test plan. What must be true of the suite itself:
 - **Permissions on API 33 and above.** Notifications need `POST_NOTIFICATIONS`; grant it through the rule, never by tapping the system dialog. On an emulator that carries the Android 17 local network permission, grant it the same way or the pairing screen blocks.
 - **Emulator audio.** Boot with `-no-audio`; the player still reaches the playing state and advances position on the null audio device. If a future emulator refuses, assert on the transport state flow, which is what the tests do anyway.
 - **Package data between tests.** The Android Test Orchestrator with `clearPackageData` gives every test (not only every class) a fresh process on a cleared install, and the harness re-seeds. Without it, one failing test poisons the next; the harness refuses to run on a dirty install.
-- **KVM on GitHub-hosted runners.** Public repos get KVM on `ubuntu-latest`; if this repo is private, the nightly needs a larger runner or a self-hosted one. Decide when slice 3 lands and record it here.
+- **KVM on GitHub-hosted runners.** Public repos get KVM on `ubuntu-latest`; if this repo is private, the nightly needs a larger runner or a self-hosted one. Decided 2026-11-11 (slice 3): the repo is public, so `e2e.yml` runs on `ubuntu-latest` with the udev rule that opens `/dev/kvm`. Revisit if the repo ever goes private.
 - **Do not test the widget by screenshot.** Glance renders through the launcher; assert the state store and stop.
 - **No em dashes or en dashes** in tags, tables, messages, or docs.
 

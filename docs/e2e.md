@@ -6,22 +6,30 @@ No Mac and no network are involved: a fixture library is loaded straight into th
 database and the media root before the app starts.
 
 Slice 1 provides the fixture, the harness, the runner, and three journeys. Slice 2 puts
-a stable tag on every control and adds the audits that keep it so. The per-screen crawl
-tables (slice 3) and gestures, rotation, and persistence (slice 4) build on both.
+a stable tag on every control and adds the audits that keep it so. Slice 3 adds a crawl
+table per screen that acts on every control and checks what it did, and the nightly
+workflow. Gestures, rotation, and persistence (slice 4) build on all three.
 
 ## Run it
 
 ```
-make end-to-end         # E2ESuite: every journey and every tag audit
+make end-to-end         # E2ESuite: the journeys, the tag audits, and the surface crawls
 make end-to-end-smoke   # SmokeSuite: one fixture journey, for a quick check
 make end-to-end-audit   # AuditSuite: only the on-device tag audits
+make end-to-end-crawl   # CrawlSuite: only the surface crawls and the table coverage check
 make end-to-end-report  # open the last HTML report
 make tag-audit          # the source-level tag audit: no device, seconds (also in make lint and CI)
 ```
 
 To run one class or one test, pass it to the script relative to the app package:
-`scripts/e2e/run.sh audits.TagCoverageAudit` or
+`scripts/e2e/run.sh surfaces.NowPlayingCrawl` or
 `scripts/e2e/run.sh "audits.TagCoverageAudit#podcastsShowsAndThePodcastPlayer"`.
+
+**Nightly.** `.github/workflows/e2e.yml` runs `make end-to-end` every night (03:17 UTC)
+and on demand (Actions, "End-to-end (nightly)", Run workflow) on an API 36 emulator on
+`ubuntu-latest`, which has KVM because the repo is public. It uploads `build/e2e/` as the
+`e2e-results` artifact and opens an issue with the summary line when the run fails. It is
+never a required check on a pull request.
 
 `scripts/e2e/run.sh` picks the device:
 
@@ -43,7 +51,8 @@ Everything lands in `build/e2e/`:
 |------|------|
 | `report/index.html` | Gradle's HTML report, per class and per test |
 | `junit/*.xml` | JUnit XML, the same results for tools |
-| `screenshots/*.png` | One PNG per `screenshot(name)` call, named `<Class>-<name>.png`, for a person to look at; never a pass or fail |
+| `screenshots/*.png` | One PNG per `screenshot(name)` call, named `<Class>-<name>.png`, and one per failed crawl step (`<Class>-<crawl>-step-<n>-failed.png`), for a person to look at; never a pass or fail |
+| `summary.txt` | The summary line alone, for tools (the nightly workflow quotes it) |
 | `gradle.log` | The full Gradle output |
 | `emulator.log` | The emulator's output, when the script booted it |
 
@@ -111,12 +120,41 @@ So, for a new control:
    `tag` argument instead. A bottom sheet passes `dragHandle = { SheetDragHandle() }`.
 2. If it is on a new screen or sheet, add a step to the matching audit so the crawl
    reaches it, and add a new route to that audit's route set.
-3. Slice 3 adds the second half: a row in that screen's crawl table with a postcondition.
+3. Add a row to that screen's crawl table (`app/src/androidTest/.../surfaces/*Crawl.kt`)
+   that acts on the control and states what must then be true. A control no table can
+   reach yet (it needs a Mac, say) goes in `CrawlRegistry.NOT_CRAWLED` with the reason
+   and the slice that will reach it.
 
 Only a node Material builds and gives no modifier for may go untagged, through an entry
 in `audits/TagAllowlist.kt` with its reason. Entries match by structure, never by a label,
 and each is anchored to a node the app did tag. Today there are two: the bottom sheet's
 drag handle wrapper and its scrim.
+
+## Crawl tables
+
+Each screen has a crawl class in `surfaces/` whose table is a list of rows:
+
+```kotlin
+Step(E2ETags.Sync.UNPAIR, Tap, Visible(E2ETags.Sync.UNPAIR_CONFIRM)),
+Step(E2ETags.Sync.UNPAIR_CANCEL, Tap, Gone(E2ETags.Sync.UNPAIR_CONFIRM)),
+Step(E2ETags.Rows.TRACK, Tap, PlayerState(playing = true, mediaIdPrefix = c.track("Breakwater 2")), row = "Breakwater 2"),
+```
+
+A row names the control by its tag (and `row`, its label, when the tag repeats), the
+action (`Tap`, `LongPress`, `Type`, `Clear`, `Submit`, `Slide`, `Swipe`, `Reorder`,
+`TapLink`, `Back`), and the postcondition the interpreter (`CrawlRunner`) waits for:
+`Visible`, `Gone`, `Navigated`, `Shows`, `Text`, `Toggled`, `Flipped`, `Selected`,
+`PlayerState`, `Holds` (stored state, such as a setting or a database row), or
+`IntentSent` (a stubbed browser link). "Did not crash" is not one of them. Labels come
+from the app's string resources and the fixture manifest, never typed into the table.
+Tap, long press, swipe, and reorder bring the control on screen first; slides, typing,
+and submits go through semantics actions, as TalkBack does, and never scroll.
+
+Two checks keep the tables complete. `CrawlTest.finishCrawl` fails on any tag seen on
+screen during a crawl that no table steps on; `TableCoverageTest` fails on any `E2ETags`
+constant that no table steps on and `CrawlRegistry` does not explain, and on any
+`CrawlRegistry` entry a table does step on. Every crawl also runs the tag audit before
+each step.
 
 ## Add a journey
 
@@ -139,3 +177,8 @@ drag handle wrapper and its scrim.
 - A tag audit failure lists each untagged node as
   `screen: [OnClick] Button, description=[], text=[Reset to normal], bounds=...`. Find the
   control by its text and screen, and tag it (see "Adding a control").
+- A crawl failure names the crawl, the step number, the action and tag, what was
+  expected, and what was found, for example `crawl 'sync', step 7: tap 'sync.cancel'
+  expected 'sync.syncNow' on screen within 10000 ms, found 0 node(s)`, and leaves
+  `<Class>-<crawl>-step-<n>-failed.png` in `screenshots/`. Decide first whether the app or
+  the table is wrong: slice 3's own first runs found both.
