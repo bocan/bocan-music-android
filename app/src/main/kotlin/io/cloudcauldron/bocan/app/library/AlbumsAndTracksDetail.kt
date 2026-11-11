@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
 import io.cloudcauldron.bocan.app.components.AlbumCell
+import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.ReadableWidth
 import io.cloudcauldron.bocan.app.components.ShuffleAllAction
 import io.cloudcauldron.bocan.app.components.TrackList

@@ -11,11 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -30,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.cloudcauldron.bocan.app.R
+import io.cloudcauldron.bocan.app.components.BackButton
 import io.cloudcauldron.bocan.app.components.SettingsToggleRow
 import io.cloudcauldron.bocan.app.data.AppearanceSettings
 import io.cloudcauldron.bocan.app.data.ThemeMode
@@ -48,11 +45,7 @@ fun AppearanceSettingsScreen(settings: Flow<AppearanceSettings>, callbacks: Appe
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.appearance_title)) },
-                navigationIcon = {
-                    IconButton(onClick = callbacks.onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                }
+                navigationIcon = { BackButton(callbacks.onBack) }
             )
         }
     ) { padding ->
