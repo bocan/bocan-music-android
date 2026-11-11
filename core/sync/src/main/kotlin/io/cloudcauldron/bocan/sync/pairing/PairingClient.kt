@@ -135,7 +135,7 @@ class PairingClient(
                 discardSession()
                 stateFlow.value = PairingState.Failed(SyncError.TooManyAttempts)
             } else {
-                stateFlow.value = PairingState.Failed(SyncError.CodeMismatch)
+                stateFlow.value = PairingState.Failed(SyncError.CodeMismatch(attemptsLeft = MAX_CODE_ATTEMPTS - wrongAttempts))
             }
             return
         }

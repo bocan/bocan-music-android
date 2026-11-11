@@ -29,7 +29,7 @@ class SyncErrorTests {
     @Test
     fun `every error carries a non-blank log message`() {
         val samples = listOf(
-            SyncError.CodeMismatch,
+            SyncError.CodeMismatch(attemptsLeft = 2),
             SyncError.TooManyAttempts,
             SyncError.CertificatePinMismatch("aa", "bb"),
             SyncError.UnsupportedProtocol(serverVersion = 2, clientVersion = 1),

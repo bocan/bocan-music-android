@@ -95,7 +95,7 @@ class PairingClientTests {
 
         client.submitCode(wrongCode(expected))
 
-        assertEquals(PairingState.Failed(SyncError.CodeMismatch), client.state.value)
+        assertEquals(PairingState.Failed(SyncError.CodeMismatch(attemptsLeft = 2)), client.state.value)
         assertEquals(1, server.requestCount)
         assertNull(store.latest())
     }
@@ -107,9 +107,13 @@ class PairingClientTests {
         val wrong = wrongCode((client.state.value as PairingState.AwaitingCode).expectedCode)
 
         client.submitCode(wrong)
-        assertEquals(PairingState.Failed(SyncError.CodeMismatch), client.state.value)
+        val first = client.state.value
+        assertEquals(PairingState.Failed(SyncError.CodeMismatch(attemptsLeft = 2)), first)
         client.submitCode(wrong)
-        assertEquals(PairingState.Failed(SyncError.CodeMismatch), client.state.value)
+        assertEquals(PairingState.Failed(SyncError.CodeMismatch(attemptsLeft = 1)), client.state.value)
+        // A StateFlow drops a value equal to the current one: the second mismatch must differ from
+        // the first, or the screen never learns of it (its field kept the wrong digits).
+        assertNotEquals("the second mismatch equals the first", first, client.state.value)
         client.submitCode(wrong)
         assertEquals(PairingState.Failed(SyncError.TooManyAttempts), client.state.value)
         assertEquals(1, server.requestCount)
@@ -129,7 +133,7 @@ class PairingClientTests {
 
         client.submitCode(macScreenCode)
 
-        assertEquals(PairingState.Failed(SyncError.CodeMismatch), client.state.value)
+        assertEquals(PairingState.Failed(SyncError.CodeMismatch(attemptsLeft = 2)), client.state.value)
         assertEquals(1, server.requestCount)
         assertNull(store.latest())
     }

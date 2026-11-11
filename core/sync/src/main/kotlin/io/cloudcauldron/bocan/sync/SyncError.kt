@@ -12,8 +12,12 @@ package io.cloudcauldron.bocan.sync
 sealed class SyncError(message: String, cause: Throwable? = null) : Exception(message, cause) {
     // Pairing ceremony (client-detected)
 
-    /** The typed six-digit code did not match the code this device computed. */
-    data object CodeMismatch : SyncError("pairing code did not match")
+    /**
+     * The typed six-digit code did not match the code this device computed. [attemptsLeft]
+     * makes each wrong entry a new value, so a second mismatch is a new state the screen
+     * reacts to (clearing the field, announcing again) rather than one equal to the first.
+     */
+    data class CodeMismatch(val attemptsLeft: Int) : SyncError("pairing code did not match, $attemptsLeft attempt(s) left")
 
     /** Three wrong local code entries; the session is abandoned. */
     data object TooManyAttempts : SyncError("too many wrong code entries")

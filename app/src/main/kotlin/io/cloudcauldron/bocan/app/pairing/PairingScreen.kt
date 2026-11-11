@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -146,7 +147,10 @@ private fun PairedContent(serverName: String, onStartOver: () -> Unit) {
 @Composable
 private fun FailedContent(error: SyncError, onSubmitCode: (String) -> Unit, onStartOver: () -> Unit) {
     if (error is SyncError.CodeMismatch) {
-        CodeEntryContent(isError = true, onSubmitCode = onSubmitCode)
+        // Keyed on the mismatch (it counts the attempts left), so every wrong code gets a fresh,
+        // empty field and a fresh live region that TalkBack announces again. Without the key a
+        // second wrong code left the first's digits in place and said nothing new.
+        key(error) { CodeEntryContent(isError = true, onSubmitCode = onSubmitCode) }
         return
     }
     Text(
