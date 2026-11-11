@@ -47,8 +47,13 @@ else
 endif
 
 .PHONY: lint
-lint: ## ktlint + detekt + Android Lint
+lint: tag-audit ## ktlint + detekt + Android Lint, plus the source tag audit
 	$(GRADLE) check
+
+.PHONY: tag-audit
+tag-audit: ## Every interactive call site carries an E2E test tag (no device; docs/e2e.md)
+	python3 -m unittest discover -s scripts/e2e -p 'test_*.py'
+	python3 scripts/e2e/audit-test-tags.py --strict
 
 .PHONY: format
 format: ## Auto-fix formatting with ktlint
@@ -60,7 +65,7 @@ coverage: ## Generate and open the Kover HTML coverage report
 	open core/observability/build/reports/kover/html/index.html
 
 .PHONY: ci
-ci: ## Run exactly what CI runs: check test koverVerify assembleDebug
+ci: tag-audit ## Run exactly what CI runs: tag audit, check test koverVerify assembleDebug
 	$(GRADLE) check test koverVerify assembleDebug
 
 .PHONY: clean
@@ -122,6 +127,10 @@ end-to-end: ## Full E2E suite on the attached device, else a headless bocan-api3
 .PHONY: end-to-end-smoke
 end-to-end-smoke: ## The E2E smoke subset (one fixture journey)
 	E2E_AVD=$(AVD) scripts/e2e/run.sh SmokeSuite
+
+.PHONY: end-to-end-audit
+end-to-end-audit: ## Only the on-device tag audits (every control on every screen has a tag)
+	E2E_AVD=$(AVD) scripts/e2e/run.sh AuditSuite
 
 .PHONY: end-to-end-report
 end-to-end-report: ## Open the last E2E HTML report
