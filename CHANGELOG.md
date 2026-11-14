@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.5.0](https://github.com/bocan/bocan-music-android/compare/v0.4.0...v0.5.0) (2026-11-14)
+
+
+### Added
+
+* **persistence:** add the car browse and one-shot search queries ([a94bd6b](https://github.com/bocan/bocan-music-android/commit/a94bd6bfe148907ba540b5ee2cb608e2a371f6c8))
+* **playback:** add letter buckets for the car's long lists ([0758bcb](https://github.com/bocan/bocan-music-android/commit/0758bcb7fe81cb8a3bc913679a23eb16660ded7a))
+* **playback:** build car browse items and style hints in one place ([00973ca](https://github.com/bocan/bocan-music-android/commit/00973ca1f9039e5f7917e20923a407ffcb4a038e))
+* **playback:** reshape the car tree into tabs, letters, and no silent cap ([19894a9](https://github.com/bocan/bocan-music-android/commit/19894a99f3a2629be93824667f1a638c29538f93))
+* **playback:** search and voice for the car ([15777b3](https://github.com/bocan/bocan-music-android/commit/15777b36290411827e62117f9e8d120a8814d868))
+
+
+### Fixed
+
+* **app:** bottom sheets open far enough to show their contents in landscape ([ef05e68](https://github.com/bocan/bocan-music-android/commit/ef05e68154d6ab3b68a411f8e11108a889c5d598))
+* **app:** Cancel stops a sync still waiting for discovery ([5729504](https://github.com/bocan/bocan-music-android/commit/572950444580b6da1a722aa8aa6c9586bf99b00c))
+* **app:** connect to the playback session at launch so the saved queue comes back ([760a62a](https://github.com/bocan/bocan-music-android/commit/760a62a39b63f132cdb2558ad114be0b20de54eb))
+* **app:** one swipe removes one queue row ([57e6bdc](https://github.com/bocan/bocan-music-android/commit/57e6bdc20f517de1bc2b049de395380280f5de10))
+* **app:** register the tag audit module before loading it so Python 3.14 imports it ([ad9c04f](https://github.com/bocan/bocan-music-android/commit/ad9c04fefb2167ed5a0f76e8ea1537baed65a711))
+* **app:** the A to Z rail follows the sort and reaches every letter ([c2b64f0](https://github.com/bocan/bocan-music-android/commit/c2b64f04b6a168e21e85202bc64a0b82263a7202))
+* **app:** the album header puts its cover beside the buttons in landscape ([62accfb](https://github.com/bocan/bocan-music-android/commit/62accfb57885e533266b89067c72eb35234719e5))
+* **app:** the e2e runner never reports an earlier run's results ([8272283](https://github.com/bocan/bocan-music-android/commit/8272283edbdaf53cab47e5993d647e3587bb28f8))
+* **app:** under repeat all the Now Playing swipes wrap like the buttons ([d90b172](https://github.com/bocan/bocan-music-android/commit/d90b172b072e855cd73f32ac422c9336a92bda32))
+* **build:** open jdk.internal.access to test JVMs for Robolectric 4.17 ([1e74ea6](https://github.com/bocan/bocan-music-android/commit/1e74ea6f1a79923a9517077831488d8611cd3fa3))
+* **deps:** update dependency androidx.compose:compose-bom to v2026.09.00 ([0cf41fb](https://github.com/bocan/bocan-music-android/commit/0cf41fb44e59b67063db0fbfb14212a746c2e5c1))
+* **deps:** update dependency androidx.core:core-ktx to v1.19.1 ([ae8865a](https://github.com/bocan/bocan-music-android/commit/ae8865a36b917f9bb7a19dc5a8f4d11198a9eff3))
+* **deps:** update dependency androidx.navigation:navigation-compose to v2.10.2 ([c867222](https://github.com/bocan/bocan-music-android/commit/c867222b932ec47ce16a058f062d0bd534b2d921))
+* **deps:** update dependency androidx.palette:palette-ktx to v1.1.0 ([613c4a0](https://github.com/bocan/bocan-music-android/commit/613c4a0959501b662be0d490499201879f66af62))
+* **deps:** update dependency com.github.triplet.gradle:play-publisher to v3.13.0 ([ebeac5f](https://github.com/bocan/bocan-music-android/commit/ebeac5fd73589c0e5398838555332b5bb1f5cf27))
+* **deps:** update dependency com.github.triplet.gradle:play-publisher to v4 ([c76540c](https://github.com/bocan/bocan-music-android/commit/c76540c557e1d60cd6db67ae9682b6aae5451a17))
+* **deps:** update dependency com.github.triplet.gradle:play-publisher to v4.1.2 ([08a875b](https://github.com/bocan/bocan-music-android/commit/08a875b627ab84aa0ade85046759a8b6270f287a))
+* **deps:** update dependency org.jetbrains.kotlinx:kotlinx-serialization-json to v1.13.0 ([2191e61](https://github.com/bocan/bocan-music-android/commit/2191e61011129c33ce77d88b0334c9824869dc41))
+* **deps:** update dependency org.robolectric:robolectric to v4.18 ([aed8986](https://github.com/bocan/bocan-music-android/commit/aed8986f2474bb29bfef3550965b9ae3c68c4d1d))
+* **deps:** update glance to v1.2.0 ([c8a6328](https://github.com/bocan/bocan-music-android/commit/c8a63285d86857d02dbc58e25b15970f6b861015))
+* **deps:** update sqlite to v2.7.1 ([e2319be](https://github.com/bocan/bocan-music-android/commit/e2319be2bf2a6a20568e4c1814074e197928a1f3))
+* **playback:** log an expected PlaybackError from a browse future as a warning ([c9fc568](https://github.com/bocan/bocan-music-android/commit/c9fc568131d2463c5c1d2fb406da6262e73c1824))
+* **sync:** a cancelled sync is not restarted when discovery sees the Mac ([04ab0d1](https://github.com/bocan/bocan-music-android/commit/04ab0d10aab8aa3d2530724b07bd393fb93c1c54))
+* **sync:** cancelling a sync stops its run, not only the wait on it ([6b6efda](https://github.com/bocan/bocan-music-android/commit/6b6efdaa4ada83809d75494ea6652c1e2f055669))
+* **sync:** every wrong pairing code clears the field and is announced ([1e6f550](https://github.com/bocan/bocan-music-android/commit/1e6f550398472be289937fec0d0645fd88d58811))
+* **sync:** the sync service lives until the runs it launched end ([89618bd](https://github.com/bocan/bocan-music-android/commit/89618bdf72e7c7e6572ca6991d22a80413404d8b))
+
+
+### Changed
+
+* **app:** drop the pairing screen's Done button, which no host shows ([107d796](https://github.com/bocan/bocan-music-android/commit/107d7969706da9d26f3621341c5c8c3112dfdcb5))
+* **app:** one shared top-bar back button ([ef70fe4](https://github.com/bocan/bocan-music-android/commit/ef70fe41a3222d005874a5d2c1dd4803a0e69101))
+
 ## [0.4.0](https://github.com/bocan/bocan-music-android/compare/v0.3.2...v0.4.0) (2026-09-07)
 
 
