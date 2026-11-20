@@ -2,7 +2,6 @@ package io.cloudcauldron.bocan.app.audits
 
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.test.espresso.Espresso
 import io.cloudcauldron.bocan.app.E2ETest
 import io.cloudcauldron.bocan.app.fixtures.FixtureProfile
 import io.cloudcauldron.bocan.app.navigation.Destination
@@ -45,8 +44,5 @@ abstract class AuditTest(profile: FixtureProfile, completeOnboarding: Boolean = 
     }
 
     /** System back: closes a sheet, menu, or dialog, or pops a pushed screen. */
-    protected fun back() {
-        composeRule.waitForIdle()
-        Espresso.pressBack()
-    }
+    protected fun back() = ui.back()
 }
