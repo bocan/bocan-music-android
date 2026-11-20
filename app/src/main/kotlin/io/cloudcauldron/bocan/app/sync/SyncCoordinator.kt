@@ -78,7 +78,8 @@ class SyncCoordinator(
 
     override val syncState: StateFlow<SyncState> = syncStateFlow.asStateFlow()
 
-    @Volatile private var cached: Pair<String, SyncEngine>? = null
+    /** One engine per paired certificate; a re-pair stops the old engine's run. */
+    private val engines = EngineSlot<SyncEngine>(onReplaced = SyncEngine::cancel)
     private val started = AtomicBoolean(false)
 
     private val triggers = SyncTriggers(
@@ -118,7 +119,7 @@ class SyncCoordinator(
         // A sync still waiting for discovery has no engine run yet; cancelling only the engine
         // left Cancel doing nothing for up to the whole discovery window.
         pendingLaunch?.cancel()
-        cached?.second?.cancel()
+        engines.current?.cancel()
         // A cancel is the person's answer for now: the paired Mac coming into view must not
         // start the sync again a moment later, as it did when discovery first saw the Mac after
         // a Cancel or a Sync later.
@@ -223,7 +224,7 @@ class SyncCoordinator(
         appScope.launch {
             trustStore.clear()
             endpoint.value = null
-            cached = null
+            engines.clear()
             syncStateFlow.value = SyncState.Idle
             log.info("sync.unpaired", emptyMap())
         }
@@ -255,8 +256,7 @@ class SyncCoordinator(
 
     private suspend fun engine(): SyncEngine? {
         val server = trustStore.current() ?: return null
-        val reusable = cached?.takeIf { it.first == server.certFingerprint }?.second
-        return reusable ?: buildEngine(server)
+        return engines.obtain(server.certFingerprint) { buildEngine(server) }
     }
 
     private fun buildEngine(server: SyncServerEntity): SyncEngine {
@@ -280,7 +280,6 @@ class SyncCoordinator(
             scope = appScope
         )
         appScope.launch { engine.state.onEach { syncStateFlow.value = it }.collect {} }
-        cached = server.certFingerprint to engine
         log.info("sync.engineReady", mapOf("server" to server.serverName))
         return engine
     }
