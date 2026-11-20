@@ -74,6 +74,8 @@ class TagCoverageAudit : AuditTest(FixtureProfile.PairedLibrary) {
         ui.scrollToRow(E2ETags.Library.ALBUMS_GRID, LYRICS_ALBUM).performClick()
         ui.awaitRow(LYRICS_TRACK).performClick()
         awaitPlayer("'$LYRICS_TRACK' playing") { it.current?.mediaId == trackMediaId(LYRICS_TRACK) && it.isPlaying }
+        // The lyrics step below needs this track, and it lasts only 4 s.
+        holdOnTrack(LYRICS_TRACK)
         check("library with the mini player")
 
         tap(E2ETags.MiniPlayer.OPEN)
