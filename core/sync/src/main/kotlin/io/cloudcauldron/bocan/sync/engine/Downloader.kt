@@ -10,6 +10,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import kotlinx.coroutines.currentCoroutineContext
@@ -40,7 +42,10 @@ import okhttp3.Response
  *  4. On a SHA-256 mismatch the `.part` is discarded and the whole file is
  *     retried once from scratch, then recorded as [Result.Failed].
  *  5. A verified file is moved into place with an atomic rename, so a reader
- *     never sees a half-written file.
+ *     never sees a half-written file. If the `.part` is gone at the rename,
+ *     another writer of the same content-addressed path won: a target that
+ *     hashes clean is [Result.AlreadyPresent], anything else is
+ *     [Result.Failed] for the next sync. It never throws past the engine.
  *
  * A `503 busy` means the server is re-preparing the bytes (a transcoded
  * artifact released after an earlier transfer, sync-protocol.md section 6):
@@ -54,11 +59,14 @@ import okhttp3.Response
  * later resume (the sync pauses rather than failing the item).
  *
  * [wait] is the busy-wait sleep, injectable so tests never spend real time.
+ * [move] is the final atomic rename, injectable so tests can lose the race to
+ * another writer on cue.
  */
 class Downloader(
     private val client: OkHttpClient,
     private val dispatchers: CoroutineDispatchers,
-    private val wait: suspend (millis: Long) -> Unit = { delay(it) }
+    private val wait: suspend (millis: Long) -> Unit = { delay(it) },
+    private val move: (part: Path, target: Path) -> Unit = ::atomicReplace
 ) {
     private val log = AppLog.forCategory(LogCategory.Sync)
 
@@ -88,16 +96,16 @@ class Downloader(
             }
             val part = File(target.parentFile, target.name + PART_SUFFIX)
             if (part.isFile && sha256Of(part) == expectedSha256) {
-                return@withContext finish(part, target)
+                return@withContext finish(part, target, expectedSha256)
             }
             when (val first = streamWaitingOnBusy(url, expectedSha256, part, allowResume = true, onProgress)) {
-                is Attempt.Verified -> return@withContext finish(part, target)
+                is Attempt.Verified -> return@withContext finish(part, target, expectedSha256)
                 is Attempt.Failed -> return@withContext Result.Failed(first.reason)
                 Attempt.DigestMismatch -> Unit // fall through to a single clean retry
             }
             part.delete()
             when (val second = streamWaitingOnBusy(url, expectedSha256, part, allowResume = false, onProgress)) {
-                is Attempt.Verified -> finish(part, target)
+                is Attempt.Verified -> finish(part, target, expectedSha256)
                 is Attempt.Failed -> {
                     part.delete()
                     Result.Failed(second.reason)
@@ -110,9 +118,15 @@ class Downloader(
             }
         }
 
-    private fun finish(part: File, target: File): Result {
-        Files.move(part.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-        return Result.Downloaded
+    private fun finish(part: File, target: File, expectedSha256: String): Result = try {
+        move(part.toPath(), target.toPath())
+        Result.Downloaded
+    } catch (gone: NoSuchFileException) {
+        // Another writer of this content-addressed path renamed the same verified bytes
+        // into place first. Uncaught, this killed the app's process mid sync.
+        val placed = target.isFile && sha256Of(target) == expectedSha256
+        log.warning("download.partVanished", mapOf("target" to target.name, "placed" to placed, "error" to gone.toString()))
+        if (placed) Result.AlreadyPresent else Result.Failed("part vanished before its rename")
     }
 
     /** The outcome of one HTTP exchange: a settled [Attempt], or a busy server to wait on. */
@@ -266,6 +280,11 @@ class Downloader(
 
 private const val SHA_256 = "SHA-256"
 private const val BUFFER_BYTES = 64 * 1024
+
+/** Renames [part] over [target] atomically, so a reader never sees a half-written file. */
+private fun atomicReplace(part: Path, target: Path) {
+    Files.move(part, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+}
 
 /** SHA-256 of a whole file, hex encoded. */
 private fun sha256Of(file: File): String {

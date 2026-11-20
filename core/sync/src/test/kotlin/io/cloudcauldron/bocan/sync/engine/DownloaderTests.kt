@@ -4,6 +4,9 @@ import io.cloudcauldron.bocan.sync.CoroutineDispatchers
 import io.cloudcauldron.bocan.sync.SyncError
 import io.cloudcauldron.bocan.sync.identity.Fingerprints
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.NoSuchFileException
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -118,6 +121,39 @@ class DownloaderTests {
         assertArrayed(payload, target.readBytes())
         assertFalse("part left behind", partOf(target).exists())
         assertEquals(0, server.requestCount)
+    }
+
+    /** A rename that loses to another writer: it moves [placed] into place, then finds its part gone. */
+    private fun losingMove(placed: ByteArray?): (Path, Path) -> Unit = { part, target ->
+        Files.delete(part)
+        placed?.let { target.toFile().writeBytes(it) }
+        throw NoSuchFileException(part.toString(), target.toString(), null)
+    }
+
+    @Test
+    fun `losing the rename to a writer of the same verified bytes is already present`() = runTest {
+        // The nightly crash: two runs downloaded one artwork hash, both found its clean part,
+        // and the second rename threw NoSuchFileException past the engine.
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(payload)).build())
+        val target = target()
+        val downloader = Downloader(OkHttpClient(), dispatchers, wait = { waits.add(it) }, move = losingMove(payload))
+
+        val result = downloader.download(url(), payloadSha, target)
+
+        assertEquals(Downloader.Result.AlreadyPresent, result)
+        assertArrayed(payload, target.readBytes())
+    }
+
+    @Test
+    fun `a part that vanishes with nothing valid in place fails the item instead of throwing`() = runTest {
+        server.enqueue(MockResponse.Builder().code(200).body(Buffer().write(payload)).build())
+        val target = target()
+        val downloader = Downloader(OkHttpClient(), dispatchers, wait = { waits.add(it) }, move = losingMove(placed = null))
+
+        val result = downloader.download(url(), payloadSha, target)
+
+        assertTrue("expected Failed, got $result", result is Downloader.Result.Failed)
+        assertFalse("nothing should be in place", target.exists())
     }
 
     @Test
