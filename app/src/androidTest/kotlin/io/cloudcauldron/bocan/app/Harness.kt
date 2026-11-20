@@ -65,6 +65,23 @@ abstract class E2ETest(
         }
     }
 
+    /**
+     * Pause and stay on the queued track [title], stepping back to it if playback already moved
+     * on. The fixture tracks run 4 s, so on a slow emulator a step that needs one track (the only
+     * one with lyrics) found the next one playing. Set-up, not a control under test: it goes
+     * straight to the queue controller.
+     */
+    protected fun holdOnTrack(title: String) {
+        val mediaId = trackMediaId(title)
+        runBlocking { graph.queueController.pause() }
+        awaitPlayer("paused") { !it.isPlaying }
+        while (player.current?.mediaId != mediaId) {
+            val before = player.current?.mediaId
+            runBlocking { graph.queueController.skipPrevious() }
+            awaitPlayer("a step back from $before toward '$title'") { it.current?.mediaId != before }
+        }
+    }
+
     /** Wait until [condition] holds, or fail naming [what]. For state outside the semantics tree (the database). */
     protected fun awaitState(what: String, timeoutMs: Long = PLAYER_TIMEOUT_MS, condition: () -> Boolean) {
         try {
