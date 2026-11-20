@@ -1,5 +1,6 @@
 package io.cloudcauldron.bocan.app
 
+import android.view.KeyEvent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.platform.app.InstrumentationRegistry
 import io.cloudcauldron.bocan.app.e2e.E2ETags
 
 /**
@@ -36,6 +38,19 @@ class Ui(private val rule: ComposeTestRule) {
 
     fun tap(tag: String) {
         awaitTag(tag).performClick()
+    }
+
+    /**
+     * System back, as the key a person presses: closes a sheet, menu, or dialog, or pops a pushed
+     * screen. Not Espresso.pressBack: that first picks a root window, then waits 10 s for that root
+     * to take focus. Just after a dialog over a sheet closes, focus is still moving back to the
+     * sheet, so it picked the activity window, which never takes focus while the sheet is up
+     * (nightly end-to-end, issues #66 to #70). The injected key goes to whichever window holds
+     * focus when the input system delivers it.
+     */
+    fun back() {
+        rule.waitForIdle()
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
     }
 
     /** Wait until at least one node carries [tag]: a repeated control such as a row. */

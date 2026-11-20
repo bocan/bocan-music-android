@@ -78,10 +78,7 @@ class CrawlRunner(
     private fun act(step: Step) {
         when (val action = step.action) {
             Action.Look -> Unit
-            Action.Back -> {
-                rule.waitForIdle()
-                Espresso.pressBack()
-            }
+            Action.Back -> ui.back()
             is Action.TapLink -> {
                 rule.waitForIdle()
                 Espresso.onView(withText(containsString(action.text))).perform(ClickSpan(action.text))

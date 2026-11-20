@@ -164,7 +164,7 @@ class NowPlayingGestureTests : E2ETest(FixtureProfile.PairedLibrary) {
         accessibilityAction(R.string.gesture_song_details)
         awaitState("the song details sheet open") { sheetHandles() == 1 }
         ui.awaitTag(E2ETags.Common.SHEET_HANDLE)
-        androidx.test.espresso.Espresso.pressBack()
+        ui.back()
         awaitState("the song details sheet closed") { sheetHandles() == 0 }
         accessibilityAction(R.string.gesture_close_player)
         ui.awaitTag(E2ETags.MiniPlayer.OPEN)
