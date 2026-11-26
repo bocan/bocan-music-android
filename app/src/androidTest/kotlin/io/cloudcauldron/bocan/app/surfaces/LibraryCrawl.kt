@@ -23,7 +23,8 @@ class LibraryCrawl : CrawlTest(FixtureProfile.PairedLibrary) {
     }
 
     companion object {
-        fun table(c: CrawlContext): List<Step> = tabs() + folders(c) + sorts(c) + rail(c) + shuffleAndChrome() + unsyncedLyrics(c)
+        fun table(c: CrawlContext): List<Step> =
+            tabs() + folders(c) + sorts(c) + rail(c) + artistAndGenreRails() + shuffleAndChrome() + unsyncedLyrics(c)
 
         // Synced lyrics are crawled in NowPlayingCrawl; the fixture's unsynced kind is checked here.
         // From the fixture's lyrics/9001000025.txt.
@@ -88,6 +89,17 @@ class LibraryCrawl : CrawlTest(FixtureProfile.PairedLibrary) {
             Step(E2ETags.Library.ALPHABET_RAIL, Swipe(Direction.Down), Visible(E2ETags.Rows.TRACK, "Wading 1")),
             Step(E2ETags.Library.ALPHABET_LETTER, Tap, Visible(E2ETags.Rows.TRACK, "Breakwater 1"), row = "A"),
             Step(E2ETags.Rows.TRACK, Tap, PlayerState(playing = true, mediaIdPrefix = c.track("Breakwater 1")), row = "Breakwater 1")
+        )
+
+        // A drag to the bottom lands on Z, the last artist letter ("Édith Marceau" is E, after Z
+        // in the list). "A" goes to "Arctic Owls", past "!Lumen" and "2 Bridges", which have no
+        // letter. The four genres fit on one screen, so "A" is the only rail step there.
+        private fun artistAndGenreRails() = listOf(
+            Step(E2ETags.Library.TAB_ARTISTS, Tap, Visible(E2ETags.Rows.ARTIST, "Aurora Lane")),
+            Step(E2ETags.Library.ALPHABET_RAIL, Swipe(Direction.Down), Visible(E2ETags.Rows.ARTIST, "Zephyr Lines")),
+            Step(E2ETags.Library.ALPHABET_LETTER, Tap, Visible(E2ETags.Rows.ARTIST, "Arctic Owls"), row = "A"),
+            Step(E2ETags.Library.TAB_GENRES, Tap, Visible(E2ETags.Rows.GENRE, "Folk")),
+            Step(E2ETags.Library.ALPHABET_LETTER, Tap, Visible(E2ETags.Rows.GENRE, "Ambient"), row = "A")
         )
 
         private fun shuffleAndChrome() = listOf(
