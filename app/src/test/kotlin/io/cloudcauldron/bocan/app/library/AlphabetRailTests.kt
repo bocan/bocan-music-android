@@ -4,8 +4,31 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import org.junit.Test
 
-/** The Songs tab's A to Z rail: what it indexes, where a letter goes, and which letters fit. */
+/** The A to Z rail (Songs, Artists, Genres): what it indexes, where a letter goes, and which letters fit. */
 class AlphabetRailTests {
+    @Test
+    fun `an accented first letter is indexed under its plain letter`() {
+        assertEquals(mapOf('E' to 0, 'N' to 1), railIndex(listOf("Édith Marceau", "ñandú")))
+        // Ø is a letter of its own, not O with a mark, so it has no place on an A to Z rail.
+        assertEquals(emptyMap(), railIndex(listOf("Øresund")))
+    }
+
+    @Test
+    fun `the artist rail follows the list order, a leading The included`() {
+        // The fixture's artists in the order the Artists tab shows them (name COLLATE NOCASE).
+        val artists = listOf(
+            "!Lumen", "2 Bridges", "Arctic Owls", "Aurora Lane", "Cassia Moor", "Dunmore Tide", "Fennel & Finch",
+            "Grey Heron Trio", "Kestrel", "Mossgiel", "Saltmarsh Choir", "The Bellwethers", "Zephyr Lines", "Édith Marceau"
+        )
+        val index = railIndex(artists)
+        assertEquals(2, index['A'])
+        assertEquals(11, index['T'])
+        assertEquals(13, index['E'])
+        assertNull(index['B'])
+        // B has no artist in the list, so it goes to the next letter that has one.
+        assertEquals(4, railTarget(index, 'B'))
+    }
+
     @Test
     fun `the index is the first row of each letter of the sort key, in list order`() {
         val index = railIndex(listOf("Breakwater 1", "breakwater 2", "Crossings 1", "Signal 1", "signal 2"))

@@ -78,7 +78,7 @@ checks; everything testable in JVM tests is covered by
 
 ## Accepted deviations
 
-- The alphabet fast-scroll rail in Songs stays hidden from accessibility
+- The alphabet fast-scroll rail in Songs, Artists, and Genres stays hidden from accessibility
   services and its letter targets are under 48 dp. It is a redundant shortcut:
   the list itself scrolls normally, so TalkBack and switch users lose nothing.
   Exposing 26 tiny targets would make traversal worse, not better.
