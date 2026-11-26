@@ -188,6 +188,9 @@ play history, so Recently Played is not empty. Each box needs the DHU, not a uni
 - [ ] Albums shows letters; a letter shows its albums as a grid of covers; an album plays.
 - [ ] Artists shows letters (only letters that have artists, then 0-9 and #); a letter shows
       its artists in order; tapping an artist and a track plays it.
+- [ ] A song tapped in an album, artist, playlist, Recently Played, or Songs queues that whole
+      list from that song: Next shows, and Next and Previous move through the list.
+- [ ] A song tapped in search results plays its album from that song, with Next showing.
 - [ ] Every artist is reachable: pick ten names at random from the phone's Artists tab,
       including one that starts with "The", one with an accent, and one with a digit, and
       find each one under its letter.

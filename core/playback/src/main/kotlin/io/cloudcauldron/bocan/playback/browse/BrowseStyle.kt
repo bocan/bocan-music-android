@@ -66,9 +66,9 @@ class BrowseStyle(private val artworkUri: (String?) -> Uri?) {
         return MediaItem.Builder().setMediaId(mediaId).setMediaMetadata(metadata).build()
     }
 
-    /** A synced track as a playable item. */
-    fun track(track: TrackEntity, group: String? = null): MediaItem = playable(
-        mediaId = MediaId.of(track).raw,
+    /** A synced track as a playable item. [mediaId] is a [BrowseTap] id when the row belongs to a list. */
+    fun track(track: TrackEntity, group: String? = null, mediaId: String = MediaId.of(track).raw): MediaItem = playable(
+        mediaId = mediaId,
         title = track.title,
         subtitle = track.artistName,
         artworkHash = track.artworkHash,

@@ -81,7 +81,13 @@ class BrowseSearchTests {
         val results = browseSearch().search("slowdive")
         assertEquals(listOf("bocan/artist/11", "bocan/artist/10"), results.filter { it.group() == "Artists" }.map { it.mediaId })
         assertEquals("bocan/album/100", results.first { it.group() == "Albums" }.mediaId)
-        assertEquals("track:3", browseSearch().search("slow").first { it.group() == "Songs" }.mediaId)
+        assertEquals(3L, BrowseTap.parse(browseSearch().search("slow").first { it.group() == "Songs" }.mediaId)?.trackId)
+    }
+
+    @Test
+    fun `a song result plays its album from that song`() = runTest {
+        val song = browseSearch().search("alison").first { it.group() == "Songs" }
+        assertEquals(BrowseTap("${MediaTree.PREFIX_ALBUM}${alison.albumId}", alison.id), BrowseTap.parse(song.mediaId))
     }
 
     @Test
@@ -92,7 +98,7 @@ class BrowseSearchTests {
 
     @Test
     fun `songs that are not downloaded are not offered`() = runTest {
-        assertTrue(browseSearch().search("slowness").none { it.mediaId == "track:4" })
+        assertTrue(browseSearch().search("slowness").none { BrowseTap.parse(it.mediaId)?.trackId == 4L })
     }
 
     @Test
