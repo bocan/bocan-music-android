@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/bocan/bocan-music-android/compare/v0.5.0...v0.6.0) (2026-11-26)
+
+
+### Added
+
+* **app:** an A to Z rail on the Artists and Genres tabs ([c130527](https://github.com/bocan/bocan-music-android/commit/c1305276920a01a21b801416e8c9e341242814a9))
+* **playback:** a song tapped in the car queues its whole list ([ff9a27b](https://github.com/bocan/bocan-music-android/commit/ff9a27b61122c70e56124384a3f4619fee963bb6))
+
+
+### Fixed
+
+* **deps:** update dependency androidx.compose:compose-bom to v2026.11.01 ([a30a7aa](https://github.com/bocan/bocan-music-android/commit/a30a7aab693bf7a2942aad6f517078deeccef810))
+
 ## [0.5.0](https://github.com/bocan/bocan-music-android/compare/v0.4.0...v0.5.0) (2026-11-20)
 
 
