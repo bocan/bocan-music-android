@@ -6,6 +6,7 @@ import io.cloudcauldron.bocan.app.journeys.LibraryPlayJourney
 import io.cloudcauldron.bocan.app.journeys.PodcastResumeJourney
 import io.cloudcauldron.bocan.app.sync.FakeMacVectorsTest
 import io.cloudcauldron.bocan.app.sync.HermeticSyncJourney
+import io.cloudcauldron.bocan.app.system.CarBrowseTests
 import io.cloudcauldron.bocan.app.system.SystemSurfaceTests
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
@@ -23,6 +24,7 @@ import org.junit.runners.Suite
     PodcastResumeJourney::class,
     NowPlayingGestureTests::class,
     SystemSurfaceTests::class,
+    CarBrowseTests::class,
     FakeMacVectorsTest::class,
     HermeticSyncJourney::class,
     AuditSuite::class,
