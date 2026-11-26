@@ -41,7 +41,9 @@ val appVersionName = "0.5.0" // x-release-please-version
 android {
     namespace = "io.cloudcauldron.bocan.app"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 2
+        }
     }
 
     defaultConfig {
