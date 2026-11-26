@@ -6,8 +6,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaConstants
 import io.cloudcauldron.bocan.observability.AppLog
 import io.cloudcauldron.bocan.persistence.daos.BrowseDao
+import io.cloudcauldron.bocan.persistence.entities.TrackEntity
 import io.cloudcauldron.bocan.persistence.model.NameRow
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
+import io.cloudcauldron.bocan.playback.MediaId
 import kotlinx.coroutines.withContext
 
 /** The human-readable, localized titles the app supplies from strings.xml. */
@@ -40,7 +42,8 @@ data class BrowseLabels(
  * Songs are bounded by definition (the newest 50 plays, the newest [CAR_LIST_CAP] synced).
  *
  * Browse items carry only a media id; when one is played the session resolves the real
- * item. Ids embed stable keys (an id or a bucket letter), never a row offset.
+ * item. Ids embed stable keys (an id or a bucket letter), never a row offset. A song row's id
+ * is a [BrowseTap], which names its parent list, so a tap can queue the whole list.
  */
 @UnstableApi
 class MediaTree(
@@ -71,13 +74,11 @@ class MediaTree(
     suspend fun children(parentId: String, page: Int, pageSize: Int, rootChildrenLimit: Int? = null): List<MediaItem> =
         withContext(dispatchers.io) {
             val window = Window.of(page, pageSize) ?: return@withContext emptyList()
+            val trackList = trackList(parentId)
             when {
+                trackList != null -> serveTracks(parentId, window, trackList)
                 parentId == ROOT_ID -> serveList(parentId, window, rootCategories(rootChildrenLimit))
                 parentId == CATEGORY_HOME -> serveList(parentId, window, homeFolders())
-                parentId == CATEGORY_RECENT ->
-                    serve(parentId, window, nodeCap = RECENT_CAP) { limit, offset ->
-                        browseDao.recentlyPlayedPage(limit, offset).map { style.track(it) }
-                    }
                 parentId == CATEGORY_CONTINUE ->
                     serve(parentId, window) { limit, offset -> browseDao.continueListeningPage(limit, offset).map { style.episode(it) } }
                 parentId == CATEGORY_PODCASTS ->
@@ -85,10 +86,6 @@ class MediaTree(
                         browseDao.showsPage(limit, offset).map { show ->
                             style.folder("$PREFIX_SHOW${show.id}", show.title, show.artworkHash, grid = false)
                         }
-                    }
-                parentId == CATEGORY_SONGS ->
-                    serve(parentId, window, nodeCap = CAR_LIST_CAP) { limit, offset ->
-                        browseDao.recentSongsPage(limit, offset).map { style.track(it) }
                     }
                 parentId == CATEGORY_PLAYLISTS ->
                     serve(parentId, window) { limit, offset ->
@@ -108,18 +105,6 @@ class MediaTree(
                     bucket(parentId, window, PREFIX_ARTIST_BUCKET, browseDao.artistNames()) { ids ->
                         browseDao.artistsByIds(ids).map { it.id to style.folder("$PREFIX_ARTIST${it.id}", it.name, null, grid = false) }
                     }
-                parentId.startsWith(PREFIX_ALBUM) ->
-                    serve(parentId, window) { limit, offset ->
-                        browseDao.albumTracksPage(idOf(parentId, PREFIX_ALBUM), limit, offset).map { style.track(it) }
-                    }
-                parentId.startsWith(PREFIX_ARTIST) ->
-                    serve(parentId, window) { limit, offset ->
-                        browseDao.artistTracksPage(idOf(parentId, PREFIX_ARTIST), limit, offset).map { style.track(it) }
-                    }
-                parentId.startsWith(PREFIX_PLAYLIST) ->
-                    serve(parentId, window) { limit, offset ->
-                        browseDao.playlistTracksPage(idOf(parentId, PREFIX_PLAYLIST), limit, offset).map { style.track(it) }
-                    }
                 parentId.startsWith(PREFIX_SHOW) ->
                     serve(parentId, window) { limit, offset ->
                         browseDao.episodesPage(idOf(parentId, PREFIX_SHOW), limit, offset).map { style.episode(it) }
@@ -127,6 +112,46 @@ class MediaTree(
                 else -> emptyList()
             }
         }
+
+    /**
+     * The queue a tap on [tap] plays: its parent list, in the order the car shows it. The song
+     * alone when it has left that list or sits past the cap, so a tap always plays what it names.
+     */
+    suspend fun queueFor(tap: BrowseTap): List<MediaId> = withContext(dispatchers.io) {
+        val listed = trackList(tap.parentId)
+            ?.let { it.fetch(it.nodeCap ?: CAR_LIST_CAP, 0) }
+            .orEmpty()
+            .map(MediaId::of)
+        if (tap.track in listed) listed else listOf(tap.track)
+    }
+
+    /** The song list behind [parentId], or null when that node does not hold songs. */
+    private fun trackList(parentId: String): TrackList? = when {
+        parentId == CATEGORY_RECENT -> TrackList(RECENT_CAP, browseDao::recentlyPlayedPage)
+        parentId == CATEGORY_SONGS -> TrackList(CAR_LIST_CAP, browseDao::recentSongsPage)
+        parentId.startsWith(PREFIX_ALBUM) ->
+            TrackList { limit, offset -> browseDao.albumTracksPage(idOf(parentId, PREFIX_ALBUM), limit, offset) }
+        parentId.startsWith(PREFIX_ARTIST) ->
+            TrackList { limit, offset -> browseDao.artistTracksPage(idOf(parentId, PREFIX_ARTIST), limit, offset) }
+        parentId.startsWith(PREFIX_PLAYLIST) ->
+            TrackList { limit, offset -> browseDao.playlistTracksPage(idOf(parentId, PREFIX_PLAYLIST), limit, offset) }
+        else -> null
+    }
+
+    /** One window of a song list, each row's id naming [nodeId] and which copy of the song it is. */
+    private suspend fun serveTracks(nodeId: String, window: Window, list: TrackList): List<MediaItem> {
+        val copiesSeen = mutableMapOf<Long, Int>()
+        if (window is Window.Paged && window.offset > 0) {
+            list.fetch(window.offset, 0).forEach { copiesSeen[it.id] = copiesSeen.getOrDefault(it.id, 0) + 1 }
+        }
+        return serve(nodeId, window, list.nodeCap) { limit, offset ->
+            list.fetch(limit, offset).map { track ->
+                val occurrence = copiesSeen.getOrDefault(track.id, 0)
+                copiesSeen[track.id] = occurrence + 1
+                style.track(track, mediaId = BrowseTap(nodeId, track.id, occurrence).raw)
+            }
+        }
+    }
 
     private fun homeFolders(): List<MediaItem> = listOf(
         style.folder(CATEGORY_RECENT, labels.recentlyPlayed, null, grid = false),
@@ -194,7 +219,8 @@ class MediaTree(
         }
     }
 
-    private fun idOf(nodeId: String, prefix: String): Long = nodeId.removePrefix(prefix).toLongOrNull() ?: -1L
+    /** A node that holds songs: its page read, and its bound when it has one by definition. */
+    private class TrackList(val nodeCap: Int? = null, val fetch: suspend (limit: Int, offset: Int) -> List<TrackEntity>)
 
     /** One request's slice of a node: an explicit page, or the whole node for a non-paging browser. */
     private sealed interface Window {
@@ -247,6 +273,8 @@ class MediaTree(
         internal const val PREFIX_SHOW = "bocan/show/"
 
         private const val COLLAPSED_TABS = 3
+
+        private fun idOf(nodeId: String, prefix: String): Long = nodeId.removePrefix(prefix).toLongOrNull() ?: -1L
 
         /** The car's root children limit from the root request's extras; null when absent or not positive. */
         fun rootChildrenLimit(extras: Bundle?): Int? = extras?.getInt(MediaConstants.EXTRAS_KEY_ROOT_CHILDREN_LIMIT, 0)?.takeIf { it > 0 }

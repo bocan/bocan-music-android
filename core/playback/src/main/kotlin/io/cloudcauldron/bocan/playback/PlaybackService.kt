@@ -21,6 +21,7 @@ import io.cloudcauldron.bocan.observability.LogCategory
 import io.cloudcauldron.bocan.playback.audio.EffectsChain
 import io.cloudcauldron.bocan.playback.audio.ReplayGainValues
 import io.cloudcauldron.bocan.playback.browse.BrowseSearch
+import io.cloudcauldron.bocan.playback.browse.BrowseTap
 import io.cloudcauldron.bocan.playback.browse.MediaTree
 import io.cloudcauldron.bocan.playback.queue.QueuePersistence
 import io.cloudcauldron.bocan.playback.queue.QueueSnapshot
@@ -340,6 +341,7 @@ class PlaybackService : MediaLibraryService() {
         // "Play X on Bocan" arrives as one item with an empty id and the query in its request
         // metadata. It plays through the normal media id path, so stats and scrobbles behave as
         // for a tap. No match fails the request: a successful empty list would wipe the queue.
+        // A tapped song row arrives the same way, as one item, and expands to its whole list.
         override fun onSetMediaItems(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -348,12 +350,25 @@ class PlaybackService : MediaLibraryService() {
             startPositionMs: Long
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
             val query = BrowseSearch.voiceQuery(mediaItems)
-                ?: return super.onSetMediaItems(mediaSession, controller, mediaItems, startIndex, startPositionMs)
-            return future {
-                val items = components.mediaItemSource.resolve(browseSearch.resolveVoice(query))
-                if (items.isEmpty()) throw PlaybackError.VoiceNoMatch(query)
-                MediaSession.MediaItemsWithStartPosition(items, 0, C.TIME_UNSET)
+            val tap = mediaItems.singleOrNull()?.let { BrowseTap.parse(it.mediaId) }
+            return when {
+                query != null -> future { voiceQueue(query) }
+                tap != null -> future { tapQueue(tap) }
+                else -> super.onSetMediaItems(mediaSession, controller, mediaItems, startIndex, startPositionMs)
             }
+        }
+
+        private suspend fun voiceQueue(query: String): MediaSession.MediaItemsWithStartPosition {
+            val items = components.mediaItemSource.resolve(browseSearch.resolveVoice(query))
+            if (items.isEmpty()) throw PlaybackError.VoiceNoMatch(query)
+            return MediaSession.MediaItemsWithStartPosition(items, 0, C.TIME_UNSET)
+        }
+
+        // A song that no longer resolves fails the request, so the current queue is left alone.
+        private suspend fun tapQueue(tap: BrowseTap): MediaSession.MediaItemsWithStartPosition {
+            val items = components.mediaItemSource.resolve(mediaTree.queueFor(tap))
+            val start = tap.startIndexIn(items) ?: throw PlaybackError.UnknownMediaId(tap.raw)
+            return MediaSession.MediaItemsWithStartPosition(items, start, C.TIME_UNSET)
         }
 
         // Browse items carry only a media id; resolve them to real playable items before they enter the queue.
@@ -362,7 +377,7 @@ class PlaybackService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             mediaItems: List<MediaItem>
         ): ListenableFuture<List<MediaItem>> = future {
-            val ids = mediaItems.mapNotNull { MediaId.parse(it.mediaId) }
+            val ids = mediaItems.mapNotNull { MediaId.parse(it.mediaId) ?: BrowseTap.parse(it.mediaId)?.track }
             components.mediaItemSource.resolve(ids).ifEmpty { mediaItems }
         }
     }

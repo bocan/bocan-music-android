@@ -42,7 +42,11 @@ class BrowseSearch(
             ranked(results.albums, text) { it.name }.take(perSection).forEach {
                 add(style.folder("${MediaTree.PREFIX_ALBUM}${it.id}", it.name, it.artworkHash, grid = false, group = labels.albums))
             }
-            ranked(songs, text) { it.title }.take(perSection).forEach { add(style.track(it, group = labels.songs)) }
+            // A song result has no list of its own, so a tap plays its album from that song.
+            ranked(songs, text) { it.title }.take(perSection).forEach {
+                val tap = BrowseTap("${MediaTree.PREFIX_ALBUM}${it.albumId}", it.id)
+                add(style.track(it, group = labels.songs, mediaId = tap.raw))
+            }
             ranked(shows, text) { it.title }.take(perSection).forEach {
                 add(style.folder("${MediaTree.PREFIX_SHOW}${it.id}", it.title, it.artworkHash, grid = false, group = labels.podcasts))
             }

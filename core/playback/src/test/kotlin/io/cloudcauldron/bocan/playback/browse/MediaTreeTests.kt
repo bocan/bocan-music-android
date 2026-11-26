@@ -11,9 +11,11 @@ import io.cloudcauldron.bocan.persistence.entities.AlbumEntity
 import io.cloudcauldron.bocan.persistence.entities.ArtistEntity
 import io.cloudcauldron.bocan.persistence.entities.PodcastEntity
 import io.cloudcauldron.bocan.playback.CoroutineDispatchers
+import io.cloudcauldron.bocan.playback.MediaId
 import io.cloudcauldron.bocan.playback.episode
 import io.cloudcauldron.bocan.playback.track
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -112,7 +114,7 @@ class MediaTreeTests {
 
         val beatles = bucket.single { it.mediaMetadata.title.toString() == "The Beatles" }
         val withTracks = dao.copyWith(artistTracks = mapOf(idOf(beatles) to listOf(track(id = 77))))
-        assertEquals(listOf("track:77"), tree(withTracks).all(beatles.mediaId).map { it.mediaId })
+        assertEquals(listOf(77L), tree(withTracks).all(beatles.mediaId).map { tapOf(it).trackId })
     }
 
     @Test
@@ -147,15 +149,15 @@ class MediaTreeTests {
         val albums = tree.all("bocan/albums/S")
         assertEquals(listOf("bocan/album/3"), albums.map { it.mediaId })
         assertEquals("content://art/AA", albums.single().mediaMetadata.artworkUri.toString())
-        assertEquals(listOf("track:30", "track:31"), tree.all("bocan/album/3").map { it.mediaId })
+        assertEquals(listOf(30L, 31L), tree.all("bocan/album/3").map { tapOf(it).trackId })
     }
 
     @Test
     fun `recently played is the newest fifty plays`() = runTest {
         val dao = FakeBrowseDao(recentlyPlayed = (1L..80L).map { track(id = it) })
         val tree = tree(dao)
-        assertEquals((1L..50L).map { "track:$it" }, tree.all(MediaTree.CATEGORY_RECENT).map { it.mediaId })
-        assertEquals((41L..50L).map { "track:$it" }, tree.children(MediaTree.CATEGORY_RECENT, page = 4, pageSize = 10).map { it.mediaId })
+        assertEquals((1L..50L).toList(), tree.all(MediaTree.CATEGORY_RECENT).map { tapOf(it).trackId })
+        assertEquals((41L..50L).toList(), tree.children(MediaTree.CATEGORY_RECENT, page = 4, pageSize = 10).map { tapOf(it).trackId })
         assertTrue(tree.children(MediaTree.CATEGORY_RECENT, page = 5, pageSize = 10).isEmpty())
         assertTrue(log.warnings.isEmpty())
     }
@@ -219,6 +221,55 @@ class MediaTreeTests {
     fun `an unknown parent id yields nothing`() = runTest {
         assertTrue(tree(FakeBrowseDao()).all("bocan/nonsense/9").isEmpty())
     }
+
+    @Test
+    fun `a tap on a song in an album, artist, or playlist queues that whole list`() = runTest {
+        val songs = listOf(track(id = 1), track(id = 2), track(id = 3))
+        val dao = FakeBrowseDao(
+            albumTracks = mapOf(3L to songs),
+            artistTracks = mapOf(4L to songs),
+            playlistTracks = mapOf(5L to songs)
+        )
+        val tree = tree(dao)
+        for (parent in listOf("bocan/album/3", "bocan/artist/4", "bocan/playlist/5")) {
+            val tapped = tapOf(tree.all(parent)[1])
+            assertEquals(parent, tapped.parentId)
+            assertEquals(listOf<MediaId>(MediaId.Track(1), MediaId.Track(2), MediaId.Track(3)), tree.queueFor(tapped))
+        }
+    }
+
+    @Test
+    fun `a tap in recently played or songs queues that list`() = runTest {
+        val dao = FakeBrowseDao(recentlyPlayed = listOf(track(id = 7), track(id = 8)), songs = listOf(track(id = 8), track(id = 9)))
+        val tree = tree(dao)
+        val recent = tapOf(tree.all(MediaTree.CATEGORY_RECENT).first())
+        assertEquals(listOf<MediaId>(MediaId.Track(7), MediaId.Track(8)), tree.queueFor(recent))
+        val song = tapOf(tree.all(MediaTree.CATEGORY_SONGS).last())
+        assertEquals(listOf<MediaId>(MediaId.Track(8), MediaId.Track(9)), tree.queueFor(song))
+    }
+
+    @Test
+    fun `two copies of a song in a playlist are different rows, even across pages`() = runTest {
+        val dao = FakeBrowseDao(playlistTracks = mapOf(5L to listOf(track(id = 1), track(id = 2), track(id = 1))))
+        val tree = tree(dao)
+        assertEquals(listOf(0, 0, 1), tree.all("bocan/playlist/5").map { tapOf(it).occurrence })
+        assertEquals(1, tapOf(tree.children("bocan/playlist/5", page = 1, pageSize = 2).single()).occurrence)
+    }
+
+    @Test
+    fun `a song that left its list queues alone`() = runTest {
+        val tree = tree(FakeBrowseDao(albumTracks = mapOf(3L to listOf(track(id = 1)))))
+        assertEquals(listOf<MediaId>(MediaId.Track(9)), tree.queueFor(BrowseTap("bocan/album/3", 9)))
+        assertEquals(listOf<MediaId>(MediaId.Track(9)), tree.queueFor(BrowseTap("bocan/nonsense/3", 9)))
+    }
+
+    @Test
+    fun `a queue holds at most the car cap`() = runTest {
+        val tree = tree(FakeBrowseDao(playlistTracks = mapOf(5L to (1L..450L).map { track(id = it) })))
+        assertEquals(MediaTree.CAR_LIST_CAP, tree.queueFor(BrowseTap("bocan/playlist/5", 1)).size)
+    }
+
+    private fun tapOf(item: MediaItem): BrowseTap = assertNotNull(BrowseTap.parse(item.mediaId), "not a song row: ${item.mediaId}")
 
     private fun idOf(item: MediaItem): Long = item.mediaId.substringAfterLast('/').toLong()
 
